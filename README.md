@@ -1,4 +1,4 @@
-# Community Hub Bot
+# Hub Bot 9000
 
 A [Reddit Developer Platform (Devvit)](https://developers.reddit.com) app that automates community engagement through scheduled posts, weather forecasts, event calendars, and curated community links.
 
@@ -8,7 +8,7 @@ A [Reddit Developer Platform (Devvit)](https://developers.reddit.com) app that a
 
 This project is the spiritual successor to [SeattleRedditBot](https://github.com/r-seattle-wa/SeattleRedditBot), a Python/PRAW bot that posted daily community threads with weather, events, and community-generated content. That bot required external hosting (AWS Fargate) and ongoing maintenance.
 
-**Community Hub Bot** reimagines this as a native Reddit app using the Devvit platform:
+**Hub Bot 9000** reimagines this as a native Reddit app using the Devvit platform:
 - **No external hosting required** - runs entirely on Reddit's infrastructure
 - **Interactive UI** - not just text posts, but clickable calendars and widgets
 - **Community-configurable** - any subreddit can install and customize it
@@ -42,7 +42,7 @@ This project is the spiritual successor to [SeattleRedditBot](https://github.com
 ### For Subreddit Moderators
 
 1. Visit the Reddit Apps directory (coming soon)
-2. Search for "Community Hub Bot"
+2. Search for "Hub Bot 9000"
 3. Click "Add to Community"
 4. Configure settings in your subreddit's app settings
 
@@ -50,8 +50,8 @@ This project is the spiritual successor to [SeattleRedditBot](https://github.com
 
 ```bash
 # Clone the repo
-git clone https://github.com/r-seattle-wa/community-hub-bot.git
-cd community-hub-bot
+git clone https://github.com/r-seattle-wa/hub-bot-9000.git
+cd hub-bot-9000
 
 # Install dependencies
 npm install
@@ -95,10 +95,11 @@ All settings are configurable per-subreddit through the app settings UI:
 
 ```
 src/
-├── main.ts                 # Devvit entry point, triggers, scheduled jobs
+├── main.tsx                # Devvit entry point, triggers, scheduled jobs
 ├── scheduler/
 │   ├── dailyPost.ts        # Daily post generation logic
-│   └── weeklyPost.ts       # Weekly post generation logic
+│   ├── weeklyPost.ts       # Weekly post generation logic
+│   └── installHandlers.ts  # App install/upgrade handlers
 ├── services/
 │   ├── weatherService.ts   # NWS API integration
 │   ├── moonService.ts      # Moon phase calculations
@@ -110,19 +111,12 @@ src/
 │   └── UserEventForm.tsx   # User event submission form
 ├── utils/
 │   ├── linkValidator.ts    # URL safety validation
-│   ├── dateUtils.ts        # Timezone utilities
-│   └── templates.ts        # Post content templates
+│   └── dateUtils.ts        # Date/time utilities
 ├── config/
 │   └── settings.ts         # App settings schema
 └── types/
     └── index.ts            # TypeScript interfaces
 ```
-
-## Event Aggregation API (Optional)
-
-For communities that want automatic event aggregation from external sources, an optional GCP Cloud Function can be deployed to scrape/fetch events from configured sources.
-
-See `/api/` directory for the Cloud Function code (coming soon).
 
 ## Link Safety
 
@@ -133,6 +127,11 @@ User-submitted event links are validated against an allowlist of trusted domains
 - `facebook.com/events`
 - Government domains (`.gov`)
 - Additional domains configurable per-subreddit
+
+## Legal
+
+- [Terms of Service](TERMS.md)
+- [Privacy Policy](PRIVACY.md)
 
 ## Credits
 
@@ -164,5 +163,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/r-seattle-wa/community-hub-bot/issues)
+- **Issues**: [GitHub Issues](https://github.com/r-seattle-wa/hub-bot-9000/issues)
 - **Reddit**: r/SeattleWA modmail for Seattle-specific questions

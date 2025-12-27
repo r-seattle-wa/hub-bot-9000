@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-Community Hub Bot is a Reddit Developer Platform (Devvit) app that provides automated community engagement features. It's built with TypeScript and uses Devvit's React-like component system.
+Hub Bot 9000 is a Reddit Developer Platform (Devvit) app that provides automated community engagement features. It's built with TypeScript and uses Devvit's React-like component system.
 
 ## Tech Stack
 
@@ -19,6 +19,12 @@ Community Hub Bot is a Reddit Developer Platform (Devvit) app that provides auto
 ```bash
 # Install dependencies
 npm install
+
+# Build
+npm run build
+
+# Lint
+npm run lint
 
 # Development with live reload
 devvit playtest <subreddit-name>
@@ -37,7 +43,7 @@ devvit logs <subreddit-name>
 
 ### Scheduler Jobs
 
-Scheduled jobs use cron syntax and are registered in `main.ts`:
+Scheduled jobs use cron syntax and are registered in `main.tsx`:
 
 ```typescript
 Devvit.addSchedulerJob({
@@ -48,7 +54,7 @@ Devvit.addSchedulerJob({
 });
 ```
 
-Jobs are scheduled during app install/upgrade events.
+Jobs are scheduled during app install/upgrade events in `installHandlers.ts`.
 
 ### Settings
 
@@ -69,9 +75,11 @@ const data = JSON.parse(await context.redis.get('key') ?? '{}');
 
 ### Components
 
-Devvit uses a React-like syntax with custom elements:
+Devvit uses a React-like syntax with custom elements. The JSX factory is `Devvit.createElement`, so every TSX file needs to import Devvit:
 
 ```tsx
+import { Devvit } from '@devvit/public-api';
+
 <vstack gap="medium" padding="medium">
   <text size="large">Title</text>
   <button onPress={handleClick}>Click me</button>
@@ -85,6 +93,7 @@ Devvit uses a React-like syntax with custom elements:
 - Use descriptive variable names
 - Keep components small and focused
 - Validate all external data
+- Use ternary operators for conditional JSX (not `&&`)
 
 ## External API Notes
 
@@ -101,7 +110,7 @@ All user-submitted URLs must be validated against the domain allowlist before st
 
 ## Testing
 
-Use `devvit playtest` with a test subreddit. Create a private subreddit for development testing.
+Use `devvit playtest` with a test subreddit (r/SeattleModTests for this project).
 
 ## Deployment
 

@@ -21,6 +21,7 @@ export interface CommunityLink {
   name: string;
   url: string;
   icon: string;
+  description?: string;
 }
 
 // Weather Types
