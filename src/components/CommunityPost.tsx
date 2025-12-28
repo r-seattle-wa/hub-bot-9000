@@ -88,6 +88,11 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
     ? parseCommunityLinks(settings.communityLinks as string)
     : [];
 
+  // Get subreddit name for dynamic URLs
+  const { data: subredditName } = useAsync(async () => {
+    return await context.reddit.getCurrentSubredditName();
+  });
+
   const location = (settings?.weatherLocation as string) || 'Seattle, WA';
   const headerEmoji = (settings?.headerEmoji as string) || '🌲';
   const headerTitle = (settings?.headerTitle as string) || 'Seattle Community Hub';
@@ -343,7 +348,7 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
             ) : null}
 
             {/* Community Links */}
-            <CommunityLinksSection context={context} links={communityLinks} />
+            <CommunityLinksSection context={context} links={communityLinks} subredditName={subredditName || 'SeattleWA'} />
           </vstack>
         ) : null}
       </vstack>
@@ -386,17 +391,12 @@ const TabButton = ({ label, active, onPress }: TabButtonProps): JSX.Element => {
 interface CommunityLinksSectionProps {
   context: Devvit.Context;
   links: CommunityLink[];
+  subredditName: string;
 }
 
-const CommunityLinksSection = ({ context, links }: CommunityLinksSectionProps): JSX.Element => {
-  // Get subreddit name for dynamic URLs
-  const { data: subredditName } = useAsync(async () => {
-    return await context.reddit.getCurrentSubredditName();
-  });
-
-  const subName = subredditName || 'SeattleWA';
-  const wikiUrl = `https://www.reddit.com/r/${subName}/wiki/index`;
-  const rulesUrl = `https://www.reddit.com/r/${subName}/about/rules`;
+const CommunityLinksSection = ({ context, links, subredditName }: CommunityLinksSectionProps): JSX.Element => {
+  const wikiUrl = `https://www.reddit.com/r/${subredditName}/wiki/index`;
+  const rulesUrl = `https://www.reddit.com/r/${subredditName}/about/rules`;
 
   return (
     <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
