@@ -38,7 +38,7 @@ hub-bot-9000/
 │   │   │   └── templates.ts      # Comment templates
 │   │   └── devvit.yaml
 │   │
-│   └── farewell-statistician/    # Unsubscribe announcement responder
+│   └── farewell-hero/            # Unsubscribe announcement responder
 │       ├── src/
 │       │   ├── main.tsx          # Devvit app entry
 │       │   ├── detector.ts       # "I'm leaving" pattern detection
@@ -82,7 +82,7 @@ devvit logs r/YourTestSubreddit
 |-----|---------|-------------|
 | haiku-sensei | Detects accidental 5-7-5 haikus | `haiku-sensei` |
 | brigade-sentinel | Cross-subreddit link alerts + hater leaderboard | `brigade-sentinel` |
-| farewell-statistician | "I'm unsubscribing" responder | `farewell-statistician` |
+| farewell-hero | "I'm unsubscribing" responder | `farewell-hero` |
 
 ## Shared Package (@hub-bot/common)
 
@@ -274,7 +274,7 @@ const REDIS_PREFIX = {
 | `enrichHatersOSINT` | brigade-sentinel | Daily 3am | Analyze top haters' deleted content |
 | `notifyBrigade` | brigade-sentinel | On-demand | Delayed crosslink notification |
 | `postDelayedReply` | haiku-sensei | On-demand | Delayed haiku reply |
-| `postDelayedFarewell` | farewell-statistician | On-demand | Delayed farewell reply |
+| `postDelayedFarewell` | farewell-hero | On-demand | Delayed farewell reply |
 
 ## ToS Compliance
 

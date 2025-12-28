@@ -1,5 +1,5 @@
 {
-  "name": "@hub-bot/farewell-statistician",
+  "name": "@hub-bot/farewell-hero",
   "version": "0.0.1",
   "description": "Detects 'I'm unsubscribing' posts and responds with user's activity stats",
   "main": "src/main.tsx",

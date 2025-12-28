@@ -24,7 +24,7 @@ export function getHaikuFooter(): string {
 }
 
 /**
- * Stats footer for farewell-statistician
+ * Stats footer for farewell-hero
  */
 export function getStatsFooter(): string {
   return `\n\n---\n^(📊 public stats only · [hub-bot-9000](${APP_URL}))`;

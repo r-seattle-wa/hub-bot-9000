@@ -1,4 +1,4 @@
-import { Devvit } from '@devvit/public-api';
+import { Devvit, SettingScope } from '@devvit/public-api';
 import {
   SourceClassification,
   checkRateLimit,
@@ -70,6 +70,7 @@ Devvit.addSettings([
     name: 'geminiApiKey',
     type: 'string',
     label: 'Your Gemini API key (get free at ai.google.dev)',
+    scope: SettingScope.App,
     isSecret: true,
     defaultValue: '',
   },

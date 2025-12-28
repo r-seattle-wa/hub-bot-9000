@@ -10,7 +10,7 @@ A monorepo of [Reddit Developer Platform (Devvit)](https://developers.reddit.com
 |-----|---------|--------|
 | [haiku-sensei](#haiku-sensei) | Detects accidental 5-7-5 haikus in comments | Ready |
 | [brigade-sentinel](#brigade-sentinel) | Cross-subreddit link alerts with hater tracking | Ready |
-| [farewell-statistician](#farewell-statistician) | Witty responses to "I'm unsubscribing" posts | Ready |
+| [farewell-hero](#farewell-hero) | Witty responses to "I'm unsubscribing" posts | Ready |
 
 ---
 
@@ -103,7 +103,7 @@ Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flag
 
 ---
 
-## Farewell Statistician
+## Farewell Hero
 
 Responds to "I'm unsubscribing" posts with a witty statistical analysis of the user's activity.
 
@@ -148,7 +148,7 @@ hub-bot-9000/
 │   │   │   └── templates.ts      # Comment templates
 │   │   └── devvit.yaml
 │   │
-│   └── farewell-statistician/    # Unsubscribe responder
+│   └── farewell-hero/            # Unsubscribe responder
 │       ├── src/
 │       │   ├── main.tsx          # Devvit app entry
 │       │   ├── detector.ts       # "I'm leaving" detection

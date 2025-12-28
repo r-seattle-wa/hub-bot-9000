@@ -1,4 +1,4 @@
-// Response templates for farewell-statistician
+// Response templates for farewell-hero
 
 import { UserSubredditStats, formatStatsTable } from './stats.js';
 import { getStatsFooter } from '@hub-bot/common';

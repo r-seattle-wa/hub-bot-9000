@@ -495,7 +495,7 @@ ${analysis.behaviorSummary ? `- Summary: ${analysis.behaviorSummary}` : ''}`;
 }
 
 /**
- * Format user analysis for farewell-statistician context
+ * Format user analysis for farewell-hero context
  */
 export function formatUserAnalysisForFarewell(analysis: UserAnalysis): string {
   const parts: string[] = [];
