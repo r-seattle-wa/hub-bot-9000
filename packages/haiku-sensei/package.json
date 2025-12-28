@@ -1,0 +1,22 @@
+{
+  "name": "@hub-bot/haiku-sensei",
+  "version": "0.0.1",
+  "description": "Detects accidental haikus in Reddit comments and posts",
+  "main": "src/main.tsx",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@devvit/public-api": "^0.12.0",
+    "@hub-bot/common": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "license": "MIT"
+}

@@ -1,32 +1,22 @@
 {
   "name": "hub-bot-9000",
   "version": "0.0.1",
-  "description": "A Reddit Devvit app for community hubs - automated posts, weather, events, and links",
-  "main": "src/main.tsx",
-  "type": "module",
+  "private": true,
+  "description": "Monorepo for Reddit Devvit community bots",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@devvit/public-api": "^0.12.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.50.1",
-    "@typescript-eslint/parser": "^8.50.1",
-    "eslint": "^8.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
   },
   "keywords": [
     "reddit",
     "devvit",
     "community",
     "bot",
-    "events",
-    "weather"
+    "moderation"
   ],
   "license": "MIT",
   "repository": {

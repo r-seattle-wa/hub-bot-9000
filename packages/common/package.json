@@ -1,0 +1,21 @@
+{
+  "name": "@hub-bot/common",
+  "version": "0.0.1",
+  "description": "Shared utilities for hub-bot-9000 Devvit apps",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@devvit/public-api": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "license": "MIT"
+}

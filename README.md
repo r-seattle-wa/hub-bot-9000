@@ -1,113 +1,214 @@
 # Hub Bot 9000
 
-A [Reddit Developer Platform (Devvit)](https://developers.reddit.com) app that automates community engagement through scheduled posts, weather forecasts, event aggregation, and curated community links.
+A monorepo of [Reddit Developer Platform (Devvit)](https://developers.reddit.com) apps for community engagement, moderation, and entertainment.
 
 **Originally built for [r/SeattleWA](https://reddit.com/r/SeattleWA)**, but designed to be adopted by any subreddit.
 
-## Features
+## Apps
 
-### 🗓️ Automated Event Aggregation
-- **Multi-source scraping** via Cloud Run service
-  - Eventbrite (JSON-LD extraction, no API key needed)
-  - Ticketmaster API integration (optional)
-  - Gemini AI for blocked sites (optional)
-- **Smart deduplication** using fuzzy string matching
-- **User-submitted events** with URL safety validation
-- **Time period selector** - Today / 3 Days / Week
-- **Source toggle** - All Events vs Community-only
+| App | Purpose | Status |
+|-----|---------|--------|
+| [haiku-sensei](#haiku-sensei) | Detects accidental 5-7-5 haikus in comments | Ready |
+| [brigade-sentinel](#brigade-sentinel) | Cross-subreddit link alerts with hater tracking | Ready |
+| [farewell-statistician](#farewell-statistician) | Witty responses to "I'm unsubscribing" posts | Ready |
 
-### 📅 Scheduled Posts
-- **Daily community threads** - configurable time, auto-posted
-- **Weekly roundup posts** - configurable day and time
-- Both can be enabled/disabled independently
+---
 
-### 🌤️ Weather Integration
-- Fetches forecasts from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api)
-- 2-day forecast with weather emoji
-- Moon phase display
-- Configurable location (any US city via NWS grid point)
+## Haiku Sensei
 
-### 🔗 Community Hub
-- **Interactive post UI** - tabbed interface for Events, Weather, Links
-- **Curated event sources** - links to reputable local event listings
-- **Community links** - Discord, wiki, rules, resources
-- **Mod tools** - event approval queue, manual post triggers
+Detects when users accidentally write comments in 5-7-5 haiku syllable pattern and replies with their words formatted as a haiku.
+
+### Features
+- Syllable counting with dictionary fallback
+- Rate limiting per user to prevent spam
+- Configurable delay before replying
+- Wiki-based opt-out system
+- Bot disclosure footer
+
+### Example
+```
+User comment: "I went to the store and bought some milk for my cat"
+
+Bot reply:
+I went to the store
+and bought some milk for my cat
+~ A haiku by u/example
+```
+
+---
+
+## Brigade Sentinel
+
+A spiritual successor to TotesMessenger - detects when other subreddits link to your community and provides transparency about crosslinks.
+
+### Features
+
+#### Cross-link Detection
+- **PullPush.io integration** - Finds posts that link to your subreddit
+- **Gemini AI fallback** - When PullPush is blocked, uses AI search grounding
+- **Tone classification** - Each linking post classified as FRIENDLY, NEUTRAL, ADVERSARIAL, or HATEFUL
+- **Configurable delay** - Wait before posting to avoid false positives
+
+#### Hater Leaderboard
+Track hostile crosslinks for posterity with dual leaderboards:
+
+**Subreddit Leaderboard**
+- Tracks which subreddits most frequently link with hostile intent
+- Alt subreddit mapping (e.g., r/SeattleWACirclejerk -> r/SeattleWA)
+- Score: adversarial + (hateful x 3)
+
+**User Leaderboard**
+- Tracks individual users who post hostile crosslinks
+- Alt account mapping for serial offenders
+- Mod log integration (+2 per removal, +6 per ban)
+- OSINT enrichment via deleted content analysis
+
+**Score Formula:**
+```
+Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flags x 2)
+```
+
+#### OSINT Enrichment
+- **Deleted content recovery** - PullPush archives deleted posts/comments
+- **Behavioral analysis** - FBI-style profiling adapted from The-Profiler
+  - Big Five (OCEAN) communication traits
+  - Trolling/deception/sockpuppet risk indicators
+- **Flagged content detection** - AI identifies harassment, hate speech, threats
+
+#### Notifications
+- **Public comment** - Transparency about crosslinks (optional)
+- **Modmail alert** - For adversarial/hateful sources (optional)
+- **Deleted content report** - Count of removed brigade comments
+
+### Settings
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `enabled` | Enable brigade detection | `true` |
+| `publicComment` | Post public comment on crosslinks | `true` |
+| `modmailNotify` | Send modmail for hostile sources | `false` |
+| `stickyComment` | Sticky the bot comment | `true` |
+| `minimumLinkAge` | Wait time before notifying (minutes) | `5` |
+| `aiProvider` | Tone classification provider | `none` |
+| `geminiApiKey` | Your Gemini API key (BYOK) | `""` |
+| `includeDeletedContent` | Check for deleted brigade comments | `true` |
+
+---
+
+## Farewell Statistician
+
+Responds to "I'm unsubscribing" posts with a witty statistical analysis of the user's activity.
+
+### Features
+- Pattern detection for farewell posts
+- User activity analysis via wiki stats
+- Delayed response to avoid appearing too eager
+- Multiple response templates
+- Bot disclosure footer
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Reddit (Devvit Platform)                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
-│  │  Scheduler Jobs │  │  Interactive    │  │   Redis     │  │
-│  │  - Daily post   │  │  Custom Post    │  │   Storage   │  │
-│  │  - Weekly post  │  │  - Events tab   │  │  - Events   │  │
-│  │  - Event fetch  │  │  - Weather tab  │  │  - Settings │  │
-│  │  - Cleanup      │  │  - Links tab    │  │  - Cache    │  │
-│  └────────┬────────┘  └─────────────────┘  └─────────────┘  │
-│           │                                                  │
-│           │ Fetch events (every 12 hours)                   │
-└───────────┼─────────────────────────────────────────────────┘
-            │
-            ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Cloud Run (Event Scraper Service)              │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
-│  │   Eventbrite    │  │   Ticketmaster  │  │   Gemini    │  │
-│  │   (JSON-LD)     │  │   (API)         │  │   (AI)      │  │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘  │
-│                              │                               │
-│                    ┌─────────▼─────────┐                    │
-│                    │   Deduplication   │                    │
-│                    │   & Aggregation   │                    │
-│                    └───────────────────┘                    │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Project Structure
-
-```
 hub-bot-9000/
-├── src/                        # Devvit app (TypeScript)
-│   ├── main.tsx                # Entry point, triggers, jobs
-│   ├── components/
-│   │   ├── CommunityPost.tsx   # Main interactive UI
-│   │   ├── WeatherWidget.tsx   # Weather display
-│   │   └── EventCalendar.tsx   # Event calendar
-│   ├── services/
-│   │   ├── eventService.ts     # Event CRUD + wiki reader
-│   │   └── weatherService.ts   # NWS API
-│   ├── scheduler/
-│   │   ├── dailyPost.ts        # Daily post logic
-│   │   ├── weeklyPost.ts       # Weekly post logic
-│   │   └── installHandlers.ts  # Install/upgrade + fetch job
-│   ├── config/settings.ts      # App settings schema
-│   └── utils/linkValidator.ts  # URL safety validation
+├── packages/
+│   ├── common/                   # Shared utilities (@hub-bot/common)
+│   │   └── src/
+│   │       ├── redis.ts          # Redis helpers (getJson, setJson)
+│   │       ├── rate-limiter.ts   # Configurable rate limiting
+│   │       ├── ai-provider.ts    # Gemini BYOK integration
+│   │       ├── pullpush.ts       # PullPush.io API client
+│   │       ├── leaderboard.ts    # Hater tracking system
+│   │       ├── user-analysis.ts  # Behavioral profiling
+│   │       ├── disclosure.ts     # Bot footer templates
+│   │       ├── wiki.ts           # Wiki page utilities
+│   │       ├── opt-out.ts        # User opt-out system
+│   │       ├── http.ts           # Rate-limited fetch
+│   │       └── types.ts          # Shared types
+│   │
+│   ├── haiku-sensei/             # Haiku detection bot
+│   │   ├── src/
+│   │   │   ├── main.tsx          # Devvit app entry
+│   │   │   ├── detector.ts       # 5-7-5 pattern detection
+│   │   │   └── syllables.ts      # Syllable counting
+│   │   └── devvit.yaml
+│   │
+│   ├── brigade-sentinel/         # TotesMessenger revival
+│   │   ├── src/
+│   │   │   ├── main.tsx          # Devvit app entry
+│   │   │   └── templates.ts      # Comment templates
+│   │   └── devvit.yaml
+│   │
+│   └── farewell-statistician/    # Unsubscribe responder
+│       ├── src/
+│       │   ├── main.tsx          # Devvit app entry
+│       │   ├── detector.ts       # "I'm leaving" detection
+│       │   ├── stats.ts          # Activity aggregation
+│       │   └── responses.ts      # Response templates
+│       └── devvit.yaml
 │
-├── scraper-service/            # Cloud Run service (Python)
-│   ├── main.py                 # FastAPI app
-│   ├── scrapers/
-│   │   └── gemini_scraper.py   # AI-powered scraping
-│   ├── deduplication.py        # Fuzzy matching
-│   ├── models.py               # Pydantic models
-│   ├── Dockerfile              # Container config
-│   └── cloudbuild.yaml         # GCP deployment
+├── scraper-service/              # Cloud Run service (Python)
+│   ├── main.py                   # FastAPI app
+│   └── scrapers/                 # Event scrapers
 │
-├── .github/workflows/
-│   └── gitleaks.yml            # Secret scanning
-└── .gitleaks.toml              # Gitleaks config
+├── CLAUDE.md                     # AI development guide
+├── FEATURE_BACKLOG.md            # Specs and ToS compliance
+└── package.json                  # Workspace root
 ```
 
-## Installation
+## Shared Package (@hub-bot/common)
 
-### For Subreddit Moderators
+All apps import shared utilities:
 
-1. Visit the Reddit Apps directory
-2. Search for "Hub Bot 9000"
-3. Click "Add to Community"
-4. Configure settings in your subreddit's app settings
+```typescript
+import {
+  // Rate limiting
+  checkRateLimit,
+  consumeRateLimit,
 
-### For Developers
+  // AI provider (BYOK)
+  classifySubreddit,
+  classifyPostTone,
+  geminiCrosslinkSearch,
+
+  // Leaderboard
+  recordHater,
+  getLeaderboard,
+  enrichTopHatersWithOSINT,
+  registerUserAlt,
+  registerSubredditAlt,
+
+  // User analysis
+  analyzeUser,
+  analyzeDeletedContent,
+  getDeletedUserContent,
+
+  // PullPush
+  findCrosslinks,
+  getDeletedComments,
+  searchComments,
+  searchSubmissions,
+
+  // Utilities
+  getJson,
+  setJson,
+  getBotFooter,
+
+  // Types
+  SourceClassification,
+  AIProvider,
+  BehavioralProfile,
+} from '@hub-bot/common';
+```
+
+## Development
+
+### Prerequisites
+- Node.js 18+
+- npm 9+
+- [Devvit CLI](https://developers.reddit.com/docs/quickstart)
+
+### Setup
 
 ```bash
 # Clone the repo
@@ -117,125 +218,111 @@ cd hub-bot-9000
 # Install dependencies
 npm install
 
-# Install Devvit CLI
-npm install -g devvit
+# Build all packages
+npm run build
 
 # Login to Reddit
 devvit login
-
-# Start development server
-devvit playtest <your-test-subreddit>
 ```
 
-### Deploying the Scraper Service (Optional)
-
-The scraper service enables automated event aggregation from Eventbrite, Ticketmaster, and other sources.
+### Working with Apps
 
 ```bash
-cd scraper-service
+# Build specific package
+cd packages/haiku-sensei && npm run build
 
-# Set GCP project
-gcloud config set project YOUR_PROJECT_ID
+# Playtest an app
+cd packages/brigade-sentinel
+devvit playtest r/YourTestSubreddit
 
-# Deploy (Eventbrite works without API keys)
-gcloud run deploy event-scraper \
-  --source . \
-  --region us-west1 \
-  --allow-unauthenticated
+# View logs
+devvit logs r/YourTestSubreddit
 
-# Optional: Add Gemini for blocked sites
-gcloud secrets create GOOGLE_API_KEY --data-file=-
-gcloud run deploy event-scraper \
-  --source . \
-  --region us-west1 \
-  --set-secrets "GOOGLE_API_KEY=GOOGLE_API_KEY:latest"
+# Upload for production
+devvit upload
+devvit publish
 ```
 
-See [scraper-service/DEPLOY.template.md](scraper-service/DEPLOY.template.md) for detailed instructions.
+## External APIs
 
-## Configuration
+| API | Used By | Auth | Purpose |
+|-----|---------|------|---------|
+| Reddit API | All apps | Devvit context | Core functionality |
+| PullPush.io | brigade-sentinel | None (rate-limited) | Deleted content, crosslinks |
+| Gemini Flash | All apps (optional) | BYOK (mod's key) | Tone classification, OSINT |
 
-All settings are configurable per-subreddit through the app settings UI:
+## BYOK Model
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `enableDailyPost` | Post daily community thread | `true` |
-| `dailyPostTime` | Time to post daily thread (UTC) | `15:00` |
-| `enableWeeklyPost` | Post weekly roundup | `true` |
-| `weeklyPostDay` | Day for weekly post | `Monday` |
-| `enableWeather` | Include weather forecast | `true` |
-| `weatherGridPoint` | NWS grid point | `SEW/123,68` (Seattle) |
-| `weatherLocation` | Display name for location | `Seattle, WA` |
-| `eventSources` | JSON array of event source links | See defaults |
-| `enableUserEvents` | Allow user event submissions | `true` |
-| `scraperUrl` | Cloud Run scraper URL (optional) | `""` |
-| `communityLinks` | JSON array of community links | `[]` |
+All AI features use **Bring Your Own Key** - moderators provide their own Gemini API key. This means:
+- No cost to app developer
+- Mods control their API usage
+- Free tier available at [ai.google.dev](https://ai.google.dev)
 
-### Finding Your NWS Grid Point
+## Privacy & Compliance
 
-1. Go to `https://api.weather.gov/points/{latitude},{longitude}`
-2. Find your coordinates from Google Maps
-3. The response includes `gridId` and `gridX,gridY`
-4. Format: `{gridId}/{gridX},{gridY}` (e.g., `SEW/123,68`)
+- **Bot disclosure** - All bot comments include disclosure footer
+- **Public data only** - Only analyzes public posts/comments
+- **No sensitive inference** - Does NOT derive health, politics, religion, sexual orientation
+- **Opt-out support** - Users can block the bot to opt out
+- **Rate limiting** - Prevents spam and API abuse
 
-## Security
+See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md) for details.
 
-- **Secret scanning** - Gitleaks runs on all PRs and pushes
-- **Input validation** - Location/state parameters validated with regex
-- **URL allowlist** - User-submitted links restricted to trusted domains
-- **Rate limiting** - 30 requests/minute on scraper API
-- **HTTPS only** - All external URLs must use HTTPS
+## Infrastructure (GCP)
 
-### Trusted Domains for User Links
+Optional GCP infrastructure for logging, monitoring, and the scraper service.
 
-- `reddit.com`, `redd.it`
-- `eventbrite.com`, `meetup.com`
-- `facebook.com` (events)
-- Government domains (`.gov`)
-- Additional domains configurable per-subreddit
+```bash
+cd infrastructure/terraform
 
-## Background
+# Setup
+cp terraform.tfvars.example terraform.tfvars
+# Edit with your project ID
 
-This project is the spiritual successor to [SeattleRedditBot](https://github.com/r-seattle-wa/SeattleRedditBot), a Python/PRAW bot that posted daily community threads with weather, events, and community-generated content. That bot required external hosting (AWS Fargate) and ongoing maintenance.
+terraform init
+terraform plan
+terraform apply
+```
 
-**Hub Bot 9000** reimagines this as a native Reddit app:
-- **No external hosting required** - runs on Reddit's infrastructure
-- **Interactive UI** - not just text posts, but clickable widgets
-- **Community-configurable** - any subreddit can install and customize
-- **Modern stack** - TypeScript, React-like components, built-in Redis
+### Detection Metrics
+
+The Terraform creates log-based metrics for monitoring suspicious activity:
+
+| Metric | Description |
+|--------|-------------|
+| `hub-bot/hostile_crosslinks` | Hostile crosslinks detected |
+| `hub-bot/brigade_patterns` | Brigading patterns |
+| `hub-bot/osint_flagged_content` | OSINT flagged content |
+| `hub-bot/sockpuppet_detections` | Sockpuppet detections |
+| `hub-bot/mod_log_spam` | Mod log spam actions |
+
+All suspicious activity is also routed to BigQuery for analysis.
+
+See [infrastructure/README.md](infrastructure/README.md) for details.
+
+---
 
 ## Credits
 
-### Predecessor Projects
-- [SeattleRedditBot](https://github.com/r-seattle-wa/SeattleRedditBot) - The original Python bot
-
-### Inspiration & Code References
-- [Aye Aye Calendar](https://github.com/jackmg2/RedditApps/tree/main/Calendar) - Event calendar UI
-- [Community Links](https://github.com/jackmg2/RedditApps/tree/main/Linker) - Link board patterns
+### Inspiration & References
+- [TotesMessenger](https://reddit.com/u/TotesMessenger) - Original crosslink bot
+- [The-Profiler](https://github.com/shitcoinsherpa/The-Profiler) - Behavioral analysis framework
 - [sub-stats-bot](https://github.com/fsvreddit/sub-stats-bot) - Scheduler patterns
+- [SeattleRedditBot](https://github.com/r-seattle-wa/SeattleRedditBot) - The original Seattle bot
 
 ### Built With
 - [Devvit](https://developers.reddit.com) - Reddit Developer Platform
-- [National Weather Service API](https://www.weather.gov/documentation/services-web-api) - Weather data
-- [Google Gemini](https://ai.google.dev/) - AI-powered scraping (optional)
-- [FastAPI](https://fastapi.tiangolo.com/) - Scraper service framework
-
-## Legal
-
-- [Terms of Service](TERMS.md)
-- [Privacy Policy](PRIVACY.md)
+- [PullPush.io](https://pullpush.io) - Reddit content archival
+- [Google Gemini](https://ai.google.dev/) - AI analysis (optional)
 
 ## Contributing
 
-Contributions are welcome! Please:
-
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-**Note**: Gitleaks will scan your PR for secrets. Ensure no API keys or credentials are committed.
+3. Build and test (`npm run build`)
+4. Commit your changes
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
 ## License
 
