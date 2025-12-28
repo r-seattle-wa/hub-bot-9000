@@ -1,0 +1,42 @@
+# Gitleaks configuration for hub-bot-9000
+# Run: gitleaks detect --source . --config .gitleaks.toml
+
+title = "hub-bot-9000 secret scanner"
+
+[extend]
+useDefault = true
+
+# Additional patterns to detect
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+tags = ["key", "google"]
+
+[[rules]]
+id = "reddit-secret"
+description = "Reddit API Secret"
+regex = '''reddit[_-]?secret[\"']?\s*[:=]\s*[\"']?[a-zA-Z0-9_-]{20,}'''
+tags = ["key", "reddit"]
+
+[[rules]]
+id = "ticketmaster-key"
+description = "Ticketmaster API Key"
+regex = '''[tT]icketmaster[_-]?(api[_-]?)?key[\"']?\s*[:=]\s*[\"']?[a-zA-Z0-9]{20,}'''
+tags = ["key", "ticketmaster"]
+
+# Allow paths (false positives)
+[allowlist]
+paths = [
+  '''\.env\.example$''',
+  '''DEPLOY\.md$''',
+  '''SECURITY_REVIEW\.md$''',
+  '''\.gitleaks\.toml$''',
+]
+
+# Allow specific patterns that are not secrets
+regexes = [
+  '''YOUR_[A-Z_]+_KEY''',
+  '''your_[a-z_]+_key''',
+  '''PLACEHOLDER''',
+]

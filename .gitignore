@@ -15,9 +15,19 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment & Secrets
 .env
 .env.local
+.env.production
+*.pem
+*.key
+secrets/
+credentials.json
+service-account*.json
+
+# Deployment docs with project-specific info
+scraper-service/DEPLOY.md
+DEPLOY.md
 
 # Logs
 *.log
@@ -29,3 +39,11 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.venv/

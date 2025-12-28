@@ -51,11 +51,13 @@ export function isLinkAllowed(url: string, allowedDomains: string[] = DEFAULT_AL
 
 /**
  * Validate a URL format
+ * Only allows https:// URLs for security
  */
 export function isValidUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    // Only allow HTTPS - block javascript:, data:, file:, etc.
+    return parsed.protocol === 'https:';
   } catch {
     return false;
   }

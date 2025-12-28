@@ -5,6 +5,7 @@ import { parseTime } from '../utils/dateUtils.js';
 export const JOB_DAILY_POST = 'dailyPost';
 export const JOB_WEEKLY_POST = 'weeklyPost';
 export const JOB_CLEANUP_EVENTS = 'cleanupEvents';
+export const JOB_FETCH_EVENTS = 'fetchEvents';
 
 /**
  * Handle app install/upgrade events
@@ -55,6 +56,15 @@ export async function handleInstallUpgrade(_: unknown, context: TriggerContext):
     });
     console.log('Scheduled event cleanup at 03:00 UTC');
 
+    // Schedule event scraper fetch (every 12 hours at 6 AM and 6 PM UTC)
+    if (settings.scraperUrl) {
+      await context.scheduler.runJob({
+        name: JOB_FETCH_EVENTS,
+        cron: '0 6,18 * * *',
+      });
+      console.log('Scheduled event scraper fetch at 06:00 and 18:00 UTC');
+    }
+
     // Send welcome modmail on first install
     await sendWelcomeMessage(context);
 
@@ -76,21 +86,21 @@ async function sendWelcomeMessage(context: TriggerContext): Promise<void> {
       return;
     }
 
-    const message = `# Welcome to Community Hub Bot! 🎉
+    const message = `# Welcome to Hub Bot 9000! 🤖
 
-Thank you for installing Community Hub Bot on r/${subredditName}!
+Thank you for installing Hub Bot 9000 on r/${subredditName}!
 
 ## Getting Started
 
-1. **Configure your settings** in the app settings panel:
-   - Set your location for weather forecasts
-   - Add your event sources (local calendars, venues)
-   - Configure your community links (Discord, wiki, rules)
-   - Set your preferred posting times
+1. **[Configure your settings](https://developers.reddit.com/r/${subredditName}/apps/hub-bot-9000)** - Click this link to set up:
+   - Your location for weather forecasts
+   - Event sources (local calendars, venues)
+   - Community links (Discord, wiki, rules)
+   - Posting schedule and times
 
 2. **Daily & Weekly Posts** will automatically be created based on your schedule settings.
 
-3. **Interactive Community Hub** - You can also create an interactive pinned post:
+3. **Interactive Community Hub** - Create an interactive pinned post:
    - Go to your subreddit
    - Click the three-dot menu → "Create Community Hub"
    - This creates an interactive post where users can view events and submit their own
@@ -105,14 +115,15 @@ Thank you for installing Community Hub Bot on r/${subredditName}!
 
 ## Need Help?
 
-- View the [documentation on GitHub](https://github.com/r-seattle-wa/community-hub-bot)
-- Report issues on [GitHub Issues](https://github.com/r-seattle-wa/community-hub-bot/issues)
+- [App Settings](https://developers.reddit.com/r/${subredditName}/apps/hub-bot-9000)
+- [Documentation on GitHub](https://github.com/r-seattle-wa/hub-bot-9000)
+- [Report Issues](https://github.com/r-seattle-wa/hub-bot-9000/issues)
 
 Happy community building! 🚀`;
 
     await context.reddit.modMail.createModInboxConversation({
       subredditId: context.subredditId,
-      subject: 'Welcome to Community Hub Bot!',
+      subject: 'Welcome to Hub Bot 9000!',
       bodyMarkdown: message,
     });
 
@@ -138,5 +149,42 @@ export async function handleCleanupEvents(_: unknown, context: TriggerContext): 
     console.log(`Cleaned up ${removedCount} expired events.`);
   } catch (error) {
     console.error('Failed to cleanup events:', error);
+  }
+}
+
+/**
+ * Handle fetch events from Cloud Run scraper
+ */
+export async function handleFetchEvents(_: unknown, context: TriggerContext): Promise<void> {
+  console.log('Fetching events from scraper service...');
+
+  try {
+    const settings = await context.settings.getAll();
+    const scraperUrl = settings.scraperUrl as string;
+
+    if (!scraperUrl) {
+      console.log('No scraper URL configured, skipping fetch.');
+      return;
+    }
+
+    // Fetch from Cloud Run
+    const response = await fetch(`${scraperUrl}/events?days=3`, {
+      headers: { 'User-Agent': 'HubBot9000/1.0' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Scraper returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const events = data.events || [];
+
+    // Save to Redis
+    const { EventService } = await import('../services/eventService.js');
+    await EventService.saveScrapedEvents(events, context as any);
+
+    console.log(`Fetched and cached ${events.length} events from scraper.`);
+  } catch (error) {
+    console.error('Failed to fetch events from scraper:', error);
   }
 }

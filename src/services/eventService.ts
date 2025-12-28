@@ -3,9 +3,12 @@ import { UserEvent } from '../types/index.js';
 import { isLinkAllowed, parseAllowedDomains, sanitizeUrl } from '../utils/linkValidator.js';
 
 const EVENTS_KEY = 'user_events';
+const SCRAPED_EVENTS_KEY = 'scraped_events';
+const WIKI_PAGE_NAME = 'hub-bot-events'; // Wiki page for scraped events
 
 /**
  * Event Service - handles CRUD operations for user-submitted events
+ * Also handles cached events from Cloud Run scraper
  */
 export class EventService {
   /**
@@ -60,6 +63,64 @@ export class EventService {
     return events
       .filter(e => new Date(e.dateStart) >= now)
       .slice(0, limit);
+  }
+
+  /**
+   * Get scraped events - tries wiki first, falls back to Redis cache
+   * @param daysAhead - Number of days to look ahead (1, 3, or 7)
+   */
+  static async getScrapedEvents(context: Devvit.Context, daysAhead: number = 3): Promise<UserEvent[]> {
+    try {
+      let events: UserEvent[] = [];
+
+      // Try reading from wiki first
+      try {
+        const subredditName = await context.reddit.getCurrentSubredditName();
+        const wikiPage = await context.reddit.getWikiPage(subredditName, WIKI_PAGE_NAME);
+
+        if (wikiPage && wikiPage.content) {
+          const wikiData = JSON.parse(wikiPage.content);
+          events = wikiData.events || [];
+          console.log(`Loaded ${events.length} events from wiki`);
+        }
+      } catch (wikiError) {
+        // Wiki page might not exist yet, fall back to Redis
+        console.log('Wiki page not found, falling back to Redis cache');
+        const eventsJson = await context.redis.get(SCRAPED_EVENTS_KEY);
+        if (eventsJson) {
+          events = JSON.parse(eventsJson);
+        }
+      }
+
+      if (events.length === 0) return [];
+
+      // Filter to requested time period
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Start of today
+      const endDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+
+      return events
+        .filter(e => {
+          const eventDate = new Date(e.dateStart);
+          return eventDate >= now && eventDate <= endDate;
+        })
+        .sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
+    } catch (error) {
+      console.error('Failed to get scraped events:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Save scraped events from Cloud Run (called by scheduler job)
+   */
+  static async saveScrapedEvents(events: UserEvent[], context: Devvit.Context): Promise<void> {
+    try {
+      await context.redis.set(SCRAPED_EVENTS_KEY, JSON.stringify(events));
+      console.log(`Saved ${events.length} scraped events to cache`);
+    } catch (error) {
+      console.error('Failed to save scraped events:', error);
+    }
   }
 
   /**

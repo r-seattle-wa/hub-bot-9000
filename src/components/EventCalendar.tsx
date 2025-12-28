@@ -6,6 +6,7 @@ interface EventCalendarProps {
   events: UserEvent[];
   eventSources: EventSource[];
   onEventClick?: (event: UserEvent) => void;
+  onSourceClick?: (url: string) => void;
   showSources?: boolean;
   maxEvents?: number;
 }
@@ -14,6 +15,7 @@ export const EventCalendar = ({
   events,
   eventSources,
   onEventClick,
+  onSourceClick,
   showSources = true,
   maxEvents = 10,
 }: EventCalendarProps): JSX.Element => {
@@ -21,22 +23,26 @@ export const EventCalendar = ({
 
   return (
     <vstack gap="medium" grow>
-      {/* Event Sources */}
+      {/* Event Sources - Compact List */}
       {showSources && eventSources.length > 0 ? (
-        <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
-          <hstack gap="small" alignment="middle">
-            <text size="large">🎭</text>
-            <text size="medium" weight="bold" color="white">Find Events</text>
-          </hstack>
-          <spacer size="small" />
-          {eventSources.map((source) => (
-            <hstack gap="small" alignment="middle">
-              <text size="small">{source.icon}</text>
-              <text size="small" color="#4da6ff">
-                {source.name}
-              </text>
-            </hstack>
-          ))}
+        <vstack padding="small" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
+          <text size="small" weight="bold" color="#888888">FIND EVENTS</text>
+          <vstack gap="small">
+            {eventSources.map((source) => (
+              <hstack
+                gap="small"
+                alignment="middle"
+                padding="small"
+                backgroundColor="#252540"
+                cornerRadius="small"
+                onPress={() => onSourceClick?.(source.url)}
+              >
+                <text size="medium">{source.icon}</text>
+                <text size="xsmall" color="#4da6ff" grow>{source.name}</text>
+                <text size="xsmall" color="#666666">→</text>
+              </hstack>
+            ))}
+          </vstack>
         </vstack>
       ) : null}
 

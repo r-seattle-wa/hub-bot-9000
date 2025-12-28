@@ -10,8 +10,9 @@ export interface UserEvent {
   title: string;
   description?: string;
   url: string;
-  dateStart: string; // ISO date string
+  dateStart: string; // ISO date string YYYY-MM-DD
   dateEnd?: string;
+  location?: string; // Venue name
   submittedBy: string;
   submittedAt: string;
   approved: boolean;

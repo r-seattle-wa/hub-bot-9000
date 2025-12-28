@@ -105,16 +105,16 @@ interface SubmitEventButtonProps {
   disabled?: boolean;
 }
 
-export const SubmitEventButton = ({ onPress, disabled = false }: SubmitEventButtonProps): JSX.Element => {
+export const SubmitEventButton = ({ onPress }: SubmitEventButtonProps): JSX.Element => {
   return (
-    <button
-      appearance="primary"
-      size="medium"
-      icon="add"
+    <hstack
+      padding="medium"
+      backgroundColor="#4da6ff"
+      cornerRadius="medium"
+      alignment="center middle"
       onPress={onPress}
-      disabled={disabled}
     >
-      Submit Event
-    </button>
+      <text size="medium" weight="bold" color="#0e0e1a">+ Submit Event</text>
+    </hstack>
   );
 };

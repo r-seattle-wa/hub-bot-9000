@@ -141,11 +141,40 @@ export const appSettings: SettingsFormField[] = [
     ],
   },
 
+  // Scraper Service
+  {
+    type: 'group',
+    label: 'Event Scraper',
+    fields: [
+      {
+        type: 'string',
+        name: 'scraperUrl',
+        label: 'Event Scraper URL',
+        helpText: 'Cloud Run URL for the event scraper service (leave empty to disable)',
+        defaultValue: '',
+      },
+    ],
+  },
+
   // Branding
   {
     type: 'group',
     label: 'Branding',
     fields: [
+      {
+        type: 'string',
+        name: 'headerTitle',
+        label: 'Hub Title',
+        helpText: 'Title shown in the Community Hub header',
+        defaultValue: 'Seattle Community Hub',
+      },
+      {
+        type: 'string',
+        name: 'headerEmoji',
+        label: 'Hub Emoji',
+        helpText: 'Emoji shown in the Community Hub header',
+        defaultValue: '🌲',
+      },
       {
         type: 'string',
         name: 'botName',

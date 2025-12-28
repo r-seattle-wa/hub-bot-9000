@@ -6,9 +6,11 @@ import { handleWeeklyPost } from './scheduler/weeklyPost.js';
 import {
   handleInstallUpgrade,
   handleCleanupEvents,
+  handleFetchEvents,
   JOB_DAILY_POST,
   JOB_WEEKLY_POST,
   JOB_CLEANUP_EVENTS,
+  JOB_FETCH_EVENTS,
 } from './scheduler/installHandlers.js';
 import { EventService } from './services/eventService.js';
 
@@ -32,6 +34,11 @@ Devvit.addSchedulerJob({
 Devvit.addSchedulerJob({
   name: JOB_CLEANUP_EVENTS,
   onRun: handleCleanupEvents,
+});
+
+Devvit.addSchedulerJob({
+  name: JOB_FETCH_EVENTS,
+  onRun: handleFetchEvents,
 });
 
 // ============================================
@@ -88,6 +95,23 @@ Devvit.addMenuItem({
 Devvit.addMenuItem({
   label: 'Post Daily Thread Now',
   location: 'subreddit',
+  forUserType: 'moderator',
+  onPress: async (_event, context) => {
+    context.ui.showToast({ text: 'Creating daily thread...', appearance: 'neutral' });
+    try {
+      await handleDailyPost({} as any, context);
+      context.ui.showToast({ text: 'Daily thread posted!', appearance: 'success' });
+    } catch (error) {
+      console.error('Failed to create daily post:', error);
+      context.ui.showToast({ text: 'Failed to create daily thread', appearance: 'neutral' });
+    }
+  },
+});
+
+// Post-level menu item (easier to find - appears on any post's three-dot menu)
+Devvit.addMenuItem({
+  label: '[Hub Bot] Create Daily Thread',
+  location: 'post',
   forUserType: 'moderator',
   onPress: async (_event, context) => {
     context.ui.showToast({ text: 'Creating daily thread...', appearance: 'neutral' });
