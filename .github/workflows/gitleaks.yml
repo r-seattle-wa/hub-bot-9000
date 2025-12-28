@@ -5,6 +5,7 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   gitleaks:
@@ -17,7 +18,15 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: .gitleaks.toml
+        uses: DariuszPorowski/github-action-gitleaks@v2
+        with:
+          config: .gitleaks.toml
+          report_format: sarif
+          fail: true
+          verbose: true
+
+      - name: Upload SARIF report
+        if: always() && hashFiles('gitleaks-report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks-report.sarif
