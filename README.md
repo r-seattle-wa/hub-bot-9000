@@ -63,6 +63,15 @@ Track hostile crosslinks for posterity with dual leaderboards:
 - Mod log integration (+2 per removal, +6 per ban)
 - OSINT enrichment via deleted content analysis
 
+**Reporting Alts via Bot Mention**
+
+Users can report alt accounts/subreddits by mentioning the bot in any comment:
+```
+u/brigade-sentinel alt u/mainaccount = u/altaccount
+u/brigade-sentinel alt r/mainsubreddit = r/altsubreddit
+```
+The bot will confirm and consolidate scores on the leaderboard.
+
 **Score Formula:**
 ```
 Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flags x 2)
