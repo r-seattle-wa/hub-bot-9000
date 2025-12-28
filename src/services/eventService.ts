@@ -83,7 +83,7 @@ export class EventService {
           events = wikiData.events || [];
           console.log(`Loaded ${events.length} events from wiki`);
         }
-      } catch (wikiError) {
+      } catch {
         // Wiki page might not exist yet, fall back to Redis
         console.log('Wiki page not found, falling back to Redis cache');
         const eventsJson = await context.redis.get(SCRAPED_EVENTS_KEY);

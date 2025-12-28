@@ -3,6 +3,8 @@ import { UserEvent, EventSource } from '../types/index.js';
 
 /**
  * Scrape events from external sources
+ * Note: This is a fallback scraper for basic HTML parsing.
+ * For production use, prefer the Cloud Run scraper service.
  */
 export class EventScraperService {
   /**
@@ -10,7 +12,7 @@ export class EventScraperService {
    */
   static async fetchExternalEvents(
     sources: EventSource[],
-    context: Devvit.Context
+    _context: Devvit.Context
   ): Promise<UserEvent[]> {
     const allEvents: UserEvent[] = [];
     const now = new Date();
@@ -18,7 +20,7 @@ export class EventScraperService {
 
     for (const source of sources) {
       try {
-        const events = await this.fetchFromSource(source, context);
+        const events = await this.fetchFromSource(source);
         // Filter to next 3 days
         const filtered = events.filter(e => {
           const eventDate = new Date(e.dateStart);
@@ -39,21 +41,18 @@ export class EventScraperService {
   /**
    * Fetch events from a single source
    */
-  private static async fetchFromSource(
-    source: EventSource,
-    context: Devvit.Context
-  ): Promise<UserEvent[]> {
+  private static async fetchFromSource(source: EventSource): Promise<UserEvent[]> {
     const url = source.url;
 
     // Route to appropriate parser based on domain
     if (url.includes('everout.com')) {
-      return this.parseEverOut(url, source, context);
+      return this.parseEverOut(url, source);
     } else if (url.includes('mopop.org')) {
-      return this.parseMoPOP(url, source, context);
+      return this.parseMoPOP(url, source);
     } else if (url.includes('seattlemet.com')) {
-      return this.parseSeattleMet(url, source, context);
+      return this.parseSeattleMet(url, source);
     } else if (url.includes('seattle.gov')) {
-      return this.parseSeattleGov(url, source, context);
+      return this.parseSeattleGov(url, source);
     }
 
     return [];
@@ -62,11 +61,7 @@ export class EventScraperService {
   /**
    * Parse EverOut Seattle events
    */
-  private static async parseEverOut(
-    url: string,
-    source: EventSource,
-    context: Devvit.Context
-  ): Promise<UserEvent[]> {
+  private static async parseEverOut(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
         headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
@@ -76,12 +71,9 @@ export class EventScraperService {
       const events: UserEvent[] = [];
 
       // Extract event cards - EverOut uses specific patterns
-      // Look for event titles and dates in the HTML
       const eventPattern = /<a[^>]*href="(\/seattle\/events\/[^"]+)"[^>]*>([^<]+)<\/a>/gi;
-      const datePattern = /(\w+ \d+)/g;
 
       let match;
-      const year = new Date().getFullYear();
 
       while ((match = eventPattern.exec(html)) !== null && events.length < 10) {
         const eventUrl = `https://everout.com${match[1]}`;
@@ -112,11 +104,7 @@ export class EventScraperService {
   /**
    * Parse MoPOP events
    */
-  private static async parseMoPOP(
-    url: string,
-    source: EventSource,
-    context: Devvit.Context
-  ): Promise<UserEvent[]> {
+  private static async parseMoPOP(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
         headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
@@ -156,11 +144,7 @@ export class EventScraperService {
   /**
    * Parse Seattle Met events
    */
-  private static async parseSeattleMet(
-    url: string,
-    source: EventSource,
-    context: Devvit.Context
-  ): Promise<UserEvent[]> {
+  private static async parseSeattleMet(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
         headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
@@ -201,11 +185,7 @@ export class EventScraperService {
   /**
    * Parse Seattle.gov events
    */
-  private static async parseSeattleGov(
-    url: string,
-    source: EventSource,
-    context: Devvit.Context
-  ): Promise<UserEvent[]> {
+  private static async parseSeattleGov(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
         headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
