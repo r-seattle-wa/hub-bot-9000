@@ -343,34 +343,7 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
             ) : null}
 
             {/* Community Links */}
-            {communityLinks.length > 0 ? (
-              <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
-                <text size="small" weight="bold" color="#888888">COMMUNITY LINKS</text>
-                {communityLinks.map((link, idx) => (
-                  <hstack
-                    key={idx.toString()}
-                    gap="small"
-                    padding="small"
-                    backgroundColor="#252540"
-                    cornerRadius="small"
-                    onPress={() => context.ui.navigateTo(link.url)}
-                  >
-                    <text size="medium">{link.icon}</text>
-                    <vstack grow>
-                      <text size="small" color="#4da6ff">{link.name}</text>
-                      {link.description ? (
-                        <text size="xsmall" color="#666666">{link.description}</text>
-                      ) : null}
-                    </vstack>
-                    <text color="#666666">→</text>
-                  </hstack>
-                ))}
-              </vstack>
-            ) : (
-              <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" alignment="center middle">
-                <text size="small" color="#888888">No community links configured</text>
-              </vstack>
-            )}
+            <CommunityLinksSection context={context} links={communityLinks} />
           </vstack>
         ) : null}
       </vstack>
@@ -404,6 +377,76 @@ const TabButton = ({ label, active, onPress }: TabButtonProps): JSX.Element => {
         {label}
       </text>
     </hstack>
+  );
+};
+
+/**
+ * Community Links Section - shows configured links + default subreddit links
+ */
+interface CommunityLinksSectionProps {
+  context: Devvit.Context;
+  links: CommunityLink[];
+}
+
+const CommunityLinksSection = ({ context, links }: CommunityLinksSectionProps): JSX.Element => {
+  // Get subreddit name for dynamic URLs
+  const { data: subredditName } = useAsync(async () => {
+    return await context.reddit.getCurrentSubredditName();
+  });
+
+  const subName = subredditName || 'SeattleWA';
+  const wikiUrl = `https://www.reddit.com/r/${subName}/wiki/index`;
+  const rulesUrl = `https://www.reddit.com/r/${subName}/about/rules`;
+
+  return (
+    <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
+      <text size="small" weight="bold" color="#888888">COMMUNITY LINKS</text>
+
+      {/* User-configured links */}
+      {links.map((link, idx) => (
+        <hstack
+          key={idx.toString()}
+          gap="small"
+          padding="small"
+          backgroundColor="#252540"
+          cornerRadius="small"
+          onPress={() => context.ui.navigateTo(link.url)}
+        >
+          <text size="medium">{link.icon}</text>
+          <vstack grow>
+            <text size="small" color="#4da6ff">{link.name}</text>
+            {link.description ? (
+              <text size="xsmall" color="#666666">{link.description}</text>
+            ) : null}
+          </vstack>
+          <text color="#666666">→</text>
+        </hstack>
+      ))}
+
+      {/* Default subreddit links - always shown */}
+      <hstack
+        gap="small"
+        padding="small"
+        backgroundColor="#252540"
+        cornerRadius="small"
+        onPress={() => context.ui.navigateTo(wikiUrl)}
+      >
+        <text size="medium">📚</text>
+        <text size="small" color="#4da6ff" grow>Subreddit Wiki</text>
+        <text color="#666666">→</text>
+      </hstack>
+      <hstack
+        gap="small"
+        padding="small"
+        backgroundColor="#252540"
+        cornerRadius="small"
+        onPress={() => context.ui.navigateTo(rulesUrl)}
+      >
+        <text size="medium">📋</text>
+        <text size="small" color="#4da6ff" grow>Community Rules</text>
+        <text color="#666666">→</text>
+      </hstack>
+    </vstack>
   );
 };
 
