@@ -133,9 +133,9 @@ export const appSettings: SettingsFormField[] = [
         label: 'Community Links (JSON)',
         helpText: 'JSON array of community links: [{"name": "...", "url": "...", "icon": "..."}]',
         defaultValue: JSON.stringify([
-          { name: 'Discord', url: '', icon: '💬' },
-          { name: 'Wiki', url: '', icon: '📚' },
-          { name: 'Rules', url: '', icon: '📋' },
+          { name: 'Subreddit Wiki', url: 'https://www.reddit.com/r/SeattleWA/wiki/index', icon: '📚', description: 'Community resources and guides' },
+          { name: 'Community Rules', url: 'https://www.reddit.com/r/SeattleWA/about/rules', icon: '📋', description: 'Read before posting' },
+          { name: 'Seattle Discord', url: 'https://discord.gg/seattle', icon: '💬', description: 'Real-time chat' },
         ], null, 2),
       },
     ],
