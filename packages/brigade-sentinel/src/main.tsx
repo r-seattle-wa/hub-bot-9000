@@ -12,6 +12,8 @@ import {
   classifyPostTone,
   recordHater,
   enrichTopHatersWithOSINT,
+  registerUserAlt,
+  registerSubredditAlt,
 } from '@hub-bot/common';
 import { getBrigadeComment, getModmailBody } from './templates.js';
 
@@ -311,6 +313,89 @@ Devvit.addSchedulerJob({
     }
   },
 });
+
+// =============================================================================
+// ALT ACCOUNT REPORTING VIA MENTION
+// Users can report alts by mentioning the bot:
+//   u/hub-bot-9000 alt u/mainaccount = u/altaccount
+//   u/hub-bot-9000 alt r/mainsubreddit = r/altsubreddit
+// =============================================================================
+
+Devvit.addTrigger({
+  event: 'CommentCreate',
+  onEvent: async (event, context) => {
+    const comment = event.comment;
+    if (!comment?.body || !comment.id) return;
+
+    const body = comment.body.toLowerCase();
+
+    // Check if bot is mentioned
+    const botMentioned = body.includes('u/hub-bot-9000') ||
+                         body.includes('/u/hub-bot-9000') ||
+                         body.includes('u/brigade-sentinel') ||
+                         body.includes('/u/brigade-sentinel');
+
+    if (!botMentioned) return;
+
+    // Check for alt report pattern
+    // Formats: "alt u/main = u/alt" or "alt r/main = r/alt"
+    const altPattern = /alt\s+([ur])\/(\w+)\s*=\s*([ur])\/(\w+)/i;
+    const match = comment.body.match(altPattern);
+
+    if (!match) return;
+
+    const [, type1, name1, type2, name2] = match;
+
+    // Validate: both should be same type (both users or both subreddits)
+    if (type1.toLowerCase() !== type2.toLowerCase()) {
+      await context.reddit.submitComment({
+        id: comment.id,
+        text: `Sorry, can't link a user to a subreddit. Use:\n\n- \`alt u/main = u/alt\` for user alts\n- \`alt r/main = r/alt\` for subreddit alts`,
+      });
+      return;
+    }
+
+    const isUser = type1.toLowerCase() === 'u';
+    const mainName = name1;
+    const altName = name2;
+
+    // Check rate limit (prevent spam)
+    const author = comment.author || 'unknown';
+    const rateCheck = await checkRateLimit(context.redis, 'altReport', author);
+    if (!rateCheck.allowed) {
+      return; // Silently ignore rate-limited requests
+    }
+
+    try {
+      let result: { success: boolean; message: string };
+
+      if (isUser) {
+        result = await registerUserAlt(context, altName, mainName);
+      } else {
+        result = await registerSubredditAlt(context, altName, mainName);
+      }
+
+      // Reply with confirmation
+      const prefix = isUser ? 'u' : 'r';
+      const replyText = result.success
+        ? `Thanks! Registered ${prefix}/${altName} as an alt of ${prefix}/${mainName}. Their scores will now be combined on the leaderboard.`
+        : `Couldn't register alt: ${result.message}`;
+
+      await context.reddit.submitComment({
+        id: comment.id,
+        text: replyText,
+      });
+
+      await consumeRateLimit(context.redis, 'altReport', author);
+    } catch (error) {
+      console.error('Alt registration failed:', error);
+    }
+  },
+});
+
+// =============================================================================
+// OSINT ENRICHMENT JOB
+// =============================================================================
 
 // OSINT enrichment job - analyze deleted content of top haters
 Devvit.addSchedulerJob({
