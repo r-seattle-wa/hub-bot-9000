@@ -1,4 +1,4 @@
-import { Devvit } from '@devvit/public-api';
+import { Devvit, TriggerContext } from '@devvit/public-api';
 import {
   detectUnsubscribePost,
   couldBeUnsubscribePost,
@@ -14,9 +14,24 @@ import {
   setJson,
   REDIS_PREFIX,
   SarcasmLevel,
+  UserTone,
+  SourceClassification,
   classifyUnsubscribeTone,
   emitFarewellAnnouncement,
   generateBotReply,
+  // Meme detection
+  detectTalkingPoints,
+  recordTalkingPointUsage,
+  getDebunkLinks,
+  TalkingPoint,
+  // Hater leaderboard
+  recordHater,
+  getLeaderboard,
+  // Achievements
+  checkAchievements,
+  getHighestNewAchievement,
+  markAchievementNotified,
+  formatAchievementComment,
 } from '@hub-bot/common';
 
 Devvit.configure({
@@ -105,6 +120,18 @@ Devvit.addSettings([
     label: 'Reply to users who respond to the bot',
     defaultValue: true,
   },
+  {
+    name: 'trackDramaticExits',
+    type: 'boolean',
+    label: 'Add hostile/dramatic users to hater leaderboard',
+    defaultValue: true,
+  },
+  {
+    name: 'includeMemeDebunks',
+    type: 'boolean',
+    label: 'Include wiki links when talking points detected',
+    defaultValue: true,
+  },
 ]);
 
 
@@ -117,6 +144,116 @@ function getSarcasmLevelFromSetting(value: string[] | string | undefined): Sarca
     case 'freakout': return SarcasmLevel.FREAKOUT;
     default: return SarcasmLevel.NEUTRAL;
   }
+}
+
+/**
+ * Analyze farewell text for talking points and record to hater leaderboard if dramatic
+ * Returns detected memes and any wiki debunk links to include in response
+ */
+interface FarewellAnalysis {
+  detectedMemes: TalkingPoint[];
+  debunkLinks: Array<{ text: string; url: string; summary: string }>;
+  addedToLeaderboard: boolean;
+  achievementText?: string;
+}
+
+async function analyzeFarewellForHaterTracking(
+  context: TriggerContext,
+  username: string,
+  text: string,
+  tone: UserTone,
+  subredditName: string,
+  settings: Record<string, unknown>
+): Promise<FarewellAnalysis> {
+  const result: FarewellAnalysis = {
+    detectedMemes: [],
+    debunkLinks: [],
+    addedToLeaderboard: false,
+  };
+
+  // Detect talking points (echo chamber, transplants, etc.)
+  result.detectedMemes = detectTalkingPoints(text);
+
+  // Record talking point usage for the user
+  for (const meme of result.detectedMemes) {
+    await recordTalkingPointUsage(context, username, meme, text);
+  }
+
+  // Get debunk links if memes detected and setting enabled
+  if (result.detectedMemes.length > 0 && settings.includeMemeDebunks) {
+    result.debunkLinks = getDebunkLinks(subredditName, result.detectedMemes);
+  }
+
+  // Add to hater leaderboard if dramatic/hostile and setting enabled
+  if (settings.trackDramaticExits) {
+    // Determine classification based on tone and meme count
+    let classification: SourceClassification | null = null;
+
+    if (tone === UserTone.HOSTILE) {
+      classification = SourceClassification.HATEFUL;
+    } else if (tone === UserTone.DRAMATIC || tone === UserTone.FRUSTRATED) {
+      classification = SourceClassification.ADVERSARIAL;
+    } else if (result.detectedMemes.length >= 2) {
+      // Multiple talking points = adversarial even if neutral tone
+      classification = SourceClassification.ADVERSARIAL;
+    }
+
+    if (classification) {
+      // Record to hater leaderboard
+      // Use subreddit name as "source" since they're posting FROM here while complaining
+      await recordHater(
+        context,
+        subredditName,  // They're already in this sub, complaining about it
+        username,
+        classification,
+        `Farewell: ${text.slice(0, 80)}...`
+      );
+      result.addedToLeaderboard = true;
+
+      // Check for achievements
+      try {
+        const leaderboard = await getLeaderboard(context);
+        if (leaderboard) {
+          const userKey = username.toLowerCase();
+          const userEntry = leaderboard.users[userKey];
+
+          if (userEntry) {
+            const unlocks = await checkAchievements(
+              context,
+              username,
+              userEntry,
+              leaderboard,
+              { repeatedMemes: result.detectedMemes.map(m => m.id) }
+            );
+
+            const highest = getHighestNewAchievement(unlocks);
+            if (highest && highest.shouldNotify) {
+              const score = userEntry.adversarialCount +
+                           (userEntry.hatefulCount * 3) +
+                           (userEntry.modLogSpamCount * 2);
+              const position = leaderboard.topUsers.findIndex(
+                u => u.username.toLowerCase() === userKey
+              ) + 1;
+
+              result.achievementText = formatAchievementComment(
+                highest.achievement,
+                username,
+                position || 999,
+                score,
+                highest.achievement.roastTemplate
+              );
+
+              await markAchievementNotified(context, username, highest.achievement.id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[farewell-hero] Failed to check achievements:', error);
+      }
+    }
+  }
+
+  return result;
 }
 
 // Scheduled job to post farewell reply after delay
@@ -220,14 +357,38 @@ Devvit.addTrigger({
       await setJson(context.redis, repeatKey, { count: repeatCount }, 365 * 24 * 60 * 60); // 1 year
     }
 
+    // Analyze for talking points and hater tracking
+    const analysis = await analyzeFarewellForHaterTracking(
+      context,
+      user.username,
+      textToCheck,
+      toneResult.tone,
+      subreddit.name,
+      settings
+    );
+
     // Generate response - check if political complaint should be appended
     let response = generateFarewellResponse(stats, sarcasmLevel, toneResult, repeatCount);
-    
-// If political complaint detected, append survey reference
+
+    // If political complaint detected, append survey reference
     if (politicalComplaint.isPoliticalComplaint) {
       const politicalResponse = generatePoliticalComplaintResponse(subreddit.name, politicalComplaint, sarcasmLevel);
       response += '\n\n---\n\n' + politicalResponse;
     }
+
+    // Add debunk links if talking points were detected
+    if (analysis.debunkLinks.length > 0) {
+      response += '\n\n---\n\n**For your reference:**\n';
+      for (const link of analysis.debunkLinks) {
+        response += `- [${link.text}](${link.url}): ${link.summary}\n`;
+      }
+    }
+
+    // Add achievement if unlocked
+    if (analysis.achievementText) {
+      response += '\n\n' + analysis.achievementText;
+    }
+
     const delaySeconds = (settings.replyDelaySeconds as number) || 60;
 
     await context.scheduler.runJob({
@@ -323,14 +484,38 @@ Devvit.addTrigger({
       await setJson(context.redis, repeatKey, { count: repeatCount }, 365 * 24 * 60 * 60);
     }
 
+    // Analyze for talking points and hater tracking
+    const analysis = await analyzeFarewellForHaterTracking(
+      context,
+      authorName,
+      comment.body,
+      toneResult.tone,
+      subreddit.name,
+      settings
+    );
+
     // Generate response - check if political complaint should be appended
     let response = generateFarewellResponse(stats, sarcasmLevel, toneResult, repeatCount);
-    
+
     // If political complaint detected, append survey reference
     if (politicalComplaint.isPoliticalComplaint) {
       const politicalResponse = generatePoliticalComplaintResponse(subreddit.name, politicalComplaint, sarcasmLevel);
       response += '\n\n---\n\n' + politicalResponse;
     }
+
+    // Add debunk links if talking points were detected
+    if (analysis.debunkLinks.length > 0) {
+      response += '\n\n---\n\n**For your reference:**\n';
+      for (const link of analysis.debunkLinks) {
+        response += `- [${link.text}](${link.url}): ${link.summary}\n`;
+      }
+    }
+
+    // Add achievement if unlocked
+    if (analysis.achievementText) {
+      response += '\n\n' + analysis.achievementText;
+    }
+
     const delaySeconds = (settings.replyDelaySeconds as number) || 60;
 
     await context.scheduler.runJob({

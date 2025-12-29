@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Stage -->
+  <rect x="4" y="48" width="56" height="12" fill="#8B4513"/>
+  <!-- Performer bowing (2 positions) -->
+  <circle cx="24" cy="32" r="6" fill="#C0C0C0" opacity="0.5"/>
+  <rect x="22" y="38" width="4" height="10" fill="#C0C0C0" opacity="0.5"/>
+  <circle cx="40" cy="32" r="6" fill="#C0C0C0"/>
+  <rect x="38" y="38" width="4" height="10" fill="#C0C0C0"/>
+  <!-- "x2" badge -->
+  <circle cx="52" cy="16" r="8" fill="#FF6B6B"/>
+  <text x="46" y="20" font-family="Arial Black" font-size="10" fill="#fff">x2</text>
+  <!-- Spotlight -->
+  <path d="M32 4 L24 20 L40 20 Z" fill="#FFD700" opacity="0.3"/>
+</svg>

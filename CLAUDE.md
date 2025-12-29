@@ -10,6 +10,9 @@ Hub Bot 9000 is a monorepo containing multiple Reddit Devvit apps for community 
 
 ```
 hub-bot-9000/
+├── assets/
+│   └── achievements/
+│       └── general/              # 26 SVG achievement icons (64x64)
 ├── packages/
 │   ├── common/                   # Shared utilities (@hub-bot/common)
 │   │   └── src/
@@ -93,7 +96,7 @@ devvit logs r/YourTestSubreddit
 |-----|---------|--------------|
 | **haiku-sensei** | Detects accidental 5-7-5 haikus | Syllable counting, AI replies to users |
 | **brigade-sentinel** | Cross-subreddit link alerts + hater leaderboard | OSINT, alt tracking, modmail alerts, traffic spike detection, achievements, community events |
-| **farewell-hero** | "I'm unsubscribing" responder | 5 sarcasm levels, tone matching, best post/comment, political complaint detection |
+| **farewell-hero** | "I'm unsubscribing" responder | 5 sarcasm levels, tone matching, best post/comment, political complaint detection, hater leaderboard integration |
 | **hub-widget** | Unified events dashboard | Color-coded feed, auto-refresh, Custom Post Type |
 
 ## Shared Package (@hub-bot/common)
@@ -251,12 +254,15 @@ import {
   AchievementTier,          // bronze, silver, gold, platinum, diamond
 } from '@hub-bot/common';
 
-// Achievement tiers and score thresholds
-// Bronze (5-9): Casual Complainer, New Challenger
-// Silver (10-24): Serial Brigader
-// Gold (25-49): Professional Hater
-// Platinum (50-99): Legendary Salt Lord, Broken Record, Main Character
-// Diamond (100+): Transcendent Malcontent, Shadow Exposed
+// 27 achievements across 5 tiers:
+// Bronze: Casual Complainer, New Challenger, Broken Record, Echo Enthusiast,
+//         Transplant Tracker, Mod Critic, Dramatic Departure, Shadow Lurker
+// Silver: Serial Brigader, Top 10 Menace, Consistency Award, Meme Collector,
+//         Encore Performer, Rage Machine, Multi-Front Warrior, Troll Suspect
+// Gold: Professional Hater, Podium Pest, Mask Off, Meme Master, Farewell Trilogy,
+//       Evidence Eraser, Story Teller
+// Platinum: Legendary Salt Lord
+// Diamond: Transcendent Malcontent, Supreme Antagonist
 ```
 
 ### Meme/Talking Point Detection

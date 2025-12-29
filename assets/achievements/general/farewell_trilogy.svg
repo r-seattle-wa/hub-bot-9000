@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Three movie posters -->
+  <rect x="4" y="16" width="16" height="32" fill="#333" stroke="#FFD700" stroke-width="2"/>
+  <rect x="24" y="12" width="16" height="40" fill="#333" stroke="#FFD700" stroke-width="2"/>
+  <rect x="44" y="16" width="16" height="32" fill="#333" stroke="#FFD700" stroke-width="2"/>
+  <!-- Roman numerals -->
+  <text x="9" y="36" font-family="Times New Roman" font-size="12" font-weight="bold" fill="#FFD700">I</text>
+  <text x="28" y="36" font-family="Times New Roman" font-size="12" font-weight="bold" fill="#FFD700">II</text>
+  <text x="47" y="36" font-family="Times New Roman" font-size="12" font-weight="bold" fill="#FFD700">III</text>
+  <!-- "BYE" text -->
+  <text x="5" y="44" font-family="Arial" font-size="6" fill="#C0C0C0">BYE</text>
+  <text x="25" y="48" font-family="Arial" font-size="6" fill="#C0C0C0">BYE</text>
+  <text x="45" y="44" font-family="Arial" font-size="6" fill="#C0C0C0">BYE</text>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Door frame -->
+  <rect x="16" y="8" width="32" height="48" fill="#8B4513" stroke="#5D3A1A" stroke-width="2"/>
+  <!-- Door (slamming) -->
+  <path d="M16 8 L32 16 L32 64 L16 56 Z" fill="#A0522D" stroke="#5D3A1A" stroke-width="2"/>
+  <!-- Door handle -->
+  <circle cx="28" cy="36" r="2" fill="#CD7F32"/>
+  <!-- Motion lines -->
+  <path d="M36 20 L44 16" stroke="#666" stroke-width="2"/>
+  <path d="M36 32 L48 32" stroke="#666" stroke-width="2"/>
+  <path d="M36 44 L44 48" stroke="#666" stroke-width="2"/>
+  <!-- Cape flowing -->
+  <path d="M48 24 Q56 32 52 48 Q56 40 60 48" fill="#CD7F32" stroke="#8B4513" stroke-width="1"/>
+</svg>

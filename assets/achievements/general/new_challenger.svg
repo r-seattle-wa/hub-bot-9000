@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Arcade screen -->
+  <rect x="8" y="8" width="48" height="48" rx="4" fill="#222" stroke="#CD7F32" stroke-width="3"/>
+  <!-- Screen glow -->
+  <rect x="12" y="12" width="40" height="36" rx="2" fill="#1a1a2e"/>
+  <!-- "NEW" text -->
+  <text x="16" y="28" font-family="Arial Black" font-size="10" fill="#FF6B6B">NEW</text>
+  <!-- Silhouette -->
+  <circle cx="32" cy="36" r="6" fill="#CD7F32"/>
+  <rect x="28" y="42" width="8" height="4" fill="#CD7F32"/>
+  <!-- Question mark -->
+  <text x="28" y="40" font-family="Arial Black" font-size="10" fill="#222">?</text>
+</svg>

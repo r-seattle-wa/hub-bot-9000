@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Cave -->
+  <path d="M4 56 Q4 20 32 8 Q60 20 60 56 Z" fill="#4a4a4a" stroke="#CD7F32" stroke-width="2"/>
+  <!-- Echo waves -->
+  <path d="M16 32 Q20 28 24 32" stroke="#CD7F32" stroke-width="2" fill="none"/>
+  <path d="M12 36 Q20 28 28 36" stroke="#CD7F32" stroke-width="2" fill="none"/>
+  <path d="M8 40 Q20 28 32 40" stroke="#CD7F32" stroke-width="2" fill="none"/>
+  <!-- Mouth -->
+  <ellipse cx="48" cy="36" rx="6" ry="8" fill="#333"/>
+</svg>

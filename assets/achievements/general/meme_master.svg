@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Graduation cap -->
+  <polygon points="32,12 8,24 32,36 56,24" fill="#333" stroke="#FFD700" stroke-width="2"/>
+  <rect x="28" y="24" width="8" height="12" fill="#333"/>
+  <rect x="24" y="36" width="16" height="4" fill="#333"/>
+  <!-- Tassel -->
+  <path d="M48 24 L52 28 L52 40" stroke="#FFD700" stroke-width="2" fill="none"/>
+  <circle cx="52" cy="42" r="3" fill="#FFD700"/>
+  <!-- PhD text -->
+  <text x="18" y="56" font-family="Arial" font-size="10" font-weight="bold" fill="#FFD700">PhD</text>
+  <!-- Meme symbols -->
+  <circle cx="14" cy="50" r="4" fill="#FFD700" stroke="#B8860B" stroke-width="1"/>
+  <circle cx="50" cy="50" r="4" fill="#FFD700" stroke="#B8860B" stroke-width="1"/>
+</svg>

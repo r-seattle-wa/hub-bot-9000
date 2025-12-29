@@ -5,7 +5,7 @@
 
 import { TriggerContext, JobContext } from '@devvit/public-api';
 import { SourceClassification } from './types.js';
-import { analyzeDeletedContent, analyzeUser } from './user-analysis.js';
+import { analyzeDeletedContent, analyzeUser, BehavioralProfile } from './user-analysis.js';
 
 type AppContext = TriggerContext | JobContext;
 
@@ -43,6 +43,11 @@ export interface UserHaterEntry {
   deletedContentSummary?: string;
   flaggedContentCount?: number;
   osintEnrichedAt?: number;
+
+  // The-Profiler behavioral analysis
+  behavioralProfile?: BehavioralProfile;
+  engagementStyle?: 'constructive' | 'neutral' | 'confrontational' | 'unknown';
+  behaviorSummary?: string;
 }
 
 export interface LeaderboardData {
@@ -458,16 +463,49 @@ export function formatLeaderboardMarkdown(data: LeaderboardData): string {
     }
   }
 
-  // Show OSINT insights for enriched users
-  const enrichedUsers = Object.values(data.users).filter(e => e.deletedContentSummary);
+  // Show OSINT insights for enriched users (The-Profiler + Deleted Content)
+  const enrichedUsers = Object.values(data.users).filter(e => e.deletedContentSummary || e.behavioralProfile);
   if (enrichedUsers.length > 0) {
-    md += `\n\n---\n\n### 🔍 OSINT Insights (Deleted Content Analysis)\n`;
+    md += `\n\n---\n\n### 🔍 OSINT Insights (The-Profiler Analysis)\n`;
     enrichedUsers.slice(0, 5).forEach(user => {
       md += `\n**u/${user.username}**`;
       if (user.flaggedContentCount) {
         md += ` (${user.flaggedContentCount} flagged items)`;
       }
-      md += `\n> ${user.deletedContentSummary}\n`;
+      md += `\n`;
+
+      // The-Profiler behavioral profile
+      if (user.behavioralProfile) {
+        const bp = user.behavioralProfile;
+        if (bp.ocean) {
+          md += `> **OCEAN:** O:${bp.ocean.openness} C:${bp.ocean.conscientiousness} E:${bp.ocean.extraversion} A:${bp.ocean.agreeableness} N:${bp.ocean.neuroticism}\n`;
+        }
+        if (bp.communicationStyle) {
+          const cs = bp.communicationStyle;
+          md += `> **Style:** ${cs.verbosity}, ${cs.formality}, ${cs.emotionalTone}, ${cs.argumentationStyle}\n`;
+        }
+        if (bp.moderationRisk) {
+          const mr = bp.moderationRisk;
+          md += `> **Risk:** Trolling:${mr.trollingLikelihood} Sockpuppet:${mr.sockpuppetRisk}`;
+          if (mr.brigadingPattern) md += ` ⚠️Brigade pattern`;
+          if (mr.deceptionIndicators > 0) md += ` (${mr.deceptionIndicators} deception flags)`;
+          md += `\n`;
+        }
+        md += `> *Confidence: ${bp.confidence} (${bp.sampleSize} samples)*\n`;
+      }
+
+      // Engagement style summary
+      if (user.engagementStyle) {
+        md += `> **Engagement:** ${user.engagementStyle}\n`;
+      }
+      if (user.behaviorSummary) {
+        md += `> ${user.behaviorSummary}\n`;
+      }
+
+      // Deleted content summary
+      if (user.deletedContentSummary) {
+        md += `> **Deleted content:** ${user.deletedContentSummary}\n`;
+      }
     });
   }
 
@@ -475,7 +513,7 @@ export function formatLeaderboardMarkdown(data: LeaderboardData): string {
 }
 
 /**
- * Enrich top haters with OSINT data (deleted content analysis)
+ * Enrich top haters with OSINT data (deleted content + The-Profiler behavioral analysis)
  * Call this periodically to update profiles of worst offenders
  */
 export async function enrichTopHatersWithOSINT(
@@ -506,19 +544,35 @@ export async function enrichTopHatersWithOSINT(
     if (!userEntry) continue;
 
     try {
-      // Analyze their deleted content
+      // Run full The-Profiler analysis (includes deleted content via PullPush)
+      const fullAnalysis = await analyzeUser(context, hater.username, {
+        geminiApiKey,
+        includeRecentPosts: true,
+        deepBehavioralAnalysis: true,  // The-Profiler OCEAN + communication style
+      });
+
+      // Store behavioral profile
+      if (fullAnalysis.behavioralProfile) {
+        userEntry.behavioralProfile = fullAnalysis.behavioralProfile;
+      }
+      if (fullAnalysis.engagementStyle) {
+        userEntry.engagementStyle = fullAnalysis.engagementStyle;
+      }
+      if (fullAnalysis.behaviorSummary) {
+        userEntry.behaviorSummary = fullAnalysis.behaviorSummary;
+      }
+
+      // Also analyze deleted content separately for flagging
       const deletedAnalysis = await analyzeDeletedContent(hater.username, geminiApiKey);
 
       if (deletedAnalysis) {
         userEntry.deletedContentSummary = deletedAnalysis.summary;
         userEntry.flaggedContentCount = deletedAnalysis.flaggedContent.length;
-        userEntry.osintEnrichedAt = Date.now();
-
-        // Add bonus points for flagged deleted content
-        // Each severe flagged item adds to their score via this count
-        data.users[userKey] = userEntry;
-        enriched++;
       }
+
+      userEntry.osintEnrichedAt = Date.now();
+      data.users[userKey] = userEntry;
+      enriched++;
     } catch {
       errors++;
     }

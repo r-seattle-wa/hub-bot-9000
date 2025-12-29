@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Gold medal -->
+  <circle cx="32" cy="38" r="18" fill="#FFD700" stroke="#B8860B" stroke-width="3"/>
+  <!-- Medal ribbon -->
+  <polygon points="20,8 28,28 32,8 36,28 44,8 40,8 32,24 24,8" fill="#FF6B6B"/>
+  <!-- Rage face on medal -->
+  <circle cx="26" cy="34" r="3" fill="#333"/>
+  <circle cx="38" cy="34" r="3" fill="#333"/>
+  <path d="M24 44 Q32 38 40 44" stroke="#333" stroke-width="2" fill="none"/>
+  <!-- Eyebrows -->
+  <path d="M22 30 L30 32" stroke="#333" stroke-width="2"/>
+  <path d="M42 30 L34 32" stroke="#333" stroke-width="2"/>
+</svg>

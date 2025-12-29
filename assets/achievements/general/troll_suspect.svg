@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Bridge -->
+  <path d="M0 48 Q32 32 64 48" fill="none" stroke="#666" stroke-width="4"/>
+  <rect x="0" y="48" width="64" height="16" fill="#4a4a4a"/>
+  <!-- Troll underneath -->
+  <circle cx="32" cy="48" r="8" fill="#228B22" stroke="#006400" stroke-width="2"/>
+  <!-- Troll features -->
+  <circle cx="28" cy="46" r="2" fill="#FF6B6B"/>
+  <circle cx="36" cy="46" r="2" fill="#FF6B6B"/>
+  <path d="M28 52 Q32 56 36 52" stroke="#006400" stroke-width="2" fill="none"/>
+  <!-- Phone -->
+  <rect x="40" y="44" width="8" height="12" rx="1" fill="#C0C0C0" stroke="#888" stroke-width="1"/>
+  <!-- Hair/ears -->
+  <path d="M24 40 L20 32" stroke="#228B22" stroke-width="3"/>
+  <path d="M40 40 L44 32" stroke="#228B22" stroke-width="3"/>
+</svg>

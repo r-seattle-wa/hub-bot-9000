@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Plant pot -->
+  <path d="M16 40 L20 56 L44 56 L48 40 Z" fill="#CD7F32" stroke="#8B4513" stroke-width="2"/>
+  <rect x="14" y="36" width="36" height="6" rx="2" fill="#CD7F32" stroke="#8B4513" stroke-width="2"/>
+  <!-- Plant being removed -->
+  <path d="M32 36 L32 20" stroke="#228B22" stroke-width="3"/>
+  <ellipse cx="26" cy="16" rx="6" ry="4" fill="#228B22"/>
+  <ellipse cx="38" cy="16" rx="6" ry="4" fill="#228B22"/>
+  <ellipse cx="32" cy="12" rx="6" ry="4" fill="#228B22"/>
+  <!-- Roots -->
+  <path d="M32 36 Q28 44 24 48" stroke="#8B4513" stroke-width="2" fill="none"/>
+  <path d="M32 36 Q36 44 40 48" stroke="#8B4513" stroke-width="2" fill="none"/>
+  <!-- Motion lines -->
+  <path d="M20 24 L16 20" stroke="#666" stroke-width="1"/>
+  <path d="M44 24 L48 20" stroke="#666" stroke-width="1"/>
+</svg>

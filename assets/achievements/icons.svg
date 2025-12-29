@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Achievement Icons for r/SeattleWA - Export each at 64x64 or 128x128 PNG -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 1728">
+  <style>
+    .bronze { fill: #CD7F32; }
+    .silver { fill: #C0C0C0; }
+    .gold { fill: #FFD700; }
+    .platinum { fill: #E5E4E2; stroke: #B8B8B8; stroke-width: 1; }
+    .diamond { fill: #B9F2FF; stroke: #87CEEB; stroke-width: 1; }
+    .dark { fill: #333; }
+    .white { fill: #fff; }
+    .red { fill: #E74C3C; }
+    .green { fill: #27AE60; }
+    .blue { fill: #3498DB; }
+    .outline { stroke: #333; stroke-width: 2; fill: none; }
+  </style>
+
+  <!-- Row 1: Score Milestones -->
+
+  <!-- casual_complainer - Bronze salt shaker -->
+  <g id="casual_complainer" transform="translate(0,0)">
+    <rect x="20" y="24" width="24" height="32" rx="4" class="bronze"/>
+    <rect x="24" y="8" width="16" height="16" rx="2" class="bronze"/>
+    <circle cx="28" cy="12" r="2" class="dark"/>
+    <circle cx="36" cy="12" r="2" class="dark"/>
+    <circle cx="32" cy="18" r="2" class="dark"/>
+    <circle cx="14" cy="44" r="3" class="white" stroke="#999"/>
+    <circle cx="50" cy="38" r="2" class="white" stroke="#999"/>
+  </g>
+
+  <!-- serial_brigader - Silver angry keyboard -->
+  <g id="serial_brigader" transform="translate(64,0)">
+    <rect x="8" y="28" width="48" height="28" rx="4" class="silver"/>
+    <rect x="12" y="32" width="8" height="6" rx="1" class="dark"/>
+    <rect x="22" y="32" width="8" height="6" rx="1" class="dark"/>
+    <rect x="32" y="32" width="8" height="6" rx="1" class="dark"/>
+    <rect x="42" y="32" width="8" height="6" rx="1" class="dark"/>
+    <rect x="12" y="40" width="40" height="6" rx="1" class="dark"/>
+    <circle cx="24" cy="16" r="6" class="red"/>
+    <circle cx="40" cy="16" r="6" class="red"/>
+    <circle cx="24" cy="16" r="2" class="dark"/>
+    <circle cx="40" cy="16" r="2" class="dark"/>
+  </g>
+
+  <!-- professional_hater - Gold medal with rage -->
+  <g id="professional_hater" transform="translate(128,0)">
+    <circle cx="32" cy="36" r="20" class="gold"/>
+    <circle cx="32" cy="36" r="16" fill="none" stroke="#B8860B" stroke-width="2"/>
+    <path d="M24 32 L28 38 L22 38 Z" class="dark"/>
+    <path d="M40 32 L36 38 L42 38 Z" class="dark"/>
+    <path d="M26 44 Q32 48 38 44" class="outline"/>
+    <rect x="28" y="8" width="8" height="12" class="gold"/>
+  </g>
+
+  <!-- legendary_salt_lord - Platinum crown -->
+  <g id="legendary_salt_lord" transform="translate(192,0)">
+    <path d="M12 48 L16 20 L24 32 L32 16 L40 32 L48 20 L52 48 Z" class="platinum"/>
+    <circle cx="16" cy="20" r="4" class="diamond"/>
+    <circle cx="32" cy="16" r="4" class="diamond"/>
+    <circle cx="48" cy="20" r="4" class="diamond"/>
+    <rect x="12" y="48" width="40" height="8" rx="2" class="platinum"/>
+  </g>
+
+  <!-- transcendent_malcontent - Diamond ascending keyboard -->
+  <g id="transcendent_malcontent" transform="translate(256,0)">
+    <ellipse cx="32" cy="12" rx="12" ry="6" fill="#FFD700" opacity="0.6"/>
+    <path d="M8 24 Q4 40 16 56" stroke="#fff" stroke-width="3" fill="none"/>
+    <path d="M56 24 Q60 40 48 56" stroke="#fff" stroke-width="3" fill="none"/>
+    <rect x="16" y="28" width="32" height="20" rx="4" class="diamond"/>
+    <rect x="20" y="32" width="6" height="4" class="dark"/>
+    <rect x="29" y="32" width="6" height="4" class="dark"/>
+    <rect x="38" y="32" width="6" height="4" class="dark"/>
+  </g>
+
+  <!-- Row 2: Rank Achievements -->
+
+  <!-- top_ten_menace - Top 10 billboard -->
+  <g id="top_ten_menace" transform="translate(320,0)">
+    <rect x="8" y="16" width="48" height="32" rx="4" class="silver"/>
+    <text x="32" y="40" font-family="Arial Black" font-size="16" fill="#333" text-anchor="middle">10</text>
+    <rect x="28" y="48" width="8" height="12" class="dark"/>
+  </g>
+
+  <!-- podium_pest - Podium -->
+  <g id="podium_pest" transform="translate(384,0)">
+    <rect x="8" y="40" width="16" height="20" class="bronze"/>
+    <rect x="24" y="28" width="16" height="32" class="gold"/>
+    <rect x="40" y="36" width="16" height="24" class="silver"/>
+    <text x="16" y="54" font-family="Arial" font-size="10" fill="#333" text-anchor="middle">3</text>
+    <text x="32" y="46" font-family="Arial" font-size="10" fill="#333" text-anchor="middle">1</text>
+    <text x="48" y="50" font-family="Arial" font-size="10" fill="#333" text-anchor="middle">2</text>
+    <circle cx="32" cy="16" r="8" class="red"/>
+  </g>
+
+  <!-- supreme_antagonist - Diamond throne -->
+  <g id="supreme_antagonist" transform="translate(448,0)">
+    <rect x="12" y="32" width="40" height="28" rx="4" class="diamond"/>
+    <rect x="8" y="28" width="8" height="32" class="diamond"/>
+    <rect x="48" y="28" width="8" height="32" class="diamond"/>
+    <path d="M20 24 L24 8 L32 16 L40 8 L44 24 Z" class="gold"/>
+    <text x="32" y="52" font-family="Arial Black" font-size="14" fill="#333" text-anchor="middle">#1</text>
+  </g>
+
+  <!-- Row 3: Special Achievements (offset by 64 in y) -->
+
+  <!-- new_challenger - Arcade challenger -->
+  <g id="new_challenger" transform="translate(0,64)">
+    <rect x="8" y="8" width="48" height="48" rx="4" class="dark"/>
+    <text x="32" y="28" font-family="Arial" font-size="8" fill="#0f0" text-anchor="middle">NEW</text>
+    <circle cx="32" cy="44" r="12" fill="none" stroke="#0f0" stroke-width="2"/>
+    <text x="32" y="48" font-family="Arial" font-size="10" fill="#0f0" text-anchor="middle">?</text>
+  </g>
+
+  <!-- mask_off - Scooby reveal -->
+  <g id="mask_off" transform="translate(64,64)">
+    <circle cx="32" cy="32" r="20" fill="#FFB6C1"/>
+    <circle cx="24" cy="28" r="4" class="white"/>
+    <circle cx="40" cy="28" r="4" class="white"/>
+    <circle cx="24" cy="28" r="2" class="dark"/>
+    <circle cx="40" cy="28" r="2" class="dark"/>
+    <path d="M24 40 Q32 48 40 40" stroke="#333" stroke-width="2" fill="none"/>
+    <path d="M8 16 Q16 8 24 12" stroke="#333" stroke-width="3" fill="none"/>
+    <ellipse cx="8" cy="20" rx="8" ry="12" fill="#666"/>
+  </g>
+
+  <!-- broken_record - Cracked vinyl -->
+  <g id="broken_record" transform="translate(128,64)">
+    <circle cx="32" cy="32" r="24" class="dark"/>
+    <circle cx="32" cy="32" r="8" class="red"/>
+    <circle cx="32" cy="32" r="4" class="dark"/>
+    <path d="M32 8 L36 32 L32 56" stroke="#fff" stroke-width="2" fill="none"/>
+    <text x="32" y="20" font-family="Arial" font-size="6" fill="#fff" text-anchor="middle">ECHO</text>
+  </g>
+
+  <!-- consistency_award - Calendar streak -->
+  <g id="consistency_award" transform="translate(192,64)">
+    <rect x="8" y="8" width="48" height="48" rx="4" fill="#fff" stroke="#333" stroke-width="2"/>
+    <rect x="8" y="8" width="48" height="12" class="red"/>
+    <text x="16" y="32" font-size="12">🔥</text>
+    <text x="28" y="32" font-size="12">🔥</text>
+    <text x="40" y="32" font-size="12">🔥</text>
+    <text x="22" y="48" font-size="12">🔥</text>
+    <text x="34" y="48" font-size="12">🔥</text>
+  </g>
+
+  <!-- Row 4: Meme-Specific -->
+
+  <!-- echo_enthusiast - Echo cave -->
+  <g id="echo_enthusiast" transform="translate(256,64)">
+    <path d="M8 56 L16 8 L48 8 L56 56 Z" fill="#666"/>
+    <path d="M16 48 L20 16 L44 16 L48 48 Z" fill="#444"/>
+    <text x="20" y="28" font-family="Arial" font-size="6" fill="#aaa">echo</text>
+    <text x="28" y="36" font-family="Arial" font-size="5" fill="#888">echo</text>
+    <text x="34" y="44" font-family="Arial" font-size="4" fill="#666">echo</text>
+  </g>
+
+  <!-- transplant_tracker - Angry plant -->
+  <g id="transplant_tracker" transform="translate(320,64)">
+    <rect x="20" y="40" width="24" height="20" rx="2" fill="#8B4513"/>
+    <ellipse cx="32" cy="40" rx="16" ry="8" fill="#654321"/>
+    <path d="M32 40 Q28 24 20 16" stroke="#228B22" stroke-width="4" fill="none"/>
+    <path d="M32 40 Q36 24 44 16" stroke="#228B22" stroke-width="4" fill="none"/>
+    <circle cx="20" cy="16" r="6" fill="#228B22"/>
+    <circle cx="44" cy="16" r="6" fill="#228B22"/>
+    <circle cx="26" cy="32" r="3" class="red"/>
+    <circle cx="38" cy="32" r="3" class="red"/>
+    <path d="M28 38 L36 38" stroke="#333" stroke-width="2"/>
+  </g>
+
+  <!-- mod_critic - Tiny vs giant badge -->
+  <g id="mod_critic" transform="translate(384,64)">
+    <rect x="24" y="8" width="32" height="40" rx="4" fill="#228B22"/>
+    <text x="40" y="36" font-family="Arial Black" font-size="16" fill="#fff" text-anchor="middle">M</text>
+    <circle cx="12" cy="52" r="8" fill="#FFB6C1"/>
+    <circle cx="10" cy="50" r="2" class="dark"/>
+    <circle cx="14" cy="50" r="2" class="dark"/>
+    <path d="M8 48 L4 40" stroke="#333" stroke-width="2"/>
+  </g>
+
+  <!-- meme_collector - Trophy case -->
+  <g id="meme_collector" transform="translate(448,64)">
+    <rect x="8" y="8" width="48" height="48" rx="2" fill="#8B4513"/>
+    <rect x="12" y="12" width="12" height="12" fill="#333"/>
+    <rect x="26" y="12" width="12" height="12" fill="#333"/>
+    <rect x="40" y="12" width="12" height="12" fill="#333"/>
+    <rect x="12" y="26" width="12" height="12" fill="#333"/>
+    <rect x="26" y="26" width="12" height="12" fill="#333"/>
+    <text x="18" y="22" font-size="8" fill="#fff">🗣</text>
+    <text x="32" y="22" font-size="8" fill="#fff">🌱</text>
+    <text x="46" y="22" font-size="8" fill="#fff">🏠</text>
+    <text x="18" y="36" font-size="8" fill="#fff">👮</text>
+    <text x="32" y="36" font-size="8" fill="#fff">💰</text>
+  </g>
+
+  <!-- meme_master - PhD cap of memes -->
+  <g id="meme_master" transform="translate(512,64)">
+    <rect x="12" y="28" width="40" height="24" rx="2" class="dark"/>
+    <path d="M8 28 L32 8 L56 28 Z" class="dark"/>
+    <rect x="30" y="4" width="4" height="8" class="gold"/>
+    <circle cx="32" cy="4" r="4" class="gold"/>
+    <text x="32" y="46" font-family="Arial" font-size="8" fill="#fff" text-anchor="middle">PhD</text>
+  </g>
+
+  <!-- Row 5: Farewell-Specific -->
+
+  <!-- dramatic_departure - Door slam -->
+  <g id="dramatic_departure" transform="translate(0,128)">
+    <rect x="20" y="8" width="24" height="48" fill="#8B4513"/>
+    <circle cx="40" cy="32" r="3" class="gold"/>
+    <path d="M44 8 L56 16 L56 48 L44 56 Z" fill="#A0522D"/>
+    <path d="M8 20 Q4 32 8 44" stroke="#666" stroke-width="2" fill="none"/>
+    <path d="M4 24 Q0 32 4 40" stroke="#666" stroke-width="2" fill="none"/>
+    <text x="12" y="32" font-size="10">💨</text>
+  </g>
+
+  <!-- encore_performer - Taking bows -->
+  <g id="encore_performer" transform="translate(64,128)">
+    <circle cx="32" cy="20" r="8" fill="#FFB6C1"/>
+    <path d="M32 28 L32 44" stroke="#333" stroke-width="3"/>
+    <path d="M32 32 L24 24" stroke="#333" stroke-width="2"/>
+    <path d="M32 32 L40 24" stroke="#333" stroke-width="2"/>
+    <path d="M32 44 L24 56" stroke="#333" stroke-width="2"/>
+    <path d="M32 44 L40 56" stroke="#333" stroke-width="2"/>
+    <text x="8" y="56" font-size="10">👏</text>
+    <text x="48" y="56" font-size="10">👏</text>
+  </g>
+
+  <!-- farewell_trilogy - Three posters -->
+  <g id="farewell_trilogy" transform="translate(128,128)">
+    <rect x="4" y="16" width="16" height="24" rx="2" class="bronze"/>
+    <rect x="24" y="12" width="16" height="28" rx="2" class="silver"/>
+    <rect x="44" y="8" width="16" height="32" rx="2" class="gold"/>
+    <text x="12" y="32" font-family="Arial" font-size="8" fill="#fff" text-anchor="middle">I</text>
+    <text x="32" y="30" font-family="Arial" font-size="8" fill="#fff" text-anchor="middle">II</text>
+    <text x="52" y="28" font-family="Arial" font-size="8" fill="#fff" text-anchor="middle">III</text>
+    <text x="32" y="56" font-family="Arial" font-size="6" fill="#333" text-anchor="middle">BYE</text>
+  </g>
+
+  <!-- shadow_lurker - Ninja goodbye -->
+  <g id="shadow_lurker" transform="translate(192,128)">
+    <circle cx="32" cy="24" r="16" class="dark"/>
+    <rect x="8" y="24" width="48" height="8" class="dark"/>
+    <path d="M20 20 L28 24 L20 28 Z" class="white"/>
+    <path d="M44 20 L36 24 L44 28 Z" class="white"/>
+    <path d="M24 44 L32 52 L40 44" stroke="#333" stroke-width="2" fill="none"/>
+    <text x="32" y="50" font-size="8" text-anchor="middle">👋</text>
+  </g>
+
+  <!-- Row 6: Behavior-Specific -->
+
+  <!-- rage_machine - Smoking keyboard -->
+  <g id="rage_machine" transform="translate(256,128)">
+    <rect x="8" y="32" width="48" height="24" rx="4" class="dark"/>
+    <rect x="12" y="36" width="8" height="6" class="red"/>
+    <rect x="22" y="36" width="8" height="6" class="red"/>
+    <rect x="32" y="36" width="8" height="6" class="red"/>
+    <rect x="42" y="36" width="8" height="6" class="red"/>
+    <path d="M20 32 Q16 20 20 8" stroke="#888" stroke-width="3" fill="none"/>
+    <path d="M32 32 Q32 20 36 8" stroke="#888" stroke-width="3" fill="none"/>
+    <path d="M44 32 Q48 20 44 8" stroke="#888" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- multi_front_warrior - Battle map -->
+  <g id="multi_front_warrior" transform="translate(320,128)">
+    <rect x="8" y="8" width="48" height="48" fill="#F5DEB3"/>
+    <circle cx="20" cy="20" r="8" fill="none" stroke="#E74C3C" stroke-width="2"/>
+    <circle cx="44" cy="20" r="8" fill="none" stroke="#E74C3C" stroke-width="2"/>
+    <circle cx="32" cy="44" r="8" fill="none" stroke="#E74C3C" stroke-width="2"/>
+    <path d="M20 20 L32 44 L44 20" stroke="#333" stroke-width="2" stroke-dasharray="4"/>
+    <text x="20" y="24" font-size="8" fill="#333" text-anchor="middle">r/</text>
+    <text x="44" y="24" font-size="8" fill="#333" text-anchor="middle">r/</text>
+    <text x="32" y="48" font-size="8" fill="#333" text-anchor="middle">r/</text>
+  </g>
+
+  <!-- evidence_eraser - Shredder -->
+  <g id="evidence_eraser" transform="translate(384,128)">
+    <rect x="16" y="8" width="32" height="20" rx="4" fill="#666"/>
+    <rect x="20" y="2" width="24" height="8" fill="#fff" stroke="#333"/>
+    <text x="32" y="9" font-size="6" fill="#333" text-anchor="middle">POST</text>
+    <rect x="20" y="28" width="24" height="28" fill="#444"/>
+    <path d="M24 28 L24 56" stroke="#888" stroke-width="1"/>
+    <path d="M28 28 L28 56" stroke="#888" stroke-width="1"/>
+    <path d="M32 28 L32 56" stroke="#888" stroke-width="1"/>
+    <path d="M36 28 L36 56" stroke="#888" stroke-width="1"/>
+    <path d="M40 28 L40 56" stroke="#888" stroke-width="1"/>
+  </g>
+
+  <!-- troll_suspect - Bridge troll -->
+  <g id="troll_suspect" transform="translate(448,128)">
+    <path d="M4 56 Q32 40 60 56 L60 60 L4 60 Z" fill="#666"/>
+    <circle cx="32" cy="36" r="14" fill="#9ACD32"/>
+    <circle cx="26" cy="32" r="4" class="white"/>
+    <circle cx="38" cy="32" r="4" class="white"/>
+    <circle cx="26" cy="32" r="2" class="dark"/>
+    <circle cx="38" cy="32" r="2" class="dark"/>
+    <path d="M26 44 Q32 48 38 44" stroke="#333" stroke-width="2" fill="none"/>
+    <rect x="40" y="28" width="12" height="20" rx="2" fill="#333"/>
+  </g>
+
+  <!-- story_teller - Pinocchio nose -->
+  <g id="story_teller" transform="translate(512,128)">
+    <circle cx="32" cy="28" r="16" fill="#FFB6C1"/>
+    <circle cx="26" cy="24" r="3" class="white"/>
+    <circle cx="38" cy="24" r="3" class="white"/>
+    <circle cx="26" cy="24" r="1.5" class="dark"/>
+    <circle cx="38" cy="24" r="1.5" class="dark"/>
+    <path d="M32 32 L48 40 L52 36 L36 28" fill="#8B4513"/>
+    <path d="M26 40 Q32 44 38 40" stroke="#333" stroke-width="2" fill="none"/>
+  </g>
+
+</svg>

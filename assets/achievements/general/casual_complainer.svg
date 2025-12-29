@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Bronze salt shaker -->
+  <rect x="20" y="24" width="24" height="32" rx="4" fill="#CD7F32"/>
+  <rect x="24" y="8" width="16" height="16" rx="2" fill="#CD7F32"/>
+  <circle cx="28" cy="12" r="2" fill="#333"/>
+  <circle cx="36" cy="12" r="2" fill="#333"/>
+  <circle cx="32" cy="18" r="2" fill="#333"/>
+  <!-- Salt particles -->
+  <circle cx="16" cy="40" r="3" fill="#fff" stroke="#999" stroke-width="1"/>
+  <circle cx="48" cy="36" r="2" fill="#fff" stroke="#999" stroke-width="1"/>
+  <circle cx="12" cy="52" r="2" fill="#fff" stroke="#999" stroke-width="1"/>
+</svg>

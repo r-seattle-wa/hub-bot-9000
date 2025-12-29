@@ -24,7 +24,28 @@ export interface Achievement {
   tier: AchievementTier;
   scoreThreshold?: number;  // Min score to unlock
   rankThreshold?: number;   // Min rank to unlock (e.g., top 10)
-  special?: 'first_offense' | 'alt_exposed' | 'meme_repeater' | 'streak';
+  special?:
+    | 'first_offense'
+    | 'alt_exposed'
+    | 'meme_repeater'
+    | 'streak'
+    // Meme-specific
+    | 'echo_chamber_user'
+    | 'transplant_blamer'
+    | 'mod_accuser'
+    | 'meme_collector'
+    | 'meme_master'
+    // Farewell-specific
+    | 'dramatic_exit'
+    | 'repeat_announcer'
+    | 'farewell_trilogy'
+    | 'lurker_leaver'
+    // Behavior-specific
+    | 'hostile_tone'
+    | 'multi_sub_hater'
+    | 'deleted_evidence'
+    | 'high_troll_risk'
+    | 'deception_detected';
   imagePrompt: string;      // For GenAI image generation
   roastTemplate: string;    // Base template for AI to enhance
 }
@@ -164,6 +185,138 @@ export const ACHIEVEMENTS: Achievement[] = [
     imagePrompt: 'A calendar with fire emojis on 5 consecutive days, streak counter style',
     roastTemplate: 'Five days straight! That kind of dedication usually goes to something productive.',
   },
+
+  // ===== MEME-SPECIFIC ACHIEVEMENTS =====
+  {
+    id: 'echo_enthusiast',
+    name: 'Echo Enthusiast',
+    description: 'Used "echo chamber" or "hivemind" complaint',
+    tier: AchievementTier.BRONZE,
+    special: 'echo_chamber_user',
+    imagePrompt: 'A cave with "ECHO ECHO ECHO" bouncing off walls, cartoon style',
+    roastTemplate: 'Ah yes, the classic "echo chamber" complaint. How original. How unique. How... echoing.',
+  },
+  {
+    id: 'transplant_tracker',
+    name: 'Transplant Tracker',
+    description: 'Blamed transplants or Californians',
+    tier: AchievementTier.BRONZE,
+    special: 'transplant_blamer',
+    imagePrompt: 'A plant being transplanted with an angry face, gardening gone wrong style',
+    roastTemplate: 'Blaming transplants - the timeless Seattle tradition older than the Space Needle.',
+  },
+  {
+    id: 'mod_critic',
+    name: 'Mod Critic',
+    description: 'Accused mods of abuse or power-tripping',
+    tier: AchievementTier.BRONZE,
+    special: 'mod_accuser',
+    imagePrompt: 'A tiny figure shaking fist at a giant moderator badge, David vs Goliath style',
+    roastTemplate: 'The mods are out to get you specifically. You figured it out. Congratulations.',
+  },
+  {
+    id: 'meme_collector',
+    name: 'Meme Collector',
+    description: 'Used 5 different talking points',
+    tier: AchievementTier.SILVER,
+    special: 'meme_collector',
+    imagePrompt: 'A trophy case filled with different complaint memes, collector edition style',
+    roastTemplate: 'Five different complaints! A true connoisseur of grievances. Your collection is impressive.',
+  },
+  {
+    id: 'meme_master',
+    name: 'Meme Master',
+    description: 'Used 10 different talking points',
+    tier: AchievementTier.GOLD,
+    special: 'meme_master',
+    imagePrompt: 'A graduation cap made of Reddit memes, PhD in complaints style',
+    roastTemplate: 'TEN different talking points! You have achieved a PhD in Predictable Complaints.',
+  },
+
+  // ===== FAREWELL-SPECIFIC ACHIEVEMENTS =====
+  {
+    id: 'dramatic_departure',
+    name: 'Dramatic Departure',
+    description: 'Made a dramatic "I\'m leaving" announcement',
+    tier: AchievementTier.BRONZE,
+    special: 'dramatic_exit',
+    imagePrompt: 'A person dramatically slamming a door with cape flowing, theatrical exit style',
+    roastTemplate: 'A dramatic exit! The stage is yours. The spotlight is on. The audience is... checking their phones.',
+  },
+  {
+    id: 'encore_performer',
+    name: 'Encore Performer',
+    description: 'Announced leaving twice',
+    tier: AchievementTier.SILVER,
+    special: 'repeat_announcer',
+    imagePrompt: 'A performer taking multiple bows while audience looks confused, awkward encore style',
+    roastTemplate: 'Back for another farewell? The first goodbye was so good you had to do it again.',
+  },
+  {
+    id: 'farewell_trilogy',
+    name: 'The Farewell Trilogy',
+    description: 'Announced leaving three or more times',
+    tier: AchievementTier.GOLD,
+    special: 'farewell_trilogy',
+    imagePrompt: 'Three movie posters for "Goodbye Part 1, 2, 3" with increasingly dramatic poses',
+    roastTemplate: 'THREE farewells! A trilogy! When is the spinoff series? The extended universe?',
+  },
+  {
+    id: 'shadow_lurker',
+    name: 'Shadow Lurker',
+    description: 'Announced leaving with almost no prior activity',
+    tier: AchievementTier.BRONZE,
+    special: 'lurker_leaver',
+    imagePrompt: 'A ninja emerging from shadows just to say goodbye, stealth farewell style',
+    roastTemplate: 'You lurked for so long and THIS is your debut? A farewell? Bold strategy.',
+  },
+
+  // ===== BEHAVIOR-SPECIFIC ACHIEVEMENTS =====
+  {
+    id: 'rage_machine',
+    name: 'Rage Machine',
+    description: 'Consistently hostile tone detected',
+    tier: AchievementTier.SILVER,
+    special: 'hostile_tone',
+    imagePrompt: 'A keyboard with smoke coming out of it, rage typing style',
+    roastTemplate: 'Your hostility is consistent, we will give you that. Have you tried decaf?',
+  },
+  {
+    id: 'multi_front_warrior',
+    name: 'Multi-Front Warrior',
+    description: 'Posted from 3+ hostile subreddits',
+    tier: AchievementTier.SILVER,
+    special: 'multi_sub_hater',
+    imagePrompt: 'A warrior fighting on multiple fronts with Reddit logos, battle map style',
+    roastTemplate: 'Fighting on multiple subreddit fronts! A true keyboard warrior crusade.',
+  },
+  {
+    id: 'evidence_eraser',
+    name: 'Evidence Eraser',
+    description: 'Significant deleted content detected',
+    tier: AchievementTier.GOLD,
+    special: 'deleted_evidence',
+    imagePrompt: 'A paper shredder eating Reddit posts, cover-up style',
+    roastTemplate: 'Deleting your posts? The internet never forgets. Neither do we.',
+  },
+  {
+    id: 'troll_suspect',
+    name: 'Troll Suspect',
+    description: 'High trolling likelihood detected by The-Profiler',
+    tier: AchievementTier.SILVER,
+    special: 'high_troll_risk',
+    imagePrompt: 'A troll under a bridge holding a smartphone, modern troll style',
+    roastTemplate: 'Our behavioral analysis suggests... you might be doing this on purpose. Shocking.',
+  },
+  {
+    id: 'story_teller',
+    name: 'Story Teller',
+    description: 'Deception indicators detected in posts',
+    tier: AchievementTier.GOLD,
+    special: 'deception_detected',
+    imagePrompt: 'A Pinocchio nose growing from a Reddit avatar, caught lying style',
+    roastTemplate: 'Inconsistencies detected! Your story has more holes than Swiss cheese.',
+  },
 ];
 
 // Achievement tier colors (for display)
@@ -221,8 +374,19 @@ export async function checkAchievements(
     isFirstOffense?: boolean;
     isAltExposed?: boolean;
     repeatedMemes?: string[];
+    uniqueMemesUsed?: string[];
     consecutiveDays?: number;
     cooldownHours?: number;
+    // Farewell-specific
+    isDramaticExit?: boolean;
+    farewellCount?: number;
+    isLurkerLeaver?: boolean;
+    // Behavior-specific
+    isHostileTone?: boolean;
+    homeSubCount?: number;
+    deletedContentCount?: number;
+    trollingRisk?: 'low' | 'moderate' | 'high';
+    deceptionIndicators?: number;
   }
 ): Promise<AchievementUnlock[]> {
   const opts = options || {};
@@ -285,6 +449,59 @@ export async function checkAchievements(
           break;
         case 'streak':
           meetsCondition = (opts.consecutiveDays || 0) >= 5;
+          break;
+
+        // Meme-specific
+        case 'echo_chamber_user':
+          meetsCondition = opts.repeatedMemes?.includes('echo_chamber') ||
+                          opts.uniqueMemesUsed?.includes('echo_chamber') || false;
+          break;
+        case 'transplant_blamer':
+          meetsCondition = opts.repeatedMemes?.includes('transplants') ||
+                          opts.uniqueMemesUsed?.includes('transplants') || false;
+          break;
+        case 'mod_accuser':
+          meetsCondition = opts.repeatedMemes?.includes('mod_abuse') ||
+                          opts.uniqueMemesUsed?.includes('mod_abuse') || false;
+          break;
+        case 'meme_collector':
+          meetsCondition = (opts.uniqueMemesUsed?.length || 0) >= 5;
+          break;
+        case 'meme_master':
+          meetsCondition = (opts.uniqueMemesUsed?.length || 0) >= 10;
+          break;
+
+        // Farewell-specific
+        case 'dramatic_exit':
+          meetsCondition = opts.isDramaticExit === true;
+          break;
+        case 'repeat_announcer':
+          meetsCondition = (opts.farewellCount || 0) >= 2;
+          break;
+        case 'farewell_trilogy':
+          meetsCondition = (opts.farewellCount || 0) >= 3;
+          break;
+        case 'lurker_leaver':
+          meetsCondition = opts.isLurkerLeaver === true;
+          break;
+
+        // Behavior-specific
+        case 'hostile_tone':
+          meetsCondition = opts.isHostileTone === true;
+          break;
+        case 'multi_sub_hater':
+          meetsCondition = (opts.homeSubCount || userEntry.homeSubreddits?.length || 0) >= 3;
+          break;
+        case 'deleted_evidence':
+          meetsCondition = (opts.deletedContentCount || userEntry.flaggedContentCount || 0) >= 5;
+          break;
+        case 'high_troll_risk':
+          meetsCondition = opts.trollingRisk === 'high' ||
+                          userEntry.behavioralProfile?.moderationRisk?.trollingLikelihood === 'high';
+          break;
+        case 'deception_detected':
+          meetsCondition = (opts.deceptionIndicators || 0) >= 2 ||
+                          (userEntry.behavioralProfile?.moderationRisk?.deceptionIndicators || 0) >= 2;
           break;
       }
     }

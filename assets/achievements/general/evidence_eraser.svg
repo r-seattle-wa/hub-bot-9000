@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Paper shredder -->
+  <rect x="12" y="24" width="40" height="32" rx="2" fill="#333" stroke="#FFD700" stroke-width="2"/>
+  <!-- Input slot -->
+  <rect x="16" y="24" width="32" height="4" fill="#222"/>
+  <!-- Paper going in -->
+  <rect x="24" y="8" width="16" height="20" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <line x1="28" y1="12" x2="36" y2="12" stroke="#ccc" stroke-width="1"/>
+  <line x1="28" y1="16" x2="36" y2="16" stroke="#ccc" stroke-width="1"/>
+  <line x1="28" y1="20" x2="36" y2="20" stroke="#ccc" stroke-width="1"/>
+  <!-- Shredded strips -->
+  <rect x="20" y="56" width="2" height="8" fill="#fff"/>
+  <rect x="24" y="56" width="2" height="10" fill="#fff"/>
+  <rect x="28" y="56" width="2" height="7" fill="#fff"/>
+  <rect x="32" y="56" width="2" height="9" fill="#fff"/>
+  <rect x="36" y="56" width="2" height="8" fill="#fff"/>
+  <rect x="40" y="56" width="2" height="6" fill="#fff"/>
+</svg>

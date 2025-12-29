@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Calendar -->
+  <rect x="8" y="12" width="48" height="44" rx="2" fill="#fff" stroke="#C0C0C0" stroke-width="2"/>
+  <rect x="8" y="12" width="48" height="10" fill="#C0C0C0"/>
+  <!-- Calendar rings -->
+  <circle cx="18" cy="12" r="3" fill="#666"/>
+  <circle cx="46" cy="12" r="3" fill="#666"/>
+  <!-- 5 days marked with fire -->
+  <rect x="12" y="28" width="8" height="8" fill="#FF6B6B" rx="1"/>
+  <rect x="22" y="28" width="8" height="8" fill="#FF6B6B" rx="1"/>
+  <rect x="32" y="28" width="8" height="8" fill="#FF6B6B" rx="1"/>
+  <rect x="42" y="28" width="8" height="8" fill="#FF6B6B" rx="1"/>
+  <rect x="12" y="40" width="8" height="8" fill="#FF6B6B" rx="1"/>
+  <!-- Flame icons -->
+  <path d="M16 30 Q14 28 16 26 Q18 28 16 30" fill="#FF8C00"/>
+  <path d="M26 30 Q24 28 26 26 Q28 28 26 30" fill="#FF8C00"/>
+  <path d="M36 30 Q34 28 36 26 Q38 28 36 30" fill="#FF8C00"/>
+  <path d="M46 30 Q44 28 46 26 Q48 28 46 30" fill="#FF8C00"/>
+  <path d="M16 42 Q14 40 16 38 Q18 40 16 42" fill="#FF8C00"/>
+</svg>
