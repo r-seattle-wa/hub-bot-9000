@@ -252,6 +252,26 @@ devvit upload
 devvit publish
 ```
 
+## Deployed Apps
+
+All apps are deployed to the Reddit Developer Platform:
+
+| App | Devvit URL | Test Subreddit |
+|-----|------------|----------------|
+| brigade-sentinel | [developers.reddit.com/apps/brigade-sentinel](https://developers.reddit.com/apps/brigade-sentinel) | r/SeattleModTests |
+| haiku-sensei | [developers.reddit.com/apps/haiku-sensei](https://developers.reddit.com/apps/haiku-sensei) | r/SeattleModTests |
+| farewell-hero | [developers.reddit.com/apps/farewell-hero](https://developers.reddit.com/apps/farewell-hero) | r/SeattleModTests |
+
+### Installing to a Subreddit
+
+```bash
+devvit install r/YourSubreddit brigade-sentinel
+devvit install r/YourSubreddit haiku-sensei
+devvit install r/YourSubreddit farewell-hero
+```
+
+---
+
 ## External APIs
 
 | API | Used By | Auth | Purpose |

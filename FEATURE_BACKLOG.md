@@ -384,7 +384,7 @@ interface BrigadeEvent {
 
 ---
 
-## Feature 3: Unsubscribe Hero (farewell-statistician)
+## Feature 3: Unsubscribe Hero (farewell-hero)
 
 **Status:** Planned
 **Complexity:** Medium
@@ -597,7 +597,7 @@ hub-bot-9000/
 │   │   ├── devvit.yaml
 │   │   └── package.json
 │   │
-│   └── farewell-statistician/     # Unsubscribe hero
+│   └── farewell-hero/             # Unsubscribe hero
 │       ├── src/
 │       │   ├── main.tsx
 │       │   ├── detectors/
