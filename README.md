@@ -11,6 +11,7 @@ A monorepo of [Reddit Developer Platform (Devvit)](https://developers.reddit.com
 | [haiku-sensei](#haiku-sensei) | Detects accidental 5-7-5 haikus in comments | Ready |
 | [brigade-sentinel](#brigade-sentinel) | Cross-subreddit link alerts with hater tracking | Ready |
 | [farewell-hero](#farewell-hero) | Witty responses to "I'm unsubscribing" posts | Ready |
+| [hub-widget](#hub-widget) | Unified events dashboard | Ready |
 
 ---
 
@@ -70,7 +71,7 @@ Users can report alt accounts/subreddits by mentioning the bot in any comment:
 u/brigade-sentinel alt u/mainaccount = u/altaccount
 u/brigade-sentinel alt r/mainsubreddit = r/altsubreddit
 ```
-The bot will confirm and consolidate scores on the leaderboard.
+Alt reports require **mod confirmation via modmail** before being applied. This prevents abuse where bad actors could falsely link innocent users. Mods can approve or reject pending alt reports, and approved links consolidate scores on the leaderboard.
 
 **Score Formula:**
 ```
@@ -83,11 +84,21 @@ Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flag
   - Big Five (OCEAN) communication traits
   - Trolling/deception/sockpuppet risk indicators
 - **Flagged content detection** - AI identifies harassment, hate speech, threats
+> **ToS Compliance**: OSINT analysis uses PullPush for meta analysis only - evaluating threats/tone of deleted content for community safety purposes. Deleted content is never reposted or publicly displayed, only aggregated metrics and risk scores are surfaced to moderators.
+
+#### Traffic Spike Detection
+Real-time detection of unusual comment velocity - potential early warning for brigades.
+- **Event-based tracking** - Every comment triggers velocity check
+- **Configurable threshold** - Default: 10 comments in 5 minutes
+- **Modmail alerts** - Sends "Neural net pattern detected" alert when spike occurs
+- **Hub-widget integration** - Emits events to unified dashboard
+- **1-hour cooldown** - Prevents alert spam per post
 
 #### Notifications
 - **Public comment** - Transparency about crosslinks (optional)
 - **Modmail alert** - For adversarial/hateful sources (optional)
-- **Deleted content report** - Count of removed brigade comments
+- **Traffic spike alert** - When comment velocity exceeds threshold
+- **Link source tracking** - Tracks which subreddits/users are linking to your community
 
 ### Settings
 | Setting | Description | Default |
@@ -100,6 +111,8 @@ Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flag
 | `aiProvider` | Tone classification provider | `none` |
 | `geminiApiKey` | Your Gemini API key (BYOK) | `""` |
 | `includeDeletedContent` | Check for deleted brigade comments | `true` |
+| `detectTrafficSpikes` | Enable traffic spike detection | `true` |
+| `velocityThreshold` | Comments per 5 min to trigger alert | `10` |
 
 ---
 
@@ -113,6 +126,36 @@ Responds to "I'm unsubscribing" posts with a witty statistical analysis of the u
 - Delayed response to avoid appearing too eager
 - Multiple response templates
 - Bot disclosure footer
+
+---
+
+## Hub Widget
+
+Unified events dashboard showing activity from all hub-bot apps as a Reddit Custom Post Type.
+
+### Features
+- **Live event feed** - Shows recent events from all bots
+- **Color-coded events** - Each event type has distinct icon/color
+- **Auto-refresh** - Updates every 60 seconds
+- **Wiki-based storage** - Events stored in shared wiki page
+
+### Event Types
+| Type | Icon | Color |
+|------|------|-------|
+| Brigade Alert | `!` | Red |
+| Haiku Detection | `*` | Teal |
+| Farewell | `~` | Yellow |
+| Court Docket | `#` | Green |
+| Traffic Spike | `^` | Orange |
+| System | `i` | Light green |
+
+### Deployment
+```bash
+cd packages/hub-widget
+devvit upload
+devvit install r/YourSubreddit
+# Then use subreddit menu: "Create Hub Bot Events Widget"
+```
 
 ---
 
@@ -261,6 +304,7 @@ All apps are deployed to the Reddit Developer Platform:
 | brigade-sentinel | [developers.reddit.com/apps/brigade-sentinel](https://developers.reddit.com/apps/brigade-sentinel) | r/SeattleModTests |
 | haiku-sensei | [developers.reddit.com/apps/haiku-sensei](https://developers.reddit.com/apps/haiku-sensei) | r/SeattleModTests |
 | farewell-hero | [developers.reddit.com/apps/farewell-hero](https://developers.reddit.com/apps/farewell-hero) | r/SeattleModTests |
+| hub-widget | [developers.reddit.com/apps/hub-widget](https://developers.reddit.com/apps/hub-widget) | r/SeattleModTests |
 
 ### Installing to a Subreddit
 

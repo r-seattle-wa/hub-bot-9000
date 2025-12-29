@@ -376,6 +376,8 @@ interface BrigadeEvent {
 - **Inform, don't auto-moderate** - Public comments inform community; mod actions are optional
 - **Neutral tone for unknown sources** - Only escalate language for mod-classified adversarial/hateful
 - **Gemini classification is advisory** - Mods can override, AI doesn't auto-escalate to "hateful"
+- **Alt reports require mod confirmation** - User-submitted alt links go to modmail for approval before being applied; prevents false flagging of innocent users
+- **OSINT is meta analysis only** - PullPush deleted content is analyzed for threats/tone for community safety; deleted content is never reposted or displayed publicly, only aggregated risk metrics shown to mods
 
 ### API Dependencies
 - Reddit API (via Devvit context.reddit)

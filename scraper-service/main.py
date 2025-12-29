@@ -390,6 +390,172 @@ async def get_wiki_format(
     return wiki_data
 
 
+
+# Reddit scraper using Gemini for when PullPush is unavailable
+async def scrape_reddit_crosslinks_with_gemini(
+    target_subreddit: str,
+    days: int = 7
+) -> list[dict]:
+    """
+    Use Gemini to find Reddit posts linking to a target subreddit.
+    This is a fallback when PullPush.io is unavailable.
+    """
+    if not GOOGLE_API_KEY:
+        return []
+    
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        prompt = f"""Search for recent Reddit posts from the last {days} days that link to or mention r/{target_subreddit}.
+
+Return ONLY a valid JSON array (no markdown) with this format:
+[
+  {{
+    "id": "unique_post_id",
+    "subreddit": "SourceSubreddit",
+    "title": "Post title",
+    "url": "https://reddit.com/r/...",
+    "author": "username",
+    "created_utc": 1234567890
+  }}
+]
+
+Only include posts that directly link to or discuss r/{target_subreddit}. 
+If no posts found, return: []"""
+
+        response = model.generate_content(
+            prompt,
+            generation_config={"temperature": 0.1, "max_output_tokens": 4096},
+        )
+        
+        text = response.text.strip()
+        # Clean markdown code blocks
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip()
+        
+        import json
+        return json.loads(text) if text else []
+    except Exception as e:
+        logger.error(f"Gemini Reddit scrape failed: {type(e).__name__}: {e}")
+        return []
+
+
+@app.get("/reddit/crosslinks")
+async def get_reddit_crosslinks(
+    request: Request,
+    target: str = Query(..., description="Target subreddit name (without r/)"),
+    days: int = Query(default=7, ge=1, le=30, description="Days to look back"),
+):
+    """
+    Find Reddit posts that link to a target subreddit.
+    Uses Gemini AI to search when PullPush is unavailable.
+    """
+    check_rate_limit(request)
+    verify_api_key(request)
+    
+    # Validate target subreddit name
+    target = target.strip().replace("r/", "")
+    if not re.match(r'^[a-zA-Z0-9_]{3,21}$', target):
+        raise HTTPException(status_code=400, detail="Invalid subreddit name")
+    
+    cache_key = f"crosslinks:{target}:{days}"
+    if cache_key in event_cache:
+        return {"crosslinks": event_cache[cache_key], "cached": True}
+    
+    crosslinks = await scrape_reddit_crosslinks_with_gemini(target, days)
+    
+    # Cache for 15 minutes for crosslinks
+    event_cache[cache_key] = crosslinks
+    
+    return {"crosslinks": crosslinks, "cached": False, "total": len(crosslinks)}
+
+
+@app.get("/reddit/submissions")
+async def get_reddit_submissions(
+    request: Request,
+    subreddit: str = Query(None, description="Subreddit to search"),
+    author: str = Query(None, description="Author username"),
+    q: str = Query(None, description="Search query"),
+    after: int = Query(None, description="Unix timestamp - posts after this time"),
+    before: int = Query(None, description="Unix timestamp - posts before this time"),
+    limit: int = Query(default=50, ge=1, le=100, description="Max results"),
+):
+    """
+    Search for Reddit submissions. Fallback endpoint for PullPush.
+    Uses Gemini AI to search Reddit content.
+    """
+    check_rate_limit(request)
+    verify_api_key(request)
+    
+    if not any([subreddit, author, q]):
+        raise HTTPException(status_code=400, detail="At least one search parameter required")
+    
+    # Build search context
+    search_parts = []
+    if subreddit:
+        search_parts.append(f"in r/{subreddit}")
+    if author:
+        search_parts.append(f"by u/{author}")
+    if q:
+        search_parts.append(f"containing '{q}'")
+    
+    search_context = " ".join(search_parts)
+    
+    if not GOOGLE_API_KEY:
+        return {"data": [], "error": "Gemini API not configured"}
+    
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        prompt = f"""Search for Reddit posts {search_context}.
+
+Return ONLY a valid JSON object (no markdown) with this format:
+{{
+  "data": [
+    {{
+      "id": "post_id",
+      "author": "username",
+      "title": "Post title",
+      "selftext": "Post body if any",
+      "url": "https://reddit.com/...",
+      "permalink": "/r/subreddit/comments/id/...",
+      "created_utc": 1234567890,
+      "subreddit": "SubredditName",
+      "score": 0,
+      "num_comments": 0
+    }}
+  ]
+}}
+
+Return up to {limit} results. If no posts found, return: {{"data": []}}"""
+
+        response = model.generate_content(
+            prompt,
+            generation_config={"temperature": 0.1, "max_output_tokens": 8192},
+        )
+        
+        text = response.text.strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip()
+        
+        import json
+        result = json.loads(text) if text else {"data": []}
+        return result
+    except Exception as e:
+        logger.error(f"Gemini submission search failed: {type(e).__name__}: {e}")
+        return {"data": [], "error": str(e)}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))

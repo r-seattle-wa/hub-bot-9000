@@ -3,6 +3,13 @@
 import { Devvit, TriggerContext } from '@devvit/public-api';
 import { checkNotableContributor } from '@hub-bot/common';
 
+export interface BestContent {
+  title: string;
+  score: number;
+  url: string;
+  date: Date;
+}
+
 export interface UserSubredditStats {
   username: string;
   subreddit: string;
@@ -12,12 +19,14 @@ export interface UserSubredditStats {
   postKarma: number;
   firstPostDate: Date | null;
   lastPostDate: Date | null;
+  bestPost: BestContent | null;
 
   // Comment stats
   totalComments: number;
   commentKarma: number;
   firstCommentDate: Date | null;
   lastCommentDate: Date | null;
+  bestComment: BestContent | null;
 
   // Account info
   accountAge: string;
@@ -70,6 +79,7 @@ export async function getUserStats(
     let postKarma = 0;
     let firstPostDate: Date | null = null;
     let lastPostDate: Date | null = null;
+    let bestPost: BestContent | null = null;
 
     try {
       const posts = await context.reddit
@@ -91,6 +101,19 @@ export async function getUserStats(
         const dates = subredditPosts.map((p) => new Date(p.createdAt));
         firstPostDate = new Date(Math.min(...dates.map((d) => d.getTime())));
         lastPostDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+        // Find best post by score
+        const topPost = subredditPosts.reduce((best, p) =>
+          p.score > best.score ? p : best
+        );
+        if (topPost.score > 0) {
+          bestPost = {
+            title: topPost.title,
+            score: topPost.score,
+            url: `https://reddit.com${topPost.permalink}`,
+            date: new Date(topPost.createdAt),
+          };
+        }
       }
     } catch {
       // User may have private history
@@ -101,6 +124,7 @@ export async function getUserStats(
     let commentKarma = 0;
     let firstCommentDate: Date | null = null;
     let lastCommentDate: Date | null = null;
+    let bestComment: BestContent | null = null;
 
     try {
       const comments = await context.reddit
@@ -122,6 +146,23 @@ export async function getUserStats(
         const dates = subredditComments.map((c) => new Date(c.createdAt));
         firstCommentDate = new Date(Math.min(...dates.map((d) => d.getTime())));
         lastCommentDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+        // Find best comment by score
+        const topComment = subredditComments.reduce((best, c) =>
+          c.score > best.score ? c : best
+        );
+        if (topComment.score > 0) {
+          // Truncate comment body for display (first 80 chars)
+          const preview = topComment.body.length > 80
+            ? topComment.body.substring(0, 80) + '...'
+            : topComment.body;
+          bestComment = {
+            title: preview.replace(/\n/g, ' '),
+            score: topComment.score,
+            url: topComment.url,
+            date: new Date(topComment.createdAt),
+          };
+        }
       }
     } catch {
       // User may have private history
@@ -160,10 +201,12 @@ export async function getUserStats(
       postKarma,
       firstPostDate,
       lastPostDate,
+      bestPost,
       totalComments,
       commentKarma,
       firstCommentDate,
       lastCommentDate,
+      bestComment,
       accountAge,
       totalKarma: (user.linkKarma || 0) + (user.commentKarma || 0),
       daysSinceFirstActivity,
@@ -206,7 +249,22 @@ export function formatStatsTable(stats: UserSubredditStats): string {
   // Add notable contributor badge if applicable
   if (stats.isNotableContributor && stats.notableYears.length > 0) {
     const years = stats.notableYears.join(', ');
-    table += `\n| Top Contributor | ${years} |`;
+    table += `
+| Top Contributor | ${years} |`;
+  }
+
+  // Add best post if available
+  if (stats.bestPost) {
+    table += `
+
+**Greatest Hit (Post):** [${stats.bestPost.title}](${stats.bestPost.url}) (+${stats.bestPost.score})`;
+  }
+
+  // Add best comment if available
+  if (stats.bestComment) {
+    table += `
+
+**Greatest Hit (Comment):** [${stats.bestComment.title}](${stats.bestComment.url}) (+${stats.bestComment.score})`;
   }
 
   return table;

@@ -12,3 +12,6 @@ export * from './pullpush.js';
 export * from './leaderboard.js';
 export * from './user-analysis.js';
 export * from './logging.js';
+export * from './pending-alts.js';
+export * from './events-feed.js';
+export * from './url-utils.js';

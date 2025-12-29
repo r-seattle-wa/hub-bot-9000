@@ -1,0 +1,8 @@
+name: hub-widget
+version: 0.0.1
+api: devvit-runtime
+runtime:
+  version: node
+  hooks:
+    - id: custom_post_type
+      name: HubBotEventsWidget

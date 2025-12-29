@@ -1,7 +1,7 @@
 // AI Provider abstraction - BYOK (Bring Your Own Key)
 
 import { TriggerContext, JobContext } from '@devvit/public-api';
-import { AIProvider, SourceClassification, ClassificationResult } from './types.js';
+import { AIProvider, SourceClassification, ClassificationResult, UserTone, ToneClassificationResult } from './types.js';
 import { getJson, setJson, REDIS_PREFIX } from './redis.js';
 import { checkRateLimit, consumeRateLimit } from './rate-limiter.js';
 
@@ -304,7 +304,9 @@ export async function classifyPostTone(
     return SourceClassification.NEUTRAL;
   }
 
-  const content = postBody ? `${postTitle}\n\n${postBody}` : postTitle;
+  const content = postBody ? `${postTitle}
+
+${postBody}` : postTitle;
 
   const prompt = `Analyze the tone of this Reddit post that links to another subreddit.
 Classify as ONE word: FRIENDLY, NEUTRAL, ADVERSARIAL, or HATEFUL.
@@ -351,4 +353,317 @@ Classification:`;
     console.error('Post tone classification failed:', error);
     return SourceClassification.NEUTRAL;
   }
+}
+
+
+// ============================================
+// User Tone Classification for farewell-hero
+// ============================================
+
+// Keyword patterns for fallback tone detection (no API key)
+const TONE_KEYWORDS = {
+  hostile: [
+    'toxic', 'garbage', 'trash', 'hate', 'worst', 'terrible', 'awful', 'disgusting',
+    'pathetic', 'moron', 'idiot', 'dumb', 'stupid', 'suck', 'cancer', 'cesspool',
+    'echo chamber', 'circlejerk', 'hivemind', 'nazi', 'fascist', 'communist',
+  ],
+  frustrated: [
+    'tired', 'sick of', 'fed up', 'enough', 'done with', 'over it', 'cant anymore',
+    'annoying', 'frustrating', 'pointless', 'waste of time', 'useless', 'ridiculous',
+  ],
+  dramatic: [
+    'forever', 'never again', 'final', 'goodbye forever', 'rip', 'dead to me',
+    'worst decision', 'ruined', 'destroyed', 'devastated', 'heartbroken', 'betrayed',
+    'unforgivable', 'the end', 'farewell', 'adieu', 'sayonara',
+  ],
+  polite: [
+    'thank', 'appreciate', 'grateful', 'enjoyed', 'good luck', 'best wishes',
+    'loved', 'great community', 'wonderful', 'amazing people', 'helped me',
+  ],
+};
+
+/**
+ * Classify the tone of an unsubscribe announcement
+ * Returns tone, trigger phrase, reasoning, and confidence
+ * Uses AI if available, keyword fallback if not
+ */
+export async function classifyUnsubscribeTone(
+  text: string,
+  geminiApiKey?: string
+): Promise<ToneClassificationResult> {
+  // Try AI classification first if API key available
+  if (geminiApiKey) {
+    const aiResult = await classifyUnsubscribeToneWithAI(text, geminiApiKey);
+    if (aiResult) return aiResult;
+  }
+
+  // Fallback to keyword detection
+  return classifyUnsubscribeToneKeywords(text);
+}
+
+/**
+ * AI-powered tone classification with Gemini
+ */
+async function classifyUnsubscribeToneWithAI(
+  text: string,
+  apiKey: string
+): Promise<ToneClassificationResult | null> {
+  const prompt = `Analyze the tone of this Reddit comment where someone announces they are unsubscribing/leaving.
+
+Return ONLY a JSON object (no markdown) with:
+{
+  "tone": "POLITE" | "NEUTRAL" | "FRUSTRATED" | "HOSTILE" | "DRAMATIC",
+  "triggerPhrase": "the specific phrase that most indicates this tone",
+  "reasoning": "brief 1-sentence explanation",
+  "confidence": 0.0-1.0
+}
+
+Tone definitions:
+- POLITE: Grateful, appreciative, wishing well, mature exit
+- NEUTRAL: Matter-of-fact, no strong emotion, simple announcement
+- FRUSTRATED: Annoyed, fed up, but not hostile or personal
+- HOSTILE: Attacking, insulting, blaming specific people or the community
+- DRAMATIC: Over-the-top emotional, theatrical, hyperbolic statements
+
+Comment: "${text.slice(0, 1000)}"
+
+JSON:`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 200,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Gemini tone API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json() as GeminiResponse;
+    let responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+    // Clean markdown code blocks
+    if (responseText.startsWith('```')) {
+      responseText = responseText.split('```')[1];
+      if (responseText.startsWith('json')) responseText = responseText.slice(4);
+    }
+    responseText = responseText.trim();
+
+    const parsed = JSON.parse(responseText) as {
+      tone: string;
+      triggerPhrase?: string;
+      reasoning?: string;
+      confidence?: number;
+    };
+
+    // Map string to enum
+    const toneMap: Record<string, UserTone> = {
+      POLITE: UserTone.POLITE,
+      NEUTRAL: UserTone.NEUTRAL,
+      FRUSTRATED: UserTone.FRUSTRATED,
+      HOSTILE: UserTone.HOSTILE,
+      DRAMATIC: UserTone.DRAMATIC,
+    };
+
+    return {
+      tone: toneMap[parsed.tone] || UserTone.NEUTRAL,
+      triggerPhrase: parsed.triggerPhrase,
+      reasoning: parsed.reasoning,
+      confidence: parsed.confidence || 0.8,
+    };
+  } catch (error) {
+    console.error('AI tone classification failed:', error);
+    return null;
+  }
+}
+
+/**
+ * Keyword-based tone classification (fallback when no API key)
+ */
+function classifyUnsubscribeToneKeywords(text: string): ToneClassificationResult {
+  const textLower = text.toLowerCase();
+  
+  // Check each category
+  const hostileMatches = findKeywordMatches(textLower, TONE_KEYWORDS.hostile);
+  const frustratedMatches = findKeywordMatches(textLower, TONE_KEYWORDS.frustrated);
+  const dramaticMatches = findKeywordMatches(textLower, TONE_KEYWORDS.dramatic);
+  const politeMatches = findKeywordMatches(textLower, TONE_KEYWORDS.polite);
+
+  // Calculate scores
+  const scores = {
+    hostile: hostileMatches.length * 2, // Weight hostile higher
+    frustrated: frustratedMatches.length,
+    dramatic: dramaticMatches.length * 1.5, // Weight dramatic somewhat
+    polite: politeMatches.length,
+  };
+
+  // Find dominant tone
+  let maxScore = 0;
+  let dominantTone: UserTone = UserTone.NEUTRAL;
+  let triggerPhrase: string | undefined;
+  let matches: string[] = [];
+
+  if (scores.hostile > maxScore) {
+    maxScore = scores.hostile;
+    dominantTone = UserTone.HOSTILE;
+    matches = hostileMatches;
+  }
+  if (scores.frustrated > maxScore) {
+    maxScore = scores.frustrated;
+    dominantTone = UserTone.FRUSTRATED;
+    matches = frustratedMatches;
+  }
+  if (scores.dramatic > maxScore) {
+    maxScore = scores.dramatic;
+    dominantTone = UserTone.DRAMATIC;
+    matches = dramaticMatches;
+  }
+  if (scores.polite > maxScore) {
+    maxScore = scores.polite;
+    dominantTone = UserTone.POLITE;
+    matches = politeMatches;
+  }
+
+  // Get trigger phrase (first match)
+  triggerPhrase = matches[0];
+
+  // Calculate confidence based on score strength
+  const totalMatches = hostileMatches.length + frustratedMatches.length + 
+                       dramaticMatches.length + politeMatches.length;
+  const confidence = totalMatches > 0 ? Math.min(0.4 + (maxScore / 10), 0.85) : 0.3;
+
+  return {
+    tone: dominantTone,
+    triggerPhrase,
+    reasoning: triggerPhrase 
+      ? `Keyword detected: "${triggerPhrase}"`
+      : 'No strong indicators found',
+    confidence,
+  };
+}
+
+/**
+ * Find matching keywords in text
+ */
+function findKeywordMatches(text: string, keywords: string[]): string[] {
+  return keywords.filter(keyword => text.includes(keyword));
+}
+
+/**
+ * Generate a conversational reply when user replies to the bot
+ * Only generates one reply per thread to avoid conversation loops
+ */
+export async function generateBotReply(
+  context: AppContext,
+  params: {
+    botName: string;
+    botPersonality: string;
+    originalBotComment: string;
+    userReply: string;
+    userUsername: string;
+    geminiApiKey?: string;
+  }
+): Promise<string | null> {
+  const { botName, botPersonality, originalBotComment, userReply, userUsername, geminiApiKey } = params;
+
+  // Check rate limit
+  const subreddit = await context.reddit.getCurrentSubreddit();
+  const rateCheck = await checkRateLimit(context.redis, 'subGemini', subreddit.id);
+  if (!rateCheck.allowed) {
+    console.log('Rate limited for AI reply generation');
+    return null;
+  }
+
+  // If no API key, return a canned response
+  if (!geminiApiKey) {
+    return generateCannedReply(botName, userReply);
+  }
+
+  try {
+    const prompt = `You are ${botName}, a Reddit bot with the following personality: ${botPersonality}
+
+You previously posted this comment:
+"""
+${originalBotComment.slice(0, 500)}
+"""
+
+User u/${userUsername} replied:
+"""
+${userReply.slice(0, 500)}
+"""
+
+Generate a brief, conversational reply (1-3 sentences max). Stay in character. Be helpful but not overly apologetic. If they're hostile, match their energy with wit. If they have a legitimate question, answer briefly. Do NOT start with "Hey there" or "Hello" - just reply naturally.
+
+Reply only with the response text, no quotes or explanation.`;
+
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + geminiApiKey,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 150,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Gemini reply API error:', response.status);
+      return generateCannedReply(botName, userReply);
+    }
+
+    const data = await response.json() as GeminiResponse;
+    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!replyText) {
+      return generateCannedReply(botName, userReply);
+    }
+
+    // Consume rate limit
+    await consumeRateLimit(context.redis, 'subGemini', subreddit.id);
+
+    return replyText;
+  } catch (error) {
+    console.error('Failed to generate bot reply:', error);
+    return generateCannedReply(botName, userReply);
+  }
+}
+
+/**
+ * Generate a canned reply when AI is not available
+ */
+function generateCannedReply(botName: string, userReply: string): string {
+  const replyLower = userReply.toLowerCase();
+
+  // Check for common patterns
+  if (replyLower.includes('?')) {
+    return 'Good question! Check out the subreddit wiki for more info.';
+  }
+  if (replyLower.includes('thank')) {
+    return "You're welcome!";
+  }
+  if (replyLower.includes('bot') && (replyLower.includes('bad') || replyLower.includes('stupid') || replyLower.includes('dumb'))) {
+    return 'Beep boop. I do my best!';
+  }
+  if (replyLower.includes('good bot')) {
+    return '*happy robot noises* Thanks!';
+  }
+  
+  // Default
+  return "I'm just a bot, but thanks for the feedback!";
 }

@@ -56,6 +56,52 @@ const NEGATIVE_PATTERNS: RegExp[] = [
   /\bwhy (did|are) (you|people) (leaving|unsubscribing)\b/i, // Asking why others left
 ];
 
+
+/**
+ * Patterns that indicate political/echo chamber complaints (may or may not be leaving)
+ */
+const POLITICAL_COMPLAINT_PATTERNS: RegExp[] = [
+  /(this|the) (sub|subreddit) (is|has become|turned into) (a|an?)? ?(trump|maga|conservative|right.?wing|republican) (sub|subreddit|echo.?chamber)/i,
+  /(this|the) (sub|subreddit) (is|has become|turned into) (a|an?)? ?(leftist|liberal|progressive|democrat) (sub|subreddit|echo.?chamber)/i,
+  /trump (sub|subreddit)/i,
+  /(echo.?chamber|circle.?jerk|hive.?mind).*(politics|political|partisan)/i,
+  /(politics|political|partisan).*(echo.?chamber|circle.?jerk|hive.?mind)/i,
+  /biased (towards?|against) (the )?(left|right|conservatives?|liberals?|republicans?|democrats?)/i,
+  /all (you )?(people|guys|everyone) (here )?(are|vote) (the same|republican|democrat|trump|liberal)/i,
+];
+
+export interface PoliticalComplaintResult {
+  isPoliticalComplaint: boolean;
+  complaintType: 'right-leaning' | 'left-leaning' | 'general' | null;
+  matchedPattern: string | null;
+}
+
+/**
+ * Detect if text contains political/echo chamber complaints
+ */
+export function detectPoliticalComplaint(text: string): PoliticalComplaintResult {
+  for (const pattern of POLITICAL_COMPLAINT_PATTERNS) {
+    if (pattern.test(text)) {
+      const lowerText = text.toLowerCase();
+      let complaintType: 'right-leaning' | 'left-leaning' | 'general' = 'general';
+      
+      if (/trump|maga|conservative|right.?wing|republican/i.test(lowerText)) {
+        complaintType = 'right-leaning'; // They think the sub is right-leaning
+      } else if (/leftist|liberal|progressive|democrat/i.test(lowerText)) {
+        complaintType = 'left-leaning'; // They think the sub is left-leaning
+      }
+      
+      return {
+        isPoliticalComplaint: true,
+        complaintType,
+        matchedPattern: pattern.source,
+      };
+    }
+  }
+  
+  return { isPoliticalComplaint: false, complaintType: null, matchedPattern: null };
+}
+
 export interface DetectionResult {
   isUnsubscribePost: boolean;
   confidence: number; // 0-1

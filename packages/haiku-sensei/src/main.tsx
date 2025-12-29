@@ -6,6 +6,8 @@ import {
   consumeRateLimit,
   isUserOptedOut,
   REDIS_PREFIX,
+  emitHaikuDetection,
+  generateBotReply,
 } from '@hub-bot/common';
 
 Devvit.configure({
@@ -44,6 +46,18 @@ Devvit.addSettings([
     type: 'number',
     label: 'Delay before posting reply (seconds)',
     defaultValue: 30,
+  },
+  {
+    name: 'geminiApiKey',
+    type: 'string',
+    label: 'Gemini API Key (for AI replies)',
+    isSecret: true,
+  },
+  {
+    name: 'enableBotReplies',
+    type: 'boolean',
+    label: 'Reply to users who respond to the bot',
+    defaultValue: true,
   },
 ]);
 
@@ -152,6 +166,15 @@ Devvit.addTrigger({
       },
       runAt: new Date(Date.now() + delaySeconds * 1000),
     });
+
+    // Emit event to shared feed
+    const subreddit = await context.reddit.getCurrentSubreddit();
+    await emitHaikuDetection(context, subreddit.name, {
+      username: authorName,
+      haiku: formattedHaiku,
+      sourceId: comment.id,
+      isPost: false,
+    });
   },
 });
 
@@ -216,6 +239,79 @@ Devvit.addTrigger({
       },
       runAt: new Date(Date.now() + delaySeconds * 1000),
     });
+
+    // Emit event to shared feed
+    const subreddit = await context.reddit.getCurrentSubreddit();
+    await emitHaikuDetection(context, subreddit.name, {
+      username: user.username,
+      haiku: formattedHaiku,
+      sourceId: post.id,
+      isPost: true,
+    });
+  },
+});
+
+
+// Reply to users who respond to the bot (one reply only)
+Devvit.addTrigger({
+  event: 'CommentCreate',
+  onEvent: async (event, context) => {
+    if (!event.comment) return;
+
+    const settings = await context.settings.getAll();
+    if (!settings.enabled || !settings.enableBotReplies) return;
+
+    const comment = event.comment;
+    const authorName = comment.author;
+
+    // Skip own comments and deleted
+    if (!authorName || authorName === '[deleted]' || comment.deleted) return;
+
+    // Must have a parent comment
+    if (!comment.parentId || !comment.parentId.startsWith('t1_')) return;
+
+    try {
+      // Get the bot's username
+      const currentUser = await context.reddit.getCurrentUser();
+      if (!currentUser) return;
+      const botUsername = currentUser.username;
+
+      // Skip if author is the bot
+      if (authorName === botUsername) return;
+
+      // Get parent comment
+      const parentComment = await context.reddit.getCommentById(comment.parentId);
+      if (!parentComment || parentComment.authorName !== botUsername) return;
+
+      // Check if grandparent is also the bot (avoid conversation loops)
+      if (parentComment.parentId && parentComment.parentId.startsWith('t1_')) {
+        const grandparent = await context.reddit.getCommentById(parentComment.parentId);
+        if (grandparent && grandparent.authorName === botUsername) {
+          // Bot already replied once in this chain, skip
+          return;
+        }
+      }
+
+      // Generate AI reply
+      const reply = await generateBotReply(context, {
+        botName: 'haiku-sensei',
+        botPersonality: 'A zen haiku detection bot. Peaceful but witty. Appreciates poetry and wordplay.',
+        originalBotComment: parentComment.body,
+        userReply: comment.body,
+        userUsername: authorName,
+        geminiApiKey: settings.geminiApiKey as string | undefined,
+      });
+
+      if (!reply) return;
+
+      // Post the reply
+      await context.reddit.submitComment({
+        id: comment.id,
+        text: reply,
+      });
+    } catch (error) {
+      console.error('Failed to reply to user:', error);
+    }
   },
 });
 

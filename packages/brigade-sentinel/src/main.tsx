@@ -12,8 +12,15 @@ import {
   classifyPostTone,
   recordHater,
   enrichTopHatersWithOSINT,
-  registerUserAlt,
-  registerSubredditAlt,
+  // Pending alt report system (requires mod approval)
+  submitPendingAltReport,
+  approveAltReport,
+  rejectAltReport,
+  getAltReportById,
+  formatAltReportModmail,
+  emitBrigadeAlert,
+  emitTrafficSpike,
+  generateBotReply,
 } from '@hub-bot/common';
 import { getBrigadeComment, getModmailBody } from './templates.js';
 
@@ -86,6 +93,25 @@ Devvit.addSettings([
     type: 'number',
     label: 'Minimum deleted comments to mention in notification',
     defaultValue: 3,
+  },
+  {
+    name: 'enableBotReplies',
+    type: 'boolean',
+    label: 'Reply to users who respond to the bot',
+    defaultValue: true,
+  },
+  // Traffic spike detection
+  {
+    name: 'detectTrafficSpikes',
+    type: 'boolean',
+    label: 'Detect unusual comment velocity spikes',
+    defaultValue: true,
+  },
+  {
+    name: 'velocityThreshold',
+    type: 'number',
+    label: 'Comments per 5 minutes to trigger spike alert',
+    defaultValue: 10,
   },
 ]);
 
@@ -250,7 +276,7 @@ Devvit.addSchedulerJob({
         deletedCount = deletedComments.length;
       }
 
-      // Post public comment if enabled
+      // Post public comment if enabled (for crosslink alerts - this is the main feature)
       if (settings.publicComment) {
         const commentBody = getBrigadeComment({
           sourceSubreddit: brigadeEvent.sourceSubreddit,
@@ -309,6 +335,14 @@ Devvit.addSchedulerJob({
       );
 
       await consumeRateLimit(context.redis, 'subComment', subreddit.id);
+
+      // Emit event to shared feed
+      await emitBrigadeAlert(context, subreddit.name, {
+        sourceSubreddit: brigadeEvent.sourceSubreddit,
+        sourceUrl: brigadeEvent.sourcePostUrl,
+        targetPostId: brigadeEvent.targetPostId,
+        classification: brigadeEvent.classification,
+      });
     } catch (error) {
       console.error('Brigade notification failed:', error);
     }
@@ -320,6 +354,12 @@ Devvit.addSchedulerJob({
 // Users can report alts by mentioning the bot:
 //   u/hub-bot-9000 alt u/mainaccount = u/altaccount
 //   u/hub-bot-9000 alt r/mainsubreddit = r/altsubreddit
+//
+// IMPORTANT: Reports are handled SILENTLY via modmail only.
+// NO public comments are posted about alt reports to avoid:
+// - Exposing potentially false reports to the community
+// - Embarrassing users named in reports
+// - Creating drama in comment threads
 // =============================================================================
 
 Devvit.addTrigger({
@@ -349,10 +389,8 @@ Devvit.addTrigger({
 
     // Validate: both should be same type (both users or both subreddits)
     if (type1.toLowerCase() !== type2.toLowerCase()) {
-      await context.reddit.submitComment({
-        id: comment.id,
-        text: `Sorry, can't link a user to a subreddit. Use:\n\n- \`alt u/main = u/alt\` for user alts\n- \`alt r/main = r/alt\` for subreddit alts`,
-      });
+      // Silently ignore invalid format - no public comment
+      console.log(`Alt report ignored: mismatched types (${type1} vs ${type2})`);
       return;
     }
 
@@ -364,32 +402,149 @@ Devvit.addTrigger({
     const author = comment.author || 'unknown';
     const rateCheck = await checkRateLimit(context.redis, 'altReport', author);
     if (!rateCheck.allowed) {
-      return; // Silently ignore rate-limited requests
+      console.log(`Alt report rate limited for ${author}`);
+      return;
     }
 
     try {
-      let result: { success: boolean; message: string };
-
-      if (isUser) {
-        result = await registerUserAlt(context, altName, mainName);
-      } else {
-        result = await registerSubredditAlt(context, altName, mainName);
-      }
-
-      // Reply with confirmation
-      const prefix = isUser ? 'u' : 'r';
-      const replyText = result.success
-        ? `Thanks! Registered ${prefix}/${altName} as an alt of ${prefix}/${mainName}. Their scores will now be combined on the leaderboard.`
-        : `Couldn't register alt: ${result.message}`;
-
-      await context.reddit.submitComment({
-        id: comment.id,
-        text: replyText,
+      // Submit as PENDING report - requires mod approval
+      const result = await submitPendingAltReport(context, {
+        type: isUser ? 'user' : 'subreddit',
+        altName,
+        mainName,
+        reportedBy: author,
+        sourceCommentId: comment.id,
       });
 
+      const prefix = isUser ? 'u' : 'r';
+
+      if (!result.success) {
+        // Log but don't post public comment
+        console.log(`Alt report rejected: ${result.message}`);
+        return;
+      }
+
+      // Send modmail for approval (the ONLY notification)
+      const subreddit = await context.reddit.getCurrentSubreddit();
+      const modmailBody = formatAltReportModmail(
+        {
+          id: result.reportId,
+          type: isUser ? 'user' : 'subreddit',
+          altName,
+          mainName,
+          reportedBy: author,
+          reportedAt: Date.now(),
+          sourceCommentId: comment.id,
+          status: 'pending',
+        },
+        subreddit.name
+      );
+
+      await context.reddit.sendPrivateMessage({
+        to: `/r/${subreddit.name}`,
+        subject: `Alt Report: ${prefix}/${altName} -> ${prefix}/${mainName}`,
+        text: modmailBody,
+      });
+
+      console.log(`Alt report submitted: ${prefix}/${altName} -> ${prefix}/${mainName} (${result.reportId})`);
       await consumeRateLimit(context.redis, 'altReport', author);
     } catch (error) {
-      console.error('Alt registration failed:', error);
+      console.error('Alt report submission failed:', error);
+    }
+  },
+});
+
+// =============================================================================
+// MODMAIL HANDLER FOR ALT APPROVAL/REJECTION
+// Mods can reply to alt report modmail with:
+//   !approve <report_id>
+//   !reject <report_id>
+// =============================================================================
+
+Devvit.addTrigger({
+  event: 'ModMail',
+  onEvent: async (event, context) => {
+    // Get message author and conversation ID
+    const authorName = event.messageAuthor?.name;
+    const conversationId = event.conversationId;
+    const messageId = event.messageId;
+
+    // Only process mod replies (not our own messages)
+    if (!authorName || authorName === 'brigade-sentinel') return;
+    if (!conversationId || !messageId) return;
+
+    try {
+      // Fetch the conversation to get the message body
+      const conversationData = await context.reddit.modMail.getConversation({
+        conversationId,
+      });
+
+      if (!conversationData?.conversation?.messages) {
+        console.log('Could not fetch modmail conversation');
+        return;
+      }
+
+      // Get the specific message body
+      const message = conversationData.conversation.messages[messageId];
+      const body = message?.body || message?.bodyMarkdown || '';
+
+      if (!body) return;
+
+      // Check for approval/rejection commands
+      const approveMatch = body.match(/!approve\s+(alt_[\w]+)/i);
+      const rejectMatch = body.match(/!reject\s+(alt_[\w]+)/i);
+
+      if (!approveMatch && !rejectMatch) return;
+
+      const reportId = approveMatch?.[1] || rejectMatch?.[1];
+      if (!reportId) return;
+
+      // Verify the report exists
+      const report = await getAltReportById(context, reportId);
+      if (!report) {
+        console.log(`Alt report not found: ${reportId}`);
+        return;
+      }
+
+      let result: { success: boolean; message: string };
+      let action: string;
+
+      if (approveMatch) {
+        result = await approveAltReport(context, reportId);
+        action = 'approved';
+      } else {
+        result = await rejectAltReport(context, reportId);
+        action = 'rejected';
+      }
+
+      const prefix = report.type === 'user' ? 'u' : 'r';
+      const subreddit = await context.reddit.getCurrentSubreddit();
+
+      // Send confirmation modmail
+      if (result.success) {
+        await context.reddit.sendPrivateMessage({
+          to: `/r/${subreddit.name}`,
+          subject: `Alt Report ${action.charAt(0).toUpperCase() + action.slice(1)}: ${prefix}/${report.altName}`,
+          text: `The alt report has been **${action}**.\n\n` +
+                `- **Alt:** ${prefix}/${report.altName}\n` +
+                `- **Main:** ${prefix}/${report.mainName}\n` +
+                `- **Reported by:** u/${report.reportedBy}\n` +
+                `- **Action by:** u/${authorName}\n\n` +
+                (action === 'approved'
+                  ? `Scores for ${prefix}/${report.altName} will now be combined with ${prefix}/${report.mainName} on the leaderboard.`
+                  : `No changes were made to the leaderboard.`),
+        });
+      } else {
+        await context.reddit.sendPrivateMessage({
+          to: `/r/${subreddit.name}`,
+          subject: `Alt Report Action Failed`,
+          text: `Failed to ${action.replace('ed', '')} alt report: ${result.message}\n\nReport ID: ${reportId}`,
+        });
+      }
+
+      console.log(`Alt report ${reportId} ${action} by ${authorName}: ${result.message}`);
+    } catch (error) {
+      console.error('Alt report action failed:', error);
     }
   },
 });
@@ -440,11 +595,150 @@ Devvit.addTrigger({
 function extractTargetPostId(url: string, targetSubreddit: string): string | null {
   // Match reddit.com/r/subreddit/comments/postid/...
   const regex = new RegExp(
-    `reddit\\.com/r/${targetSubreddit}/comments/([a-z0-9]+)`,
+    `reddit\.com/r/${targetSubreddit}/comments/([a-z0-9]+)`,
     'i'
   );
   const match = url.match(regex);
   return match ? `t3_${match[1]}` : null;
 }
+
+
+// Reply to users who respond to the bot (one reply only)
+Devvit.addTrigger({
+  event: 'CommentCreate',
+  onEvent: async (event, context) => {
+    if (!event.comment) return;
+
+    const settings = await context.settings.getAll();
+    if (!settings.enabled || !settings.enableBotReplies) return;
+
+    const comment = event.comment;
+    const authorName = comment.author;
+
+    // Skip own comments and deleted
+    if (!authorName || authorName === '[deleted]' || comment.deleted) return;
+
+    // Must have a parent comment
+    if (!comment.parentId || !comment.parentId.startsWith('t1_')) return;
+
+    try {
+      // Get the bot's username
+      const currentUser = await context.reddit.getCurrentUser();
+      if (!currentUser) return;
+      const botUsername = currentUser.username;
+
+      // Skip if author is the bot
+      if (authorName === botUsername) return;
+
+      // Get parent comment
+      const parentComment = await context.reddit.getCommentById(comment.parentId);
+      if (!parentComment || parentComment.authorName !== botUsername) return;
+
+      // Check if grandparent is also the bot (avoid conversation loops)
+      if (parentComment.parentId && parentComment.parentId.startsWith('t1_')) {
+        const grandparent = await context.reddit.getCommentById(parentComment.parentId);
+        if (grandparent && grandparent.authorName === botUsername) {
+          // Bot already replied once in this chain, skip
+          return;
+        }
+      }
+
+      // Generate AI reply
+      const reply = await generateBotReply(context, {
+        botName: 'brigade-sentinel',
+        botPersonality: 'A vigilant crosslink detection bot. Serious about community protection but not humorless.',
+        originalBotComment: parentComment.body,
+        userReply: comment.body,
+        userUsername: authorName,
+        geminiApiKey: settings.geminiApiKey as string | undefined,
+      });
+
+      if (!reply) return;
+
+      // Post the reply
+      await context.reddit.submitComment({
+        id: comment.id,
+        text: reply,
+      });
+    } catch (error) {
+      console.error('Failed to reply to user:', error);
+    }
+  },
+});
+
+// =============================================================================
+// TRAFFIC SPIKE DETECTION
+// Tracks comment velocity per post - emits event when spike detected
+// =============================================================================
+
+Devvit.addTrigger({
+  event: 'CommentCreate',
+  onEvent: async (event, context) => {
+    if (!event.comment?.postId) return;
+
+    const settings = await context.settings.getAll();
+    if (!settings.enabled || !settings.detectTrafficSpikes) return;
+
+    const postId = event.comment.postId;
+    const now = Date.now();
+
+    // Get recent comment timestamps for this post
+    const velocityKey = `${REDIS_PREFIX.brigade}velocity:${postId}`;
+    const recentComments = await getJson<number[]>(context.redis, velocityKey) || [];
+
+    // Add current timestamp, keep last hour
+    const hourAgo = now - 60 * 60 * 1000;
+    const filtered = [...recentComments.filter(t => t > hourAgo), now];
+    await setJson(context.redis, velocityKey, filtered, 2 * 60 * 60); // 2 hour TTL
+
+    // Calculate velocity (comments in last 5 minutes)
+    const fiveMinAgo = now - 5 * 60 * 1000;
+    const recentCount = filtered.filter(t => t > fiveMinAgo).length;
+
+    // Check if spike detected (default: 10+ comments in 5 min)
+    const threshold = (settings.velocityThreshold as number) || 10;
+    if (recentCount >= threshold) {
+      // Check if we already alerted for this post
+      const alertKey = `${REDIS_PREFIX.brigade}spikeAlert:${postId}`;
+      if (await context.redis.get(alertKey)) return;
+
+      // Mark as alerted (1 hour cooldown)
+      await context.redis.set(alertKey, '1', { expiration: new Date(now + 60 * 60 * 1000) });
+
+      const subreddit = await context.reddit.getCurrentSubreddit();
+
+      // Try to get post title for context
+      let postTitle: string | undefined;
+      try {
+        const post = await context.reddit.getPostById(postId);
+        postTitle = post?.title;
+      } catch {
+        // Post may be deleted
+      }
+
+      // Send spike alert to modmail
+      await context.reddit.sendPrivateMessage({
+        to: `/r/${subreddit.name}`,
+        subject: `[TRAFFIC SPIKE] Unusual comment velocity detected`,
+        text: `**Neural net pattern detected: Comment velocity anomaly**\n\n` +
+              `Post: ${postTitle || postId}\n` +
+              `Comments in last 5 min: **${recentCount}** (threshold: ${threshold})\n\n` +
+              `Possible brigade in progress. Recommend visual inspection.\n\n` +
+              `---\n*brigade-sentinel v2.0 | traffic_spike_detection*`,
+      });
+
+      // Emit to hub-widget events feed
+      await emitTrafficSpike(context, subreddit.name, {
+        postId,
+        postTitle,
+        commentsInWindow: recentCount,
+        windowMinutes: 5,
+        threshold,
+      });
+
+      console.log(`[SPIKE] Traffic spike detected on ${postId}: ${recentCount} comments in 5 min`);
+    }
+  },
+});
 
 export default Devvit;
