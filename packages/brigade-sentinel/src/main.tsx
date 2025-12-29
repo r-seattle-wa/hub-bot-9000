@@ -11,6 +11,7 @@ import {
   geminiCrosslinkSearch,
   classifyPostTone,
   recordHater,
+  getLeaderboard,
   enrichTopHatersWithOSINT,
   // Pending alt report system (requires mod approval)
   submitPendingAltReport,
@@ -21,6 +22,23 @@ import {
   emitBrigadeAlert,
   emitTrafficSpike,
   generateBotReply,
+  // Achievement system
+  checkAchievements,
+  getHighestNewAchievement,
+  markAchievementNotified,
+  formatAchievementComment,
+  TIER_EMOJIS,
+  // Meme detection
+  detectTalkingPoints,
+  recordTalkingPointUsage,
+  checkBrokenRecordStatus,
+  getTopRepeatedTalkingPoints,
+  getDebunkLinks,
+  // AI roast generation
+  generateAchievementRoast,
+  // Event fetching
+  fetchCommunityEvents,
+  emitCommunityEvent,
 } from '@hub-bot/common';
 import { getBrigadeComment, getModmailBody } from './templates.js';
 
@@ -112,6 +130,64 @@ Devvit.addSettings([
     type: 'number',
     label: 'Comments per 5 minutes to trigger spike alert',
     defaultValue: 10,
+  },
+  // Achievement system settings
+  {
+    name: 'enableAchievements',
+    type: 'boolean',
+    label: 'Enable hater achievement announcements',
+    defaultValue: true,
+  },
+  {
+    name: 'achievementCooldownHours',
+    type: 'number',
+    label: 'Hours between achievement comments for same user',
+    defaultValue: 24,
+  },
+  {
+    name: 'generateAchievementImages',
+    type: 'boolean',
+    label: 'Generate AI images for achievements (requires Gemini key)',
+    defaultValue: true,
+  },
+  // Community events settings
+  {
+    name: 'enableEventFetching',
+    type: 'boolean',
+    label: 'Fetch community events for hub-widget',
+    defaultValue: false,
+  },
+  {
+    name: 'eventLocation',
+    type: 'string',
+    label: 'Location for event search (e.g., "Seattle")',
+    defaultValue: '',
+  },
+  {
+    name: 'eventState',
+    type: 'string',
+    label: 'State for event search (e.g., "WA")',
+    defaultValue: '',
+  },
+  {
+    name: 'scraperServiceUrl',
+    type: 'string',
+    label: 'Scraper service URL (optional, uses AI if not set)',
+    defaultValue: '',
+  },
+  {
+    name: 'scraperApiKey',
+    type: 'string',
+    label: 'Scraper service API key',
+    scope: SettingScope.App,
+    isSecret: true,
+    defaultValue: '',
+  },
+  {
+    name: 'useRedditAI',
+    type: 'boolean',
+    label: 'Use Reddit AI for event search (free, no key needed)',
+    defaultValue: true,
   },
 ]);
 
@@ -217,6 +293,61 @@ Devvit.addSchedulerJob({
           toneClassification,
           post.title
         );
+
+        // Check for achievements if enabled
+        if (settings.enableAchievements) {
+          try {
+            const leaderboard = await getLeaderboard(context);
+            if (leaderboard) {
+              const userEntry = leaderboard.users[post.author.toLowerCase()];
+              if (userEntry) {
+                // Check for first offense (new user)
+                const isFirstOffense = userEntry.hostileLinks === 1;
+
+                // Detect talking points in the post title
+                const detectedMemes = detectTalkingPoints(post.title);
+                for (const meme of detectedMemes) {
+                  await recordTalkingPointUsage(context, post.author, meme, post.title);
+                }
+
+                // Check broken record status
+                const brokenRecord = await checkBrokenRecordStatus(context, post.author);
+
+                // Check for unlocked achievements
+                const unlocks = await checkAchievements(
+                  context,
+                  post.author,
+                  userEntry,
+                  leaderboard,
+                  {
+                    isFirstOffense,
+                    repeatedMemes: brokenRecord.repeatedMemes,
+                    cooldownHours: (settings.achievementCooldownHours as number) || 24,
+                  }
+                );
+
+                // Get highest new achievement to notify about
+                const bestUnlock = getHighestNewAchievement(unlocks);
+                if (bestUnlock && bestUnlock.shouldNotify) {
+                  // Queue achievement comment (with same delay as brigade notification)
+                  await context.scheduler.runJob({
+                    name: 'postAchievementComment',
+                    data: {
+                      username: post.author,
+                      achievementId: bestUnlock.achievement.id,
+                      targetPostId: brigadeEvent.targetPostId,
+                      sourceSubreddit: post.subreddit,
+                    },
+                    runAt: new Date(Date.now() + ((settings.minimumLinkAge as number) || 5) * 60 * 1000 + 30000), // 30s after brigade notification
+                  });
+                  console.log('[ACHIEVEMENT] Queued ' + bestUnlock.achievement.name + ' for u/' + post.author);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Achievement check failed:', error);
+          }
+        }
 
         // Queue notification (with delay per settings)
         const delayMinutes = (settings.minimumLinkAge as number) || 5;
@@ -573,6 +704,165 @@ Devvit.addSchedulerJob({
   },
 });
 
+// =============================================================================
+// COMMUNITY EVENT FETCHING JOB
+// Fetches local events and emits to hub-widget events feed
+// =============================================================================
+
+Devvit.addSchedulerJob({
+  name: 'fetchCommunityEventsJob',
+  onRun: async (_event, context) => {
+    const settings = await context.settings.getAll();
+    if (!settings.enabled || !settings.enableEventFetching) return;
+
+    const location = settings.eventLocation as string;
+    if (!location) {
+      console.log('[events] No location configured, skipping event fetch');
+      return;
+    }
+
+    const subreddit = await context.reddit.getCurrentSubreddit();
+
+    try {
+      const events = await fetchCommunityEvents(context, {
+        location,
+        state: settings.eventState as string || undefined,
+        days: 7,
+        geminiApiKey: settings.geminiApiKey as string || undefined,
+        scraperUrl: settings.scraperServiceUrl as string || undefined,
+        scraperApiKey: settings.scraperApiKey as string || undefined,
+        useRedditAI: settings.useRedditAI as boolean ?? true,
+      });
+
+      console.log('[events] Fetched ' + events.length + ' community events for ' + location);
+
+      // Emit each event to the feed (deduplication happens in emitCommunityEvent)
+      for (const event of events) {
+        await emitCommunityEvent(context, subreddit.name, {
+          title: event.title,
+          description: event.description,
+          eventDate: event.dateStart,
+          location: event.location,
+          url: event.url,
+          source: event.source,
+        });
+      }
+    } catch (error) {
+      console.error('[events] Community event fetch failed:', error);
+    }
+  },
+});
+
+
+// =============================================================================
+// ACHIEVEMENT COMMENT JOB
+// Posts achievement announcements to haters when they unlock achievements
+// =============================================================================
+
+interface AchievementJobData {
+  username: string;
+  achievementId: string;
+  targetCommentId?: string;
+  targetPostId?: string;
+  sourceSubreddit: string;
+}
+
+Devvit.addSchedulerJob({
+  name: 'postAchievementComment',
+  onRun: async (event, context) => {
+    const settings = await context.settings.getAll();
+    if (!settings.enabled || !settings.enableAchievements) return;
+
+    const data = event.data as unknown as AchievementJobData;
+    const { username, achievementId, targetCommentId, targetPostId, sourceSubreddit } = data;
+
+    // Get achievement details
+    const { getAchievementById } = await import('@hub-bot/common');
+    const achievement = getAchievementById(achievementId);
+    if (!achievement) {
+      console.error('Achievement not found: ' + achievementId);
+      return;
+    }
+
+    // Get leaderboard for position
+    const leaderboard = await getLeaderboard(context);
+    if (!leaderboard) return;
+
+    const userEntry = leaderboard.users[username.toLowerCase()];
+    if (!userEntry) return;
+
+    // Calculate score
+    const totalScore = userEntry.adversarialCount +
+                       (userEntry.hatefulCount * 3) +
+                       (userEntry.modLogSpamCount * 2) +
+                       ((userEntry.flaggedContentCount || 0) * 2);
+
+    const userRank = leaderboard.topUsers.findIndex(
+      u => u.username.toLowerCase() === username.toLowerCase()
+    ) + 1;
+
+    // Get talking point data for context
+    const repeatedMemes = await getTopRepeatedTalkingPoints(context, username, 3);
+    const memeNames = repeatedMemes.map(r => r.talkingPoint.name);
+
+    // Generate AI roast
+    const roastResult = await generateAchievementRoast(context, {
+      username,
+      achievementName: achievement.name,
+      achievementTier: achievement.tier,
+      achievementDescription: achievement.description,
+      baseRoastTemplate: achievement.roastTemplate,
+      leaderboardPosition: userRank,
+      totalScore,
+      behaviorSummary: userEntry.deletedContentSummary,
+      repeatedMemes: memeNames,
+      homeSubreddits: userEntry.homeSubreddits,
+      worstTitle: userEntry.worstTitle,
+      geminiApiKey: settings.geminiApiKey as string || '',
+    });
+
+    // Get subreddit for wiki links
+    const subreddit = await context.reddit.getCurrentSubreddit();
+
+    // Build wiki links from detected memes
+    const talkingPoints = repeatedMemes.map(r => r.talkingPoint);
+    const wikiLinks = getDebunkLinks(subreddit.name, talkingPoints);
+
+    // Format the comment
+    const commentBody = formatAchievementComment(
+      achievement,
+      username,
+      userRank,
+      totalScore,
+      roastResult.roastText,
+      undefined, // imageUrl - TODO: integrate image generation
+      wikiLinks.length > 0 ? wikiLinks.map(l => ({ text: l.text, url: l.url })) : undefined
+    );
+
+    try {
+      // Post comment - either reply to their comment or the post
+      if (targetCommentId) {
+        await context.reddit.submitComment({
+          id: targetCommentId,
+          text: commentBody,
+        });
+      } else if (targetPostId) {
+        await context.reddit.submitComment({
+          id: targetPostId,
+          text: commentBody,
+        });
+      }
+
+      // Mark as notified
+      await markAchievementNotified(context, username, achievementId);
+
+      console.log();
+    } catch (error) {
+      console.error('Failed to post achievement comment:', error);
+    }
+  },
+});
+
 // Schedule scanner on install
 Devvit.addTrigger({
   event: 'AppInstall',
@@ -587,6 +877,12 @@ Devvit.addTrigger({
     await context.scheduler.runJob({
       name: 'enrichHatersOSINT',
       cron: '0 3 * * *',
+    });
+
+    // Run community events fetch every 6 hours
+    await context.scheduler.runJob({
+      name: 'fetchCommunityEventsJob',
+      cron: '0 */6 * * *',
     });
   },
 });
@@ -662,6 +958,90 @@ Devvit.addTrigger({
       });
     } catch (error) {
       console.error('Failed to reply to user:', error);
+    }
+  },
+});
+
+
+
+// =============================================================================
+// TALKING POINT DETECTION ON ALL COMMENTS
+// Analyzes every comment for repeated memes/talking points
+// =============================================================================
+
+Devvit.addTrigger({
+  event: 'CommentCreate',
+  onEvent: async (event, context) => {
+    const comment = event.comment;
+    if (!comment?.body || !comment.author) return;
+
+    const settings = await context.settings.getAll();
+    if (!settings.enabled || !settings.enableAchievements) return;
+
+    const authorName = comment.author;
+
+    // Skip bots and deleted
+    if (authorName === '[deleted]' || comment.deleted) return;
+
+    // Rate limit per user to avoid spam
+    const rateCheck = await checkRateLimit(context.redis, 'memeDetection', authorName);
+    if (!rateCheck.allowed) return;
+
+    try {
+      // Detect talking points in the comment
+      const detectedMemes = detectTalkingPoints(comment.body);
+
+      if (detectedMemes.length === 0) return;
+
+      // Record each detected meme
+      for (const meme of detectedMemes) {
+        await recordTalkingPointUsage(context, authorName, meme, comment.body);
+      }
+
+      await consumeRateLimit(context.redis, 'memeDetection', authorName);
+
+      // Check for broken record achievement
+      const brokenRecord = await checkBrokenRecordStatus(context, authorName);
+
+      if (brokenRecord.qualifies) {
+        // Check if user already has hater entry (from crosslinks)
+        const leaderboard = await getLeaderboard(context);
+        if (!leaderboard) return;
+
+        const userEntry = leaderboard.users[authorName.toLowerCase()];
+
+        // If they have a leaderboard entry, check for achievements
+        if (userEntry) {
+          const unlocks = await checkAchievements(
+            context,
+            authorName,
+            userEntry,
+            leaderboard,
+            {
+              repeatedMemes: brokenRecord.repeatedMemes,
+              cooldownHours: (settings.achievementCooldownHours as number) || 24,
+            }
+          );
+
+          const bestUnlock = getHighestNewAchievement(unlocks);
+          if (bestUnlock && bestUnlock.shouldNotify) {
+            // Queue achievement comment as reply to their meme-laden comment
+            await context.scheduler.runJob({
+              name: 'postAchievementComment',
+              data: {
+                username: authorName,
+                achievementId: bestUnlock.achievement.id,
+                targetCommentId: comment.id,
+                sourceSubreddit: 'meme-detection',
+              },
+              runAt: new Date(Date.now() + 60000), // 1 minute delay
+            });
+            console.log('[MEME] Queued ' + bestUnlock.achievement.name + ' for u/' + authorName + ' (broken record)');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Meme detection failed:', error);
     }
   },
 });

@@ -56,6 +56,7 @@ export enum HubBotEventType {
   COURT_DOCKET = 'court_docket',
   OUTGOING_LINK = 'outgoing_link',
   TRAFFIC_SPIKE = 'traffic_spike',
+  COMMUNITY_EVENT = 'community_event',
   SYSTEM = 'system',
 }
 
@@ -127,6 +128,17 @@ export interface TrafficSpikeEvent extends HubBotEventBase {
   threshold: number;
 }
 
+// Community event (from scraper-service)
+export interface CommunityEventEvent extends HubBotEventBase {
+  type: HubBotEventType.COMMUNITY_EVENT;
+  title: string;
+  description?: string;
+  eventDate: string;      // YYYY-MM-DD
+  location?: string;
+  url?: string;
+  source: string;         // e.g., 'eventbrite', 'ticketmaster', 'gemini'
+}
+
 // System event
 export interface SystemEvent extends HubBotEventBase {
   type: HubBotEventType.SYSTEM;
@@ -141,6 +153,7 @@ export type HubBotEvent =
   | CourtDocketEvent
   | OutgoingLinkEvent
   | TrafficSpikeEvent
+  | CommunityEventEvent
   | SystemEvent;
 
 // Tone classification result

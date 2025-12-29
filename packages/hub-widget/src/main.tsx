@@ -7,6 +7,7 @@ import {
   FarewellAnnouncementEvent,
   CourtDocketEvent,
   TrafficSpikeEvent,
+  CommunityEventEvent,
   SystemEvent,
   SourceClassification,
   EVENT_FEED_WIKI_PAGE,
@@ -23,6 +24,7 @@ const EVENT_COLORS: Record<string, string> = {
   farewell_announcement: "#FFE66D",
   court_docket: "#95E1D3",
   traffic_spike: "#FF9F43",
+  community_event: "#9B59B6",
   system: "#A8E6CF",
 };
 
@@ -32,6 +34,7 @@ const EVENT_ICONS: Record<string, string> = {
   farewell_announcement: "~",
   court_docket: "#",
   traffic_spike: "^",
+  community_event: "@",
   system: "i",
 };
 
@@ -86,6 +89,12 @@ function toSimpleEvent(event: HubBotEvent): SimpleEvent {
       const e = event as TrafficSpikeEvent;
       summary = "SPIKE: " + e.commentsInWindow + " comments/" + e.windowMinutes + "min";
       detail = e.postTitle ? e.postTitle.substring(0, 25) : e.postId;
+      break;
+    }
+    case HubBotEventType.COMMUNITY_EVENT: {
+      const e = event as CommunityEventEvent;
+      summary = e.title.substring(0, 35);
+      detail = e.eventDate + (e.location ? " @ " + e.location.substring(0, 15) : "");
       break;
     }
     case HubBotEventType.SYSTEM: {

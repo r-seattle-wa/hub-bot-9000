@@ -10,6 +10,7 @@ import {
   FarewellAnnouncementEvent,
   CourtDocketEvent,
   TrafficSpikeEvent,
+  CommunityEventEvent,
   SystemEvent,
   SourceClassification,
   SarcasmLevel,
@@ -291,6 +292,27 @@ export async function emitTrafficSpike(
   return appendEvent<TrafficSpikeEvent>(context, subredditName, {
     type: HubBotEventType.TRAFFIC_SPIKE,
     sourceApp: 'brigade-sentinel',
+    ...data,
+  });
+}
+/**
+ * Create a community event (from scraper-service)
+ */
+export async function emitCommunityEvent(
+  context: TriggerContext,
+  subredditName: string,
+  data: {
+    title: string;
+    description?: string;
+    eventDate: string;
+    location?: string;
+    url?: string;
+    source: string;
+  }
+): Promise<CommunityEventEvent> {
+  return appendEvent<CommunityEventEvent>(context, subredditName, {
+    type: HubBotEventType.COMMUNITY_EVENT,
+    sourceApp: 'scraper-service',
     ...data,
   });
 }

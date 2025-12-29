@@ -15,3 +15,7 @@ export * from './logging.js';
 export * from './pending-alts.js';
 export * from './events-feed.js';
 export * from './url-utils.js';
+export * from './achievements.js';
+export * from './meme-detector.js';
+export * from './achievement-roast.js';
+export * from './event-fetcher.js';

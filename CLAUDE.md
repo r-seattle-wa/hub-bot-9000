@@ -92,7 +92,7 @@ devvit logs r/YourTestSubreddit
 | App | Purpose | Key Features |
 |-----|---------|--------------|
 | **haiku-sensei** | Detects accidental 5-7-5 haikus | Syllable counting, AI replies to users |
-| **brigade-sentinel** | Cross-subreddit link alerts + hater leaderboard | OSINT, alt tracking, modmail alerts, traffic spike detection |
+| **brigade-sentinel** | Cross-subreddit link alerts + hater leaderboard | OSINT, alt tracking, modmail alerts, traffic spike detection, achievements, community events |
 | **farewell-hero** | "I'm unsubscribing" responder | 5 sarcasm levels, tone matching, best post/comment, political complaint detection |
 | **hub-widget** | Unified events dashboard | Color-coded feed, auto-refresh, Custom Post Type |
 
@@ -177,6 +177,7 @@ import {
   emitFarewellAnnouncement,
   emitCourtDocket,
   emitTrafficSpike,
+  emitCommunityEvent,
   emitSystemEvent,
 
   // Constants
@@ -231,6 +232,92 @@ import {
   analyzeDeletedContent,    // AI analysis of deleted content
   checkNotableContributor,  // Check if user was a top contributor
 } from '@hub-bot/common';
+```
+
+### Achievement System
+
+```typescript
+import {
+  // Achievement tracking
+  checkAchievements,        // Check for unlocked achievements
+  getHighestNewAchievement, // Get best new achievement to announce
+  markAchievementNotified,  // Mark achievement as announced
+  formatAchievementComment, // Format achievement announcement
+  getAchievementById,       // Lookup achievement by ID
+  
+  // Constants
+  ACHIEVEMENTS,             // All 11 achievement definitions
+  TIER_EMOJIS,              // Tier icons (bronze->diamond)
+  AchievementTier,          // bronze, silver, gold, platinum, diamond
+} from '@hub-bot/common';
+
+// Achievement tiers and score thresholds
+// Bronze (5-9): Casual Complainer, New Challenger
+// Silver (10-24): Serial Brigader
+// Gold (25-49): Professional Hater
+// Platinum (50-99): Legendary Salt Lord, Broken Record, Main Character
+// Diamond (100+): Transcendent Malcontent, Shadow Exposed
+```
+
+### Meme/Talking Point Detection
+
+```typescript
+import {
+  detectTalkingPoints,       // Find talking points in text
+  recordTalkingPointUsage,   // Track user's repeated memes
+  checkBrokenRecordStatus,   // Check if user repeats same memes
+  getTopRepeatedTalkingPoints, // Get user's most-used memes
+  getDebunkLinks,            // Get wiki links to debunk pages
+  TALKING_POINTS,            // All 12 talking point definitions
+} from '@hub-bot/common';
+
+// Tracked talking points with wiki debunk links:
+// echo_chamber, liberal_bias, transplants, housing, homeless,
+// censorship, astroturfing, politics_ban, crime_stats,
+// moving_away, tech_bros, amazon
+```
+
+### AI Roast Generation
+
+```typescript
+import { generateAchievementRoast } from '@hub-bot/common';
+
+// Generate personalized roasts for achievement announcements
+const result = await generateAchievementRoast(context, {
+  username,
+  achievementName: 'Professional Hater',
+  achievementTier: 'gold',
+  achievementDescription: 'Reached 25+ hater points',
+  baseRoastTemplate: 'Your dedication to negativity is impressive.',
+  leaderboardPosition: 7,
+  totalScore: 28,
+  behaviorSummary: 'Frequent complaints about housing policies',
+  repeatedMemes: ['echo_chamber', 'transplants'],
+  geminiApiKey: settings.geminiApiKey,
+});
+// Returns: { roastText: string, imagePrompt?: string }
+```
+
+### Community Event Fetching
+
+```typescript
+import {
+  fetchCommunityEvents,      // Main function - tries all sources
+  fetchEventsWithRedditAI,   // Free, uses Devvit built-in AI
+  fetchEventsWithGemini,     // BYOK, uses grounded search
+  fetchEventsFromScraper,    // Cloud Run scraper service
+  CommunityEvent,            // Event interface
+} from '@hub-bot/common';
+
+// Priority: Reddit AI (free) > Gemini (BYOK) > Scraper
+const events = await fetchCommunityEvents(context, {
+  location: 'Seattle',
+  state: 'WA',
+  days: 7,
+  geminiApiKey: settings.geminiApiKey,
+  scraperUrl: settings.scraperServiceUrl,
+  useRedditAI: true,
+});
 ```
 
 ### PullPush Integration
@@ -303,6 +390,7 @@ devvit install r/YourSubreddit
 | Farewell | `~` | Yellow | Unsubscribe announcement responded to |
 | Court Docket | `#` | Green | Ban court case (from r/seattlewabancourt) |
 | Traffic Spike | `^` | Orange | Unusual comment velocity detected |
+| Community Event | `@` | Purple | Local community events |
 | System | `i` | Light green | System messages |
 
 ## Architecture Patterns
@@ -380,6 +468,8 @@ const REDIS_PREFIX = {
 |-----|-----|----------|---------|
 | `scanForCrosslinks` | brigade-sentinel | Every 15 min | Find new crosslinks |
 | `enrichHatersOSINT` | brigade-sentinel | Daily 3am | Analyze top haters' deleted content |
+| `fetchCommunityEventsJob` | brigade-sentinel | Every 6 hours | Fetch local community events |
+| `postAchievementComment` | brigade-sentinel | On-demand | Post achievement announcements |
 | `notifyBrigade` | brigade-sentinel | On-demand | Delayed crosslink notification |
 | `postHaikuReply` | haiku-sensei | On-demand | Delayed haiku reply |
 | `postFarewellReply` | farewell-hero | On-demand | Delayed farewell reply |

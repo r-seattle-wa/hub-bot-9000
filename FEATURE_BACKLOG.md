@@ -657,6 +657,70 @@ const comments = await context.reddit.getCommentsByUser({
 
 ---
 
+---
+
+## Implemented Features
+
+### Feature 5: Hater Achievement System (COMPLETE)
+
+**Status:** Implemented
+**Location:** `packages/common/src/achievements.ts`, `meme-detector.ts`, `achievement-roast.ts`
+
+Xbox-style achievement system that acknowledges dedicated haters with:
+- 11 achievements across 5 tiers (Bronze -> Diamond)
+- AI-generated personalized roasts
+- Talking point detection (12 common memes tracked)
+- Wiki debunk links
+- Leaderboard position callouts
+
+#### Achievement Tiers
+| Tier | Score | Achievements |
+|------|-------|--------------|
+| Bronze | 5-9 | Casual Complainer, New Challenger |
+| Silver | 10-24 | Serial Brigader |
+| Gold | 25-49 | Professional Hater |
+| Platinum | 50-99 | Legendary Salt Lord, Broken Record, Main Character |
+| Diamond | 100+ | Transcendent Malcontent, Shadow Exposed |
+
+#### Triggering Conditions
+- Score milestones (5, 10, 25, 50, 100 points)
+- First hostile link (new challenger)
+- Repeated talking points (broken record)
+- Alt account exposure
+- Top 10 leaderboard entry
+
+### Feature 6: Community Events Integration (COMPLETE)
+
+**Status:** Implemented
+**Location:** `packages/common/src/event-fetcher.ts`, `packages/brigade-sentinel/src/main.tsx`
+
+Fetches local community events for display in hub-widget with three data sources:
+
+| Source | Auth | Priority | Notes |
+|--------|------|----------|-------|
+| Reddit AI | None (Devvit built-in) | 1 | Free, uses context.ai |
+| Gemini | BYOK | 2 | Uses grounded search |
+| Scraper Service | API key | 3 | Cloud Run fallback |
+
+#### Settings
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `enableEventFetching` | Enable event fetching | `false` |
+| `eventLocation` | Location for search | `""` |
+| `eventState` | State abbreviation | `""` |
+| `scraperServiceUrl` | Cloud Run URL | `""` |
+| `useRedditAI` | Prefer Reddit AI | `true` |
+
+#### Event Flow
+```
+brigade-sentinel (every 6 hours)
+  -> fetchCommunityEvents()
+  -> emitCommunityEvent() -> wiki storage
+  -> hub-widget displays with @ icon (purple)
+```
+
+---
+
 ## Open Questions
 
 1. **Brigade Sentinel scope:** Should it also track outgoing links (when our users link to other subs)?

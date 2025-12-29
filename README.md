@@ -94,6 +94,30 @@ Real-time detection of unusual comment velocity - potential early warning for br
 - **Hub-widget integration** - Emits events to unified dashboard
 - **1-hour cooldown** - Prevents alert spam per post
 
+#### Hater Achievement System
+Xbox-style achievements for dedicated haters:
+- **11 achievements** across 5 tiers (Bronze -> Diamond)
+- **AI-generated roasts** - Personalized mockery using Gemini
+- **Talking point detection** - Tracks 12 common memes/complaints
+- **Wiki debunk links** - Links to evidence contradicting claims
+- **Leaderboard callouts** - "You just cracked the top 5!"
+
+Achievement Tiers:
+| Tier | Score | Example Achievement |
+|------|-------|---------------------|
+| Bronze | 5-9 | Casual Complainer |
+| Silver | 10-24 | Serial Brigader |
+| Gold | 25-49 | Professional Hater |
+| Platinum | 50-99 | Legendary Salt Lord |
+| Diamond | 100+ | Transcendent Malcontent |
+
+#### Community Events
+Fetches local events for hub-widget display:
+- **Reddit AI** - Free, uses Devvit built-in AI
+- **Gemini** - BYOK, grounded search for event data
+- **Scraper Service** - Cloud Run fallback for complex sources
+- **Every 6 hours** - Scheduled job fetches and emits events
+
 #### Notifications
 - **Public comment** - Transparency about crosslinks (optional)
 - **Modmail alert** - For adversarial/hateful sources (optional)
@@ -113,6 +137,11 @@ Real-time detection of unusual comment velocity - potential early warning for br
 | `includeDeletedContent` | Check for deleted brigade comments | `true` |
 | `detectTrafficSpikes` | Enable traffic spike detection | `true` |
 | `velocityThreshold` | Comments per 5 min to trigger alert | `10` |
+| `enableAchievements` | Enable hater achievement comments | `true` |
+| `achievementCooldownHours` | Hours between achievement comments | `24` |
+| `enableEventFetching` | Fetch community events | `false` |
+| `eventLocation` | Location for event search | `""` |
+| `useRedditAI` | Use Reddit AI for events | `true` |
 
 ---
 
@@ -147,6 +176,7 @@ Unified events dashboard showing activity from all hub-bot apps as a Reddit Cust
 | Farewell | `~` | Yellow |
 | Court Docket | `#` | Green |
 | Traffic Spike | `^` | Orange |
+| Community Event | `@` | Purple |
 | System | `i` | Light green |
 
 ### Deployment
@@ -176,6 +206,10 @@ hub-bot-9000/
 │   │       ├── wiki.ts           # Wiki page utilities
 │   │       ├── opt-out.ts        # User opt-out system
 │   │       ├── http.ts           # Rate-limited fetch
+│   │       ├── achievements.ts   # Hater achievement system
+│   │       ├── meme-detector.ts  # Talking point detection
+│   │       ├── achievement-roast.ts # AI roast generation
+│   │       ├── event-fetcher.ts  # Community event fetching
 │   │       └── types.ts          # Shared types
 │   │
 │   ├── haiku-sensei/             # Haiku detection bot
