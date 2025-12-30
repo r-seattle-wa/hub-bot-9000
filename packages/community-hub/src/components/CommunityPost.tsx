@@ -446,17 +446,6 @@ const CommunityLinksSection = ({ context, links, subredditName }: CommunityLinks
         <text size="small" color="#4da6ff" grow>Community Rules</text>
         <text color="#666666">→</text>
       </hstack>
-      <hstack
-        gap="small"
-        padding="small"
-        backgroundColor="#252540"
-        cornerRadius="small"
-        onPress={() => context.ui.navigateTo('https://discord.gg/seattle')}
-      >
-        <text size="medium">💬</text>
-        <text size="small" color="#4da6ff" grow>Seattle Discord</text>
-        <text color="#666666">→</text>
-      </hstack>
     </vstack>
   );
 };

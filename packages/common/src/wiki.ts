@@ -1,9 +1,32 @@
-// Wiki integration helpers for reading sub-stats-bot data
+// Wiki integration helpers for hub-bot-9000 apps
 
 import { TriggerContext } from '@devvit/public-api';
 
 /**
- * Wiki page paths for sub-stats-bot
+ * Standardized wiki page paths for hub-bot-9000 apps
+ * All apps use the 'hub-bot-9000/' prefix for their wiki storage
+ */
+export const HUB_BOT_WIKI = {
+  // Cross-app shared storage
+  eventsFeed: 'hub-bot-9000/events-feed',      // Bot activity feed (brigade alerts, haikus, etc.)
+  optOut: 'hub-bot-9000/opt-out',              // User opt-out list
+
+  // Brigade Sentinel
+  haterLeaderboard: 'hub-bot-9000/hater-leaderboard',  // Hater tracking scores
+  userAchievements: 'hub-bot-9000/user-achievements',  // Achievement unlock tracking
+  pendingAlts: 'hub-bot-9000/pending-alts',           // Alt reports awaiting mod approval
+
+  // Community Hub
+  communityEvents: 'hub-bot-9000/community-events',   // User-submitted + scraped events
+
+  // External integrations (read-only)
+  subStatsSummary: 'sub-stats-bot',                   // sub-stats-bot data
+  subStatsYear: (year: number) => `sub-stats-bot/${year}`,
+};
+
+/**
+ * @deprecated Use HUB_BOT_WIKI instead
+ * Wiki page paths for sub-stats-bot (legacy)
  */
 export const WIKI_PATHS = {
   summary: 'sub-stats-bot',

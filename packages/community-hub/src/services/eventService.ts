@@ -4,7 +4,7 @@ import { isLinkAllowed, parseAllowedDomains, sanitizeUrl } from '../utils/linkVa
 
 const EVENTS_KEY = 'user_events';
 const SCRAPED_EVENTS_KEY = 'scraped_events';
-const WIKI_PAGE_NAME = 'hub-bot-events'; // Wiki page for scraped events
+const WIKI_PAGE_NAME = 'hub-bot-9000/community-events'; // Standardized wiki path
 
 /**
  * Event Service - handles CRUD operations for user-submitted events
