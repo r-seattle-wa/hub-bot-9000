@@ -1,0 +1,37 @@
+# Example enrichment service
+from fastapi import FastAPI
+import httpx
+import os
+import json
+
+app = FastAPI()
+
+SCRAPER_URL = os.getenv("SCRAPER_URL", "")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+@app.get("/events")
+async def get_enriched_events(days: int = 7, location: str = "Seattle"):
+    events = []
+    
+    # Optionally chain to scraper
+    if SCRAPER_URL:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{SCRAPER_URL}/events", params={"days": days, "location": location})
+            if resp.status_code == 200:
+                events = resp.json().get("events", [])
+    
+    # Add your enrichment logic here
+    # e.g., use Gemini to categorize events, add tags, etc.
+    
+    # Log for metrics
+    print(json.dumps({"event": "processed", "count": len(events)}))
+    
+    return {"events": events, "enriched": True}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))

@@ -1,5 +1,8 @@
 # Hub Bot 9000 - GCP Infrastructure
-# Terraform configuration for Cloud Run, Logging, Monitoring, and Alerting
+# Modular Terraform for Cloud Run services
+#
+# INTEGRATION POINT: The scraper_url output is the URL to configure in your apps.
+# Anyone can deploy their own instance and use their URL instead.
 
 terraform {
   required_version = ">= 1.0"
@@ -23,105 +26,147 @@ provider "google" {
   region  = var.region
 }
 
-# Enable required APIs
-resource "google_project_service" "apis" {
-  for_each = toset([
-    "run.googleapis.com",
-    "logging.googleapis.com",
-    "monitoring.googleapis.com",
-    "cloudbuild.googleapis.com",
-    "secretmanager.googleapis.com",
-    "artifactregistry.googleapis.com",
-  ])
+# =============================================================================
+# BASE INFRASTRUCTURE (APIs, Registry, BigQuery)
+# =============================================================================
 
-  service            = each.value
-  disable_on_destroy = false
+module "base" {
+  source = "./modules/base"
+
+  project_id          = var.project_id
+  region              = var.region
+  environment         = var.environment
+  registry_name       = "hub-bot-9000"
+  bigquery_dataset_id = "hub_bot_logs"
+  log_retention_days  = var.log_retention_days
 }
 
-# Artifact Registry for container images
-resource "google_artifact_registry_repository" "hub_bot" {
-  location      = var.region
-  repository_id = "hub-bot-9000"
-  description   = "Container images for Hub Bot 9000 services"
-  format        = "DOCKER"
+# =============================================================================
+# EVENT SCRAPER SERVICE
+# This is the main integration point - the URL goes into Devvit app settings
+# =============================================================================
 
-  depends_on = [google_project_service.apis]
+module "scraper" {
+  source = "./modules/cloud-run-service"
+
+  project_id         = var.project_id
+  region             = var.region
+  service_name       = "hub-bot-scraper"
+  service_account_id = "hub-bot-scraper"
+  container_image    = "${module.base.artifact_registry_url}/scraper:latest"
+
+  cpu           = "1"
+  memory        = "512Mi"
+  min_instances = 0
+  max_instances = 3
+  timeout       = "300s"
+
+  env_vars = {
+    ENVIRONMENT = var.environment
+  }
+
+  secret_env_vars = var.gemini_api_key_secret != "" ? {
+    GOOGLE_API_KEY = { secret_name = var.gemini_api_key_secret }
+  } : {}
+
+  public_access = var.scraper_public_access
 }
 
-# Cloud Run service for event scraper
-resource "google_cloud_run_v2_service" "scraper" {
-  name     = "hub-bot-scraper"
-  location = var.region
+# =============================================================================
+# DETECTION METRICS (Optional - for observability)
+# =============================================================================
 
-  template {
-    containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/hub-bot-9000/scraper:latest"
+module "detection_metrics" {
+  source = "./modules/detection-metrics"
 
-      resources {
-        limits = {
-          cpu    = "1"
-          memory = "512Mi"
-        }
+  project_id       = var.project_id
+  metric_prefix    = "hub-bot"
+  bigquery_dataset = module.base.bigquery_dataset_id
+  sink_name_prefix = "hub-bot-suspicious-activity"
+
+  sink_filter = <<-EOT
+    resource.type="cloud_run_revision"
+    (
+      jsonPayload.event="hostile_crosslink" OR
+      jsonPayload.event="brigade_pattern" OR
+      jsonPayload.event="osint_flagged_content" OR
+      jsonPayload.event="behavioral_analysis" OR
+      jsonPayload.event="deleted_content_detected" OR
+      jsonPayload.event="mod_log_spam_found"
+    )
+  EOT
+
+  metrics = {
+    hostile_crosslinks = {
+      description = "Hostile crosslinks detected"
+      filter      = "resource.type=\"cloud_run_revision\" jsonPayload.event=\"hostile_crosslink\""
+      labels = {
+        source_subreddit = { description = "Subreddit that posted the crosslink" }
+        classification   = { description = "Tone classification" }
       }
-
-      env {
-        name  = "ENVIRONMENT"
-        value = var.environment
-      }
-
-      # Gemini API key from Secret Manager
-      dynamic "env" {
-        for_each = var.gemini_api_key_secret != "" ? [1] : []
-        content {
-          name = "GOOGLE_API_KEY"
-          value_source {
-            secret_key_ref {
-              secret  = var.gemini_api_key_secret
-              version = "latest"
-            }
-          }
-        }
+      label_extractors = {
+        "source_subreddit" = "EXTRACT(jsonPayload.source_subreddit)"
+        "classification"   = "EXTRACT(jsonPayload.classification)"
       }
     }
 
-    scaling {
-      min_instance_count = 0
-      max_instance_count = 3
+    brigade_patterns = {
+      description = "Brigading patterns detected"
+      filter      = "resource.type=\"cloud_run_revision\" jsonPayload.event=\"brigade_pattern\""
+      labels = {
+        source_subreddit = { description = "Source subreddit" }
+      }
+      label_extractors = {
+        "source_subreddit" = "EXTRACT(jsonPayload.source_subreddit)"
+      }
     }
 
-    timeout = "300s"
+    sockpuppet_detections = {
+      description = "High-confidence sockpuppet detections"
+      filter      = "resource.type=\"cloud_run_revision\" jsonPayload.event=\"behavioral_analysis\" jsonPayload.sockpuppet_risk=\"high\""
+      labels = {
+        username = { description = "Detected username" }
+      }
+      label_extractors = {
+        "username" = "EXTRACT(jsonPayload.username)"
+      }
+    }
+
+    api_errors = {
+      description = "API errors (PullPush, Gemini)"
+      filter      = "resource.type=\"cloud_run_revision\" (jsonPayload.event=\"pullpush_error\" OR jsonPayload.event=\"gemini_error\") severity>=ERROR"
+      labels = {
+        error_type = { description = "Type of error" }
+      }
+      label_extractors = {
+        "error_type" = "EXTRACT(jsonPayload.error_type)"
+      }
+    }
+
+    rate_limits = {
+      description = "Rate limit responses (429)"
+      filter      = "resource.type=\"cloud_run_revision\" httpRequest.status=429"
+    }
   }
-
-  traffic {
-    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
-    percent = 100
-  }
-
-  depends_on = [google_project_service.apis]
 }
 
-# Allow unauthenticated access to scraper (rate-limited internally)
-resource "google_cloud_run_v2_service_iam_member" "scraper_public" {
-  count = var.scraper_public_access ? 1 : 0
+# =============================================================================
+# CUSTOM SERVICES - Add your own enrichment/trigger services below
+# =============================================================================
 
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.scraper.name
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
-
-# Service account for Cloud Run
-resource "google_service_account" "scraper_sa" {
-  account_id   = "hub-bot-scraper"
-  display_name = "Hub Bot Scraper Service Account"
-}
-
-# Grant Secret Manager access to service account
-resource "google_secret_manager_secret_iam_member" "scraper_secret_access" {
-  count = var.gemini_api_key_secret != "" ? 1 : 0
-
-  secret_id = var.gemini_api_key_secret
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.scraper_sa.email}"
-}
+# Example: Uncomment to add a custom enrichment service
+# module "my_enrichment" {
+#   source = "./modules/cloud-run-service"
+#
+#   project_id         = var.project_id
+#   region             = var.region
+#   service_name       = "my-enrichment-service"
+#   service_account_id = "my-enrichment-sa"
+#   container_image    = "${module.base.artifact_registry_url}/my-enrichment:latest"
+#
+#   env_vars = {
+#     SCRAPER_URL = module.scraper.service_url  # Chain to scraper
+#   }
+#
+#   public_access = true  # Or restrict to specific callers
+# }

@@ -1,40 +1,30 @@
 # Hub Bot 9000 - GCP Infrastructure
 
-Terraform configuration for deploying Hub Bot 9000 infrastructure on Google Cloud Platform.
+Modular Terraform configuration for deploying Hub Bot 9000 services on Google Cloud Platform.
 
-## Resources Created
+## Integration Point
 
-### Compute
-- **Cloud Run Service** - Event scraper API
-- **Artifact Registry** - Container image storage
+**The `scraper_url` output is the URL to configure in your Devvit app settings.**
 
-### Observability
-- **Log-based Metrics** - Detection signals for suspicious activity
-- **BigQuery Dataset** - Log storage for analysis
-- **Log Sink** - Routes suspicious activity logs to BigQuery
+Anyone can deploy their own instance with custom features and use their own URL.
 
-### Detection Metrics
+## Architecture
 
-| Metric | Description |
-|--------|-------------|
-| `hub-bot/hostile_crosslinks` | Hostile (adversarial/hateful) crosslinks detected |
-| `hub-bot/brigade_patterns` | Potential brigading patterns |
-| `hub-bot/deleted_content` | Deleted content found via PullPush |
-| `hub-bot/osint_flagged_content` | OSINT flagged content by severity |
-| `hub-bot/sockpuppet_detections` | High-confidence sockpuppet detections |
-| `hub-bot/mod_log_spam` | Mod log spam actions for haters |
-| `hub-bot/leaderboard_updates` | Leaderboard score updates |
-| `hub-bot/pullpush_errors` | PullPush API errors |
-| `hub-bot/gemini_errors` | Gemini API errors |
-| `hub-bot/rate_limit_hits` | Rate limit responses (429) |
+```
+infrastructure/terraform/
+  main.tf                 # Root composition (uses modules)
+  variables.tf            # Input variables
+  outputs.tf              # Output values (scraper_url, etc.)
+  terraform.tfvars.example
+  modules/
+    base/               # Shared infra (APIs, Registry, BigQuery)
+    cloud-run-service/  # Reusable Cloud Run deployment
+    detection-metrics/  # Log-based metrics and sinks
+  examples/
+    enrichment-service/ # Template for custom services
+```
 
-## Prerequisites
-
-1. [Terraform](https://terraform.io) >= 1.0
-2. [gcloud CLI](https://cloud.google.com/sdk/gcloud)
-3. GCP Project with billing enabled
-
-## Setup
+## Quick Start
 
 ```bash
 cd infrastructure/terraform
@@ -54,116 +44,116 @@ terraform plan
 
 # Apply
 terraform apply
+
+# Get the scraper URL
+terraform output scraper_url
 ```
 
-## Deploying the Scraper
+## Resources Created
 
-After Terraform creates the infrastructure:
+### Base Module
+- **GCP APIs** - Cloud Run, Logging, Monitoring, Build, Secrets, Artifact Registry
+- **Artifact Registry** - Container image storage
+- **BigQuery Dataset** - Log storage for analysis
+
+### Scraper Service
+- **Cloud Run Service** - Event scraper API with Gemini fallback
+- **Service Account** - With Secret Manager access
+- **IAM** - Public access (rate-limited internally)
+
+### Detection Metrics
+- **Log-based Metrics** - Brigade, sockpuppet, error tracking
+- **BigQuery Sink** - Routes suspicious activity to BigQuery
+
+## Deploying the Scraper Container
+
+After Terraform creates infrastructure:
 
 ```bash
-# Build and push container
 cd ../../scraper-service
 
-# Tag for Artifact Registry
+# Build
 docker build -t us-west1-docker.pkg.dev/YOUR_PROJECT/hub-bot-9000/scraper:latest .
 
 # Push
 docker push us-west1-docker.pkg.dev/YOUR_PROJECT/hub-bot-9000/scraper:latest
 
 # Deploy new revision
-gcloud run services update hub-bot-scraper --image us-west1-docker.pkg.dev/YOUR_PROJECT/hub-bot-9000/scraper:latest
+gcloud run services update hub-bot-scraper   --image us-west1-docker.pkg.dev/YOUR_PROJECT/hub-bot-9000/scraper:latest   --region us-west1
 ```
 
-## Viewing Metrics
+## Adding Custom Services
 
-### Cloud Console
+Want to add your own enrichment service? See `examples/enrichment-service/`.
 
-1. Go to **Monitoring > Metrics Explorer**
+```hcl
+# In main.tf, add:
+module "my_enrichment" {
+  source = "./modules/cloud-run-service"
+
+  project_id         = var.project_id
+  region             = var.region
+  service_name       = "my-enrichment-service"
+  service_account_id = "my-enrichment-sa"
+  container_image    = "${module.base.artifact_registry_url}/my-enrichment:latest"
+
+  env_vars = {
+    SCRAPER_URL = module.scraper.service_url  # Chain to scraper
+  }
+
+  public_access = true
+}
+```
+
+## Detection Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `hub-bot/hostile_crosslinks` | Hostile crosslinks detected |
+| `hub-bot/brigade_patterns` | Brigading patterns |
+| `hub-bot/sockpuppet_detections` | High-confidence sockpuppets |
+| `hub-bot/api_errors` | PullPush/Gemini API errors |
+| `hub-bot/rate_limits` | Rate limit responses (429) |
+
+### Viewing Metrics
+
+1. Go to **GCP Console > Monitoring > Metrics Explorer**
 2. Search for `hub-bot/` to see all custom metrics
-3. Create dashboards as needed
 
-### BigQuery
+### BigQuery Analysis
 
 ```sql
--- View hostile crosslinks by source
+-- Hostile crosslinks by source
 SELECT
   jsonPayload.source_subreddit,
   jsonPayload.classification,
   COUNT(*) as count
-FROM `your-project.hub_bot_logs.suspicious_activity_*`
+FROM your_project.hub_bot_logs.suspicious_activity_*
 WHERE jsonPayload.event = 'hostile_crosslink'
 GROUP BY 1, 2
 ORDER BY count DESC
 ```
 
-## Logging Events
-
-The apps should emit structured logs with these events:
-
-```typescript
-// Hostile crosslink detected
-console.log(JSON.stringify({
-  event: 'hostile_crosslink',
-  source_subreddit: 'example',
-  classification: 'adversarial',
-  target_post: 't3_abc123',
-}));
-
-// Brigade pattern detected
-console.log(JSON.stringify({
-  event: 'brigade_pattern',
-  source_subreddit: 'example',
-  link_count: 5,
-}));
-
-// OSINT flagged content
-console.log(JSON.stringify({
-  event: 'osint_flagged_content',
-  username: 'example_user',
-  severity: 'severe',
-  reason: 'harassment',
-}));
-
-// Behavioral analysis result
-console.log(JSON.stringify({
-  event: 'behavioral_analysis',
-  username: 'example_user',
-  sockpuppet_risk: 'high',
-  similar_to: 'other_user',
-}));
-```
-
 ## Cost Estimates
 
-- **Cloud Run**: Pay per request, ~$0.00001 per request
-- **BigQuery**: $5/TB stored, $5/TB queried
-- **Cloud Logging**: First 50GB/month free, then $0.50/GB
-- **Artifact Registry**: $0.10/GB stored
+| Resource | Estimated Cost |
+|----------|---------------|
+| Cloud Run | ~$0/month (scales to zero) |
+| BigQuery | ~$0.10/month (small logs) |
+| Artifact Registry | ~$0.10/month |
+| Cloud Logging | Free (under 50GB) |
+| **Total** | **< $1/month** |
 
-For typical usage (~10k requests/month), expect < $5/month.
+## Variables
 
-## Adding Notifications Later
-
-When ready to add alert notifications:
-
-1. Create notification channels (email, Slack, PagerDuty, etc.)
-2. Create alert policies using the log-based metrics
-3. Example Slack integration:
-
-```hcl
-resource "google_monitoring_notification_channel" "slack" {
-  type         = "slack"
-  display_name = "Hub Bot Alerts"
-
-  labels = {
-    channel_name = "#hub-bot-alerts"
-  }
-
-  sensitive_labels {
-    auth_token = var.slack_webhook_token
-  }
-}
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `project_id` | GCP Project ID | (required) |
+| `region` | GCP Region | `us-west1` |
+| `environment` | Environment name | `prod` |
+| `gemini_api_key_secret` | Secret Manager secret name | `""` |
+| `scraper_public_access` | Allow public access | `true` |
+| `log_retention_days` | BigQuery retention | `30` |
 
 ## Cleanup
 
