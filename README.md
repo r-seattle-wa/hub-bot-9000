@@ -351,6 +351,50 @@ devvit publish
 
 ---
 
+## Cloud Run Deployment
+
+The scraper-service runs on Google Cloud Run. Deployment can be triggered manually via GitHub Actions.
+
+### Prerequisites
+
+1. **GCP Project**: `reddit-botting` (or your project)
+2. **Service Account**: Create with roles:
+   - Cloud Run Admin
+   - Artifact Registry Writer
+3. **GitHub Secrets**: Add to repository settings:
+   - `GCP_SA_KEY`: Base64-encoded service account JSON key
+
+### Deploy via GitHub Actions
+
+1. Go to **Actions** tab in GitHub
+2. Select **Deploy Scraper Service**
+3. Click **Run workflow**
+4. Select environment (production/staging)
+5. Click **Run workflow**
+
+### Deploy via gcloud CLI
+
+```bash
+cd scraper-service
+
+# Build and deploy directly
+gcloud run deploy event-scraper   --source .   --region us-west1   --allow-unauthenticated   --memory 512Mi   --set-env-vars "RATE_LIMIT=30,ENABLE_DOCS=false"
+
+# Or use Cloud Build
+gcloud builds submit --config cloudbuild.yaml
+```
+
+### Service Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/events` | Fetch Seattle events |
+| `/wiki-format` | Events formatted for wiki |
+| `/health` | Health check |
+| `/analyze/content` | Content analysis |
+
+---
+
 ## External APIs
 
 | API | Used By | Auth | Purpose |
