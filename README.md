@@ -11,7 +11,7 @@ A suite of [Reddit Developer Platform (Devvit)](https://developers.reddit.com) a
 | [community-hub](#community-hub) | Community dashboard with events, weather, and links | Ready |
 | [haiku-sensei](#haiku-sensei) | Detects accidental 5-7-5 haikus in comments | Ready |
 | [brigade-sentinel](#brigade-sentinel) | Cross-subreddit link alerts with hater tracking | Ready |
-| [farewell-hero](#farewell-hero) | Witty responses to "I'm unsubscribing" posts | Ready |
+| [farewell-hero](#farewell-hero) | Witty responses + satirical tributes (!tribute) | Ready |
 | [hub-widget](#hub-widget) | Bot activity feed showing all hub-bot events | Ready |
 
 ---
@@ -112,7 +112,7 @@ Track hostile crosslinks with dual leaderboards:
 
 **Score Formula:**
 ```
-Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flags x 2)
+Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flags x 2) + (tributes x 0.5)
 ```
 
 #### Hater Achievement System
@@ -160,15 +160,34 @@ Real-time detection of unusual comment velocity - potential early warning for br
 
 ## Farewell Hero
 
-Responds to "I'm unsubscribing" posts with a witty statistical analysis of the user's activity.
+Responds to "I'm unsubscribing" posts with a witty statistical analysis of the user's activity. Also includes the **Tribute** feature for generating satirical homages to users and subreddits.
 
-### Features
+### Farewell Features
 - Pattern detection for farewell posts
 - User activity analysis
 - 5 sarcasm levels (Polite → Freakout)
 - Tone matching to user's mood
 - Political complaint detection with wiki survey links
 - Best post/comment showcase
+- Hater leaderboard integration
+
+### Tribute Feature
+
+Satirical tribute generator that channels the essence of subreddits and users. Spiritual successor to [Seattle-Simulator](https://github.com/r-seattle-wa/Seattle-Simulator).
+
+**Commands:**
+```
+!tribute              # Tribute to default subreddit
+!tribute r/Seattle    # Tribute to specific subreddit
+!tribute u/username   # Tribute to specific user
+"what would u/user say about this?"  # Natural language
+```
+
+**AI Providers:**
+- **Groq** (primary) - Free tier, Llama 3.1-8b-instant
+- **Gemini** (fallback) - BYOK
+
+**Leaderboard Integration:** Each tribute request adds +0.5 hater points (playful rivalry).
 
 ### Sarcasm Levels
 
@@ -228,6 +247,7 @@ hub-bot-9000/
 │   │       ├── ai-provider.ts    # Gemini BYOK integration
 │   │       ├── pullpush.ts       # PullPush.io API client
 │   │       ├── leaderboard.ts    # Hater tracking system
+│   │       ├── tribute.ts        # Tribute generation
 │   │       ├── achievements.ts   # Achievement system
 │   │       ├── events-feed.ts    # Cross-app event feed
 │   │       ├── wiki.ts           # Wiki storage paths
@@ -298,7 +318,7 @@ All apps use standardized wiki paths under `hub-bot-9000/`:
 
 ```bash
 # Clone the repo
-git clone https://github.com/rattusrattus/hub-bot-9000.git
+git clone https://github.com/r-seattle-wa/hub-bot-9000.git
 cd hub-bot-9000
 
 # Install dependencies
@@ -338,7 +358,8 @@ devvit publish
 | Reddit API | All apps | Devvit context | Core functionality |
 | weather.gov | community-hub | None | Weather forecasts (US) |
 | PullPush.io | brigade-sentinel | None (rate-limited) | Deleted content, crosslinks |
-| Gemini Flash | All apps (optional) | BYOK | AI classification |
+| Groq API | farewell-hero | BYOK (free tier) | Tribute generation (Llama 3.1) |
+| Gemini Flash | All apps (optional) | BYOK | AI classification, tribute fallback |
 
 ## BYOK Model
 
@@ -365,6 +386,8 @@ See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md) for details.
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## Support
+## Community
 
-- **Issues**: [GitHub Issues](https://github.com/rattusrattus/hub-bot-9000/issues)
+- **Discord**: [discord.gg/seattle](https://discord.gg/seattle) - Seattle Discord community
+- **Subreddits**: r/Seattle, r/SeattleWA, and others
+- **Issues**: [GitHub Issues](https://github.com/r-seattle-wa/hub-bot-9000/issues)

@@ -11,6 +11,7 @@ export enum AIProvider {
   NONE = 'none',
   REDDIT = 'reddit',
   GEMINI = 'gemini',
+  GROQ = 'groq',
 }
 
 export interface ClassificationResult {
@@ -58,6 +59,7 @@ export enum HubBotEventType {
   TRAFFIC_SPIKE = 'traffic_spike',
   COMMUNITY_EVENT = 'community_event',
   SYSTEM = 'system',
+  TRIBUTE = 'tribute',
 }
 
 // Base event interface
@@ -139,6 +141,18 @@ export interface CommunityEventEvent extends HubBotEventBase {
   source: string;         // e.g., 'eventbrite', 'ticketmaster', 'gemini'
 }
 
+
+// Tribute event - satirical content generated for subreddit/user
+export interface TributeEvent extends HubBotEventBase {
+  type: HubBotEventType.TRIBUTE;
+  targetName: string;
+  targetType: 'subreddit' | 'user';
+  tribute: string;
+  sarcasmLevel: SarcasmLevel;
+  requestedBy: string;
+  hasImage: boolean;
+}
+
 // System event
 export interface SystemEvent extends HubBotEventBase {
   type: HubBotEventType.SYSTEM;
@@ -154,7 +168,8 @@ export type HubBotEvent =
   | OutgoingLinkEvent
   | TrafficSpikeEvent
   | CommunityEventEvent
-  | SystemEvent;
+  | SystemEvent
+  | TributeEvent;
 
 // Tone classification result
 export interface ToneClassificationResult {

@@ -33,6 +33,7 @@ export interface UserHaterEntry {
   adversarialCount: number;
   hatefulCount: number;
   modLogSpamCount: number;  // Times found in mod log for spam/removals
+  tributeRequestCount: number;  // Tribute commands used (+0.5 points each)
   lastSeen: number;
   worstTitle?: string;
   homeSubreddits: string[]; // Where they post from
@@ -208,6 +209,7 @@ export async function recordHater(
     adversarialCount: 0,
     hatefulCount: 0,
     modLogSpamCount: 0,
+    tributeRequestCount: 0,
     lastSeen: 0,
     homeSubreddits: [],
   };
@@ -246,17 +248,77 @@ export async function recordHater(
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
-  // Top users (score includes mod log spam: +2 per spam action)
+  // Top users (score includes mod log spam: +2 per spam action, +0.5 per tribute)
   data.topUsers = Object.values(data.users)
     .filter(e => !e.isAltOf)
     .map(e => ({
       username: e.username,
-      score: e.adversarialCount + (e.hatefulCount * 3) + (e.modLogSpamCount * 2),
+      score: e.adversarialCount + (e.hatefulCount * 3) + (e.modLogSpamCount * 2) + ((e.tributeRequestCount || 0) * 0.5),
       alts: e.knownAlts?.length || 0,
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
+  await saveLeaderboard(context, data);
+}
+
+/**
+ * Record a tribute request for a user (+0.5 hater points)
+ * Used for playful leaderboard engagement
+ */
+export async function recordTributeRequest(
+  context: AppContext,
+  username: string
+): Promise<void> {
+  let data = await getLeaderboard(context);
+
+  if (!data) {
+    data = {
+      updatedAt: Date.now(),
+      totalHostileLinks: 0,
+      subreddits: {},
+      subredditAltMappings: {},
+      topSubreddits: [],
+      users: {},
+      userAltMappings: {},
+      topUsers: [],
+    };
+  }
+
+  const userKey = username.toLowerCase();
+  const mainUserKey = data.userAltMappings[userKey] || userKey;
+
+  const mainUserName = mainUserKey !== userKey && data.users[mainUserKey]
+    ? data.users[mainUserKey].username
+    : username;
+
+  const userEntry: UserHaterEntry = data.users[mainUserKey] || {
+    username: mainUserName,
+    hostileLinks: 0,
+    adversarialCount: 0,
+    hatefulCount: 0,
+    modLogSpamCount: 0,
+    tributeRequestCount: 0,
+    lastSeen: 0,
+    homeSubreddits: [],
+  };
+
+  userEntry.tributeRequestCount = (userEntry.tributeRequestCount || 0) + 1;
+  userEntry.lastSeen = Date.now();
+  data.users[mainUserKey] = userEntry;
+
+  // Update top users list
+  data.topUsers = Object.values(data.users)
+    .filter(e => !e.isAltOf)
+    .map(e => ({
+      username: e.username,
+      score: e.adversarialCount + (e.hatefulCount * 3) + (e.modLogSpamCount * 2) + ((e.tributeRequestCount || 0) * 0.5),
+      alts: e.knownAlts?.length || 0,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+
+  data.updatedAt = Date.now();
   await saveLeaderboard(context, data);
 }
 
@@ -322,7 +384,7 @@ export async function registerUserAlt(
   data.userAltMappings[altKey] = mainKey;
 
   const mainEntry: UserHaterEntry = data.users[mainKey] || {
-    username: mainUsername, hostileLinks: 0, adversarialCount: 0, hatefulCount: 0, modLogSpamCount: 0, lastSeen: Date.now(), homeSubreddits: [],
+    username: mainUsername, hostileLinks: 0, adversarialCount: 0, hatefulCount: 0, modLogSpamCount: 0, tributeRequestCount: 0, lastSeen: Date.now(), homeSubreddits: [],
   };
   mainEntry.knownAlts = mainEntry.knownAlts || [];
   if (!mainEntry.knownAlts.includes(altUsername)) mainEntry.knownAlts.push(altUsername);
@@ -578,7 +640,7 @@ export async function enrichTopHatersWithOSINT(
     }
   }
 
-  // Update score calculation to include flagged content
+  // Update score calculation to include flagged content and tributes
   data.topUsers = Object.values(data.users)
     .filter(e => !e.isAltOf)
     .map(e => ({
@@ -586,7 +648,8 @@ export async function enrichTopHatersWithOSINT(
       score: e.adversarialCount +
              (e.hatefulCount * 3) +
              (e.modLogSpamCount * 2) +
-             ((e.flaggedContentCount || 0) * 2),  // Deleted bad content adds points
+             ((e.flaggedContentCount || 0) * 2) +  // Deleted bad content adds points
+             ((e.tributeRequestCount || 0) * 0.5),  // Tributes add small points
       alts: e.knownAlts?.length || 0,
     }))
     .sort((a, b) => b.score - a.score)

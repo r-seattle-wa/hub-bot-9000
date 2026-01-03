@@ -719,6 +719,62 @@ brigade-sentinel (every 6 hours)
   -> hub-widget displays with @ icon (purple)
 ```
 
+
+
+### Feature 7: Tribute Feature (COMPLETE)
+
+**Status:** Implemented & Merged
+**Location:** `packages/farewell-hero/` (merged), `packages/common/src/tribute.ts` (shared logic)
+
+Satirical tribute generator that channels the essence of subreddits and users. Spiritual successor to [Seattle-Simulator](https://github.com/r-seattle-wa/Seattle-Simulator). Originally planned as standalone `tribute-bot`, merged into `farewell-hero` for simpler deployment.
+
+#### Trigger Command
+```
+!tribute              # Default subreddit (configurable)
+!tribute r/Seattle    # Specific subreddit
+!tribute u/username   # Specific user
+```
+
+#### Features
+- **5 Sarcasm Levels**: Polite, Neutral, Snarky, Roast, Freakout
+- **Dual AI Provider**: Groq (free tier) primary, Gemini fallback
+- **Context Analysis**: Fetches recent posts/comments for style mimicry
+- **Image Generation**: Optional AI-generated tribute art (Gemini Imagen)
+- **Rate Limiting**: 5 tributes/user/hour, 30 tributes/sub/day
+- **Opt-out**: Block bot or wiki-based opt-out
+
+#### Settings (in farewell-hero)
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `enableTributes` | Enable !tribute command | `true` |
+| `sarcasmLevel` | Default sarcasm level | `neutral` |
+| `groqApiKey` | Groq API key (free tier) | - |
+| `geminiApiKey` | Gemini API key (fallback) | - |
+| `defaultTributeTarget` | Default subreddit | `Seattle` |
+| `allowUserTributes` | Allow u/username targets | `true` |
+| `replyDelaySeconds` | Delay before reply | `30` |
+
+#### Hater Leaderboard Integration
+Each tribute request adds +0.5 points to the requesting user's hater score (playful rivalry).
+
+```typescript
+// Score formula now includes tribute requests
+score = adversarialCount
+      + (hatefulCount * 3)
+      + (modLogSpamCount * 2)
+      + (flaggedContentCount * 2)
+      + (tributeRequestCount * 0.5)
+```
+
+#### ToS Compliance
+- Framed as "tribute/homage" not impersonation
+- Clear AI disclosure in footer
+- Opt-out via blocking
+- Rate limited to prevent spam
+- Never claims to BE the user/community
+
+---
+
 ---
 
 ## Open Questions

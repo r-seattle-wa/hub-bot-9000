@@ -20,7 +20,8 @@ hub-bot-9000/
 │   │       ├── rate-limiter.ts   # Configurable rate limiting
 │   │       ├── ai-provider.ts    # Gemini BYOK + tone classification + bot replies
 │   │       ├── pullpush.ts       # PullPush.io API client
-│   │       ├── leaderboard.ts    # Hater tracking (subs + users)
+│   │       ├── leaderboard.ts    # Hater tracking (subs + users + tributes)
+│   │       ├── tribute.ts        # Tribute generation (Groq/Gemini)
 │   │       ├── user-analysis.ts  # Behavioral profiling (OSINT)
 │   │       ├── events-feed.ts    # Unified event feed (wiki-based)
 │   │       ├── url-utils.ts      # Reddit URL extraction utilities
@@ -96,7 +97,7 @@ devvit logs r/YourTestSubreddit
 |-----|---------|--------------|
 | **haiku-sensei** | Detects accidental 5-7-5 haikus | Syllable counting, AI replies to users |
 | **brigade-sentinel** | Cross-subreddit link alerts + hater leaderboard | OSINT, alt tracking, modmail alerts, traffic spike detection, achievements, community events |
-| **farewell-hero** | "I'm unsubscribing" responder | 5 sarcasm levels, tone matching, best post/comment, political complaint detection, hater leaderboard integration |
+| **farewell-hero** | "I'm unsubscribing" responder + tributes | 5 sarcasm levels, tone matching, best post/comment, political complaint detection, hater leaderboard integration, !tribute command |
 | **hub-widget** | Unified events dashboard | Color-coded feed, auto-refresh, Custom Post Type |
 
 ## Shared Package (@hub-bot/common)
@@ -210,6 +211,7 @@ import {
 import {
   // Recording
   recordHater,              // Record a hostile crosslink or political complainer
+  recordTributeRequest,     // Record a tribute request (+0.5 points)
   checkModLogForUser,       // Check mod log for spam actions
 
   // Alt tracking (requires mod confirmation)
@@ -326,6 +328,29 @@ const events = await fetchCommunityEvents(context, {
 });
 ```
 
+### Tribute Generation Module
+
+```typescript
+import {
+  // Command parsing
+  parseTributeCommand,      // Parse !tribute and natural language commands
+  
+  // Context fetching
+  fetchSubredditContext,    // Fetch recent posts/comments for AI context
+  fetchUserContext,         // Fetch user's post history for AI context
+  
+  // Generation
+  generateTribute,          // Generate AI tribute (Groq primary, Gemini fallback)
+  formatTributeResponse,    // Format tribute with header and footer
+} from '@hub-bot/common';
+
+// Supports multiple trigger patterns:
+// !tribute r/Seattle       - Explicit subreddit
+// !tribute u/username      - Explicit user
+// "what would u/user say"  - Natural language
+// "channel r/Seattle"      - Natural language
+```
+
 ### PullPush Integration
 
 ```typescript
@@ -378,6 +403,34 @@ When `matchToneToUser` is enabled:
 - HOSTILE user → ROAST minimum
 - DRAMATIC user → FREAKOUT (match energy)
 
+### Tribute Feature
+
+Satirical tribute generator that channels the essence of subreddits/users. Successor to Seattle-Simulator.
+
+**Trigger Commands:**
+```
+!tribute              # Default subreddit (configurable)
+!tribute r/Seattle    # Specific subreddit
+!tribute u/username   # Specific user
+"what would u/username say"  # Natural language
+"channel r/Seattle"          # Natural language
+```
+
+**Settings:**
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `enableTributes` | Enable !tribute command | `true` |
+| `allowUserTributes` | Allow u/username targets | `true` |
+| `defaultTributeTarget` | Default subreddit | `Seattle` |
+| `groqApiKey` | Groq API key (free tier) | - |
+
+**AI Providers:**
+- **Groq (primary)**: Free tier, Llama 3.1-8b-instant
+- **Gemini (fallback)**: BYOK, Flash model
+
+**Leaderboard Integration:**
+Each tribute request adds +0.5 hater points (playful rivalry).
+
 ## hub-widget Deployment
 
 ```bash
@@ -425,6 +478,7 @@ score = adversarialCount
       + (hatefulCount * 3)
       + (modLogSpamCount * 2)
       + (flaggedContentCount * 2)
+      + (tributeRequestCount * 0.5)  // Playful rivalry bonus
 ```
 
 ## External APIs
@@ -433,7 +487,8 @@ score = adversarialCount
 |-----|---------|------|---------|
 | Reddit API | All apps | Devvit context | Core functionality |
 | PullPush.io | brigade-sentinel, user-analysis | None (rate-limited) | Deleted content, crosslinks |
-| Gemini Flash | All apps (optional) | BYOK (mod's key) | Tone classification, AI replies, OSINT |
+| Groq API | farewell-hero | BYOK (free tier) | Primary AI for tributes (Llama 3.1) |
+| Gemini Flash | All apps (optional) | BYOK (mod's key) | Tone classification, AI replies, OSINT, tribute fallback |
 
 ## Settings Pattern
 
@@ -479,6 +534,7 @@ const REDIS_PREFIX = {
 | `notifyBrigade` | brigade-sentinel | On-demand | Delayed crosslink notification |
 | `postHaikuReply` | haiku-sensei | On-demand | Delayed haiku reply |
 | `postFarewellReply` | farewell-hero | On-demand | Delayed farewell reply |
+| `postTributeReply` | farewell-hero | On-demand | Delayed tribute reply |
 
 ## Test Suite
 
@@ -504,3 +560,15 @@ npm test  # Runs vitest across all packages
 - Only PUBLIC data analyzed - no sensitive attribute inference
 - Alt reports require mod confirmation - prevents abuse/false linking
 - OSINT is meta analysis only - deleted content never reposted
+
+## Community
+
+This project is developed by the r/Seattle community mod team.
+
+- **Discord**: [discord.gg/seattle](https://discord.gg/seattle) - Seattle Discord community
+- **Subreddits**: r/Seattle, r/SeattleWA, r/seattlebike, r/SeattlePhotography, and more
+- **GitHub**: [r-seattle-wa/hub-bot-9000](https://github.com/r-seattle-wa/hub-bot-9000)
+
+### Related Projects
+
+- [Seattle-Simulator](https://github.com/r-seattle-wa/Seattle-Simulator) - Original Python tribute bot (now integrated into farewell-hero)

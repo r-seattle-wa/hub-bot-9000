@@ -26,12 +26,19 @@ import {
   TalkingPoint,
   // Hater leaderboard
   recordHater,
+  recordTributeRequest,
   getLeaderboard,
   // Achievements
   checkAchievements,
   getHighestNewAchievement,
   markAchievementNotified,
   formatAchievementComment,
+  // Tribute generation
+  parseTributeCommand,
+  fetchSubredditContext,
+  fetchUserContext,
+  generateTribute,
+  formatTributeResponse,
 } from '@hub-bot/common';
 
 Devvit.configure({
@@ -131,6 +138,31 @@ Devvit.addSettings([
     type: 'boolean',
     label: 'Include wiki links when talking points detected',
     defaultValue: true,
+  },
+  // Tribute settings
+  {
+    name: 'enableTributes',
+    type: 'boolean',
+    label: 'Enable !tribute command for satirical user/subreddit tributes',
+    defaultValue: true,
+  },
+  {
+    name: 'allowUserTributes',
+    type: 'boolean',
+    label: 'Allow tributes to users (u/username)',
+    defaultValue: true,
+  },
+  {
+    name: 'defaultTributeTarget',
+    type: 'string',
+    label: 'Default subreddit for !tribute with no target',
+    defaultValue: 'Seattle',
+  },
+  {
+    name: 'groqApiKey',
+    type: 'string',
+    label: 'Groq API Key (free tier, for tributes)',
+    isSecret: true,
   },
 ]);
 
@@ -600,6 +632,145 @@ Devvit.addTrigger({
       });
     } catch (error) {
       console.error('Failed to reply to user:', error);
+    }
+  },
+});
+
+
+
+// ============================================
+// TRIBUTE FEATURE - Satirical user/subreddit tributes
+// ============================================
+
+// Scheduled job to post tribute reply after delay
+Devvit.addSchedulerJob({
+  name: 'postTributeReply',
+  onRun: async (event, context) => {
+    const { targetId, response, username } = event.data as {
+      targetId: string;
+      response: string;
+      username: string;
+    };
+
+    try {
+      await context.reddit.submitComment({
+        id: targetId,
+        text: response,
+      });
+
+      await consumeRateLimit(context.redis, 'userTribute', username);
+
+      // Track tribute stats
+      const statsKey = `${REDIS_PREFIX.farewell}tribute:total`;
+      const current = await context.redis.get(statsKey);
+      await context.redis.set(statsKey, String((parseInt(current || '0', 10) || 0) + 1));
+    } catch (error) {
+      console.error('Failed to post tribute reply:', error);
+    }
+  },
+});
+
+// Comment trigger for !tribute command and natural language
+Devvit.addTrigger({
+  event: 'CommentCreate',
+  onEvent: async (event, context) => {
+    if (!event.comment) return;
+
+    const settings = await context.settings.getAll();
+    if (!settings.enableTributes) return;
+
+    const comment = event.comment;
+    const authorName = comment.author;
+
+    if (!authorName || authorName === '[deleted]' || authorName === 'AutoModerator' || comment.deleted) {
+      return;
+    }
+
+    // Parse tribute command (supports !tribute, "what would X say", etc.)
+    const command = parseTributeCommand(comment.body, 'farewell-hero');
+    if (!command.found) return;
+
+    // Check if user opted out
+    if (await isUserOptedOut(context, authorName)) return;
+
+    // Check rate limit
+    const rateCheck = await checkRateLimit(context.redis, 'userTribute', authorName);
+    if (!rateCheck.allowed) return;
+
+    // Determine target
+    const subreddit = await context.reddit.getCurrentSubreddit();
+    let targetName = command.target || (settings.defaultTributeTarget as string) || subreddit.name;
+    let targetType = command.targetType || 'subreddit';
+
+    // Check if user tributes are allowed
+    if (targetType === 'user' && !settings.allowUserTributes) {
+      return; // Silently skip
+    }
+
+    // Check if target user has opted out
+    if (targetType === 'user' && await isUserOptedOut(context, targetName)) {
+      await context.reddit.submitComment({
+        id: comment.id,
+        text: `u/${targetName} has opted out of tributes. Their legacy remains unwritten.
+
+^(farewell-hero)`,
+      });
+      return;
+    }
+
+    // Fetch context
+    let tributeContext: string;
+    try {
+      if (targetType === 'user') {
+        tributeContext = await fetchUserContext(context, targetName);
+      } else {
+        tributeContext = await fetchSubredditContext(context, targetName);
+      }
+    } catch (error) {
+      console.error(`Failed to fetch context for ${targetType} ${targetName}:`, error);
+      return; // Silently fail
+    }
+
+    // Get sarcasm level from settings
+    const sarcasmLevel = getSarcasmLevelFromSetting(settings.sarcasmLevel as string[]);
+
+    // Generate tribute
+    let tribute: string;
+    try {
+      tribute = await generateTribute({
+        context: tributeContext,
+        targetName,
+        targetType,
+        sarcasmLevel,
+        groqApiKey: settings.groqApiKey as string | undefined,
+        geminiApiKey: settings.geminiApiKey as string | undefined,
+      });
+    } catch (error) {
+      console.error('Failed to generate tribute:', error);
+      return; // Silently fail
+    }
+
+    // Format response
+    const response = formatTributeResponse(tribute, targetName, targetType, sarcasmLevel);
+
+    // Schedule delayed reply
+    const delaySeconds = (settings.replyDelaySeconds as number) || 30;
+
+    await context.scheduler.runJob({
+      name: 'postTributeReply',
+      data: {
+        targetId: comment.id,
+        response,
+        username: authorName,
+      },
+      runAt: new Date(Date.now() + delaySeconds * 1000),
+    });
+
+    // Record tribute request to hater leaderboard (+0.5 points)
+    try {
+      await recordTributeRequest(context, authorName);
+    } catch (error) {
+      console.error('[farewell-hero] Failed to record tribute request:', error);
     }
   },
 });

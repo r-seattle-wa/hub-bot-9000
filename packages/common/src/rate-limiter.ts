@@ -11,11 +11,13 @@ export const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
   // Per-user limits
   userComment: { maxRequests: 1, windowSeconds: 3600 }, // 1 reply per user per hour
   userHaiku: { maxRequests: 3, windowSeconds: 86400 }, // 3 haiku detections per user per day
+  userTribute: { maxRequests: 5, windowSeconds: 3600 }, // 5 tributes per user per hour
 
   // Per-subreddit limits
   subComment: { maxRequests: 50, windowSeconds: 86400 }, // 50 comments per sub per day
   subGemini: { maxRequests: 20, windowSeconds: 86400 }, // 20 AI calls per sub per day
   subPullpush: { maxRequests: 100, windowSeconds: 86400 }, // 100 pullpush queries per sub per day
+  subTribute: { maxRequests: 30, windowSeconds: 86400 }, // 30 tributes per sub per day
 };
 
 /**

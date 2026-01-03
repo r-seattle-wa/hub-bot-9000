@@ -19,3 +19,4 @@ export * from './achievements.js';
 export * from './meme-detector.js';
 export * from './achievement-roast.js';
 export * from './event-fetcher.js';
+export * from './tribute.js';

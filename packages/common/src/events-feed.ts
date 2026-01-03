@@ -12,6 +12,7 @@ import {
   TrafficSpikeEvent,
   CommunityEventEvent,
   SystemEvent,
+  TributeEvent,
   SourceClassification,
   SarcasmLevel,
   UserTone,
@@ -313,6 +314,28 @@ export async function emitCommunityEvent(
   return appendEvent<CommunityEventEvent>(context, subredditName, {
     type: HubBotEventType.COMMUNITY_EVENT,
     sourceApp: 'scraper-service',
+    ...data,
+  });
+}
+
+/**
+ * Create a tribute event - satirical content generated
+ */
+export async function emitTribute(
+  context: TriggerContext,
+  subredditName: string,
+  data: {
+    targetName: string;
+    targetType: 'subreddit' | 'user';
+    tribute: string;
+    sarcasmLevel: SarcasmLevel;
+    requestedBy: string;
+    hasImage: boolean;
+  }
+): Promise<TributeEvent> {
+  return appendEvent<TributeEvent>(context, subredditName, {
+    type: HubBotEventType.TRIBUTE,
+    sourceApp: 'tribute-bot',
     ...data,
   });
 }
