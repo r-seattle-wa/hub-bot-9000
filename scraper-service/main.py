@@ -1,11 +1,12 @@
 """
-Seattle Event Scraper Service
-Aggregates events from multiple sources and returns deduplicated JSON.
+Hub Bot 9000 - Event Scraper & Content Analyzer
 
-Data sources:
-1. Eventbrite - Public JSON-LD extraction (no API key needed!)
-2. Ticketmaster - API with free tier (optional, needs TICKETMASTER_API_KEY)
-3. Gemini - AI-powered scraping for blocked sites (optional, needs GOOGLE_API_KEY)
+Services:
+1. Event Aggregation: Eventbrite, Ticketmaster, Gemini AI scraping
+2. Content Analysis: Unified detection (haiku, farewell, crosslinks, tone)
+3. Cloud Logging: Structured events for GCP metrics
+
+Integration Point: Use scraper_url in Devvit app settings
 """
 import os
 import hashlib
@@ -31,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Seattle Event Scraper",
+    title="Hub Bot 9000 - Event Scraper & Content Analyzer",
     version="1.0.0",
     docs_url="/docs" if os.getenv("ENABLE_DOCS", "false").lower() == "true" else None,
 )
@@ -41,7 +42,7 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLO
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -73,6 +74,42 @@ if GOOGLE_API_KEY:
         logger.info("Gemini scraper enabled")
     except ImportError as e:
         logger.warning(f"Gemini scraper not available: {e}")
+
+# Initialize direct web scrapers (no AI needed)
+try:
+    from scrapers.web_scrapers import fetch_all_seattle_events
+    web_scrapers_enabled = True
+    logger.info("Direct web scrapers enabled")
+except ImportError as e:
+    web_scrapers_enabled = False
+    logger.warning(f"Web scrapers not available: {e}")
+
+# Ollama local LLM support
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3")
+
+# Gemini event scraper (primary - fast, uses search grounding)
+gemini_event_scraper = None
+try:
+    from scrapers.gemini_event_scraper import fetch_events_single_query, check_gemini_available
+    if check_gemini_available():
+        gemini_event_scraper = fetch_events_single_query
+        logger.info("Gemini event scraper enabled (primary)")
+except ImportError as e:
+    logger.warning(f"Gemini event scraper not available: {e}")
+
+# Ollama multi-source scraper (fallback for local dev)
+multi_source_scraper = None
+ollama_available = False
+try:
+    from scrapers.multi_source_scraper import fetch_all_events as fetch_multi_source_events
+    from scrapers.multi_source_scraper import check_ollama_available, get_source_list
+    ollama_available = check_ollama_available()
+    if ollama_available:
+        multi_source_scraper = fetch_multi_source_events
+        logger.info(f"Ollama scraper enabled (fallback)")
+except ImportError as e:
+    pass  # Ollama is optional
 
 # Input validation patterns
 LOCATION_PATTERN = re.compile(r'^[a-zA-Z\s\-]{1,50}$')
@@ -174,8 +211,35 @@ async def get_events(
             elif isinstance(result, Exception):
                 logger.error(f"Scraper error: {type(result).__name__}")
 
-    # Gemini scraper for blocked sites (optional - runs outside httpx context)
-    if gemini_scraper:
+    # Gemini event scraper with search grounding (primary - fast)
+    if gemini_event_scraper and location.lower() == "seattle":
+        try:
+            gemini_events = await gemini_event_scraper(location, days)
+            all_events.extend(gemini_events)
+            logger.info(f"Gemini events: added {len(gemini_events)} events")
+        except Exception as e:
+            logger.error(f"Gemini event scraper error: {type(e).__name__}: {e}")
+    
+    # Fallback 1: Ollama multi-source (for local dev without API key)
+    if not all_events and multi_source_scraper and location.lower() == "seattle":
+        try:
+            ollama_events = await multi_source_scraper()
+            all_events.extend(ollama_events)
+            logger.info(f"Ollama fallback: added {len(ollama_events)} events")
+        except Exception as e:
+            logger.error(f"Ollama scraper error: {type(e).__name__}: {e}")
+    
+    # Fallback 2: Direct web scrapers (no AI)
+    if not all_events and web_scrapers_enabled and location.lower() == "seattle":
+        try:
+            web_events = await fetch_all_seattle_events(days)
+            all_events.extend(web_events)
+            logger.info(f"Web scrapers: added {len(web_events)} events")
+        except Exception as e:
+            logger.error(f"Web scraper error: {type(e).__name__}: {e}")
+
+    # Gemini scraper for AI-assisted extraction (optional fallback)
+    if gemini_scraper and not all_events:  # Only use Gemini if no events from other sources
         try:
             gemini_events = await gemini_scraper(location, days)
             all_events.extend(gemini_events)
@@ -320,14 +384,28 @@ async def fetch_ticketmaster_events(client: httpx.AsyncClient, location: str, st
 async def health():
     """Health check endpoint for Cloud Run."""
     sources = ["Eventbrite (JSON-LD)"]
+    
+    # Gemini event scraper (primary)
+    if gemini_event_scraper:
+        sources.append("Gemini Events (search grounding, 10 sources)")
+    
+    # Ollama fallback
+    if multi_source_scraper:
+        sources.append("Ollama Multi-Source (fallback)")
+    
+    if web_scrapers_enabled:
+        sources.append("Web Scrapers (fallback)")
     if TICKETMASTER_API_KEY:
         sources.append("Ticketmaster (API)")
     if gemini_scraper:
-        sources.append("Gemini (AI)")
+        sources.append("Gemini (AI fallback)")
 
     return {
         "status": "healthy",
         "sources": sources,
+        "ollama_enabled": ollama_available,
+        "ollama_model": OLLAMA_MODEL if ollama_available else None,
+        "web_scrapers_enabled": web_scrapers_enabled,
         "ticketmaster_enabled": bool(TICKETMASTER_API_KEY),
         "gemini_enabled": bool(gemini_scraper),
     }
@@ -406,7 +484,7 @@ async def scrape_reddit_crosslinks_with_gemini(
     try:
         import google.generativeai as genai
         genai.configure(api_key=GOOGLE_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         
         prompt = f"""Search for recent Reddit posts from the last {days} days that link to or mention r/{target_subreddit}.
 
@@ -512,7 +590,7 @@ async def get_reddit_submissions(
     try:
         import google.generativeai as genai
         genai.configure(api_key=GOOGLE_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         
         prompt = f"""Search for Reddit posts {search_context}.
 
@@ -554,6 +632,179 @@ Return up to {limit} results. If no posts found, return: {{"data": []}}"""
     except Exception as e:
         logger.error(f"Gemini submission search failed: {type(e).__name__}: {e}")
         return {"data": [], "error": str(e)}
+
+
+
+
+# =============================================================================
+# UNIFIED CONTENT ANALYSIS ENDPOINT
+# =============================================================================
+
+from models import ContentAnalysisRequest, ContentAnalysisResponse
+from detectors import detect_haiku, detect_farewell, detect_political_complaint, detect_crosslinks, classify_tone
+import time
+
+
+def emit_detection_log(event_type: str, **kwargs):
+    """Emit structured log for Cloud Logging metrics."""
+    log_entry = {
+        "event": event_type,
+        "timestamp": int(time.time() * 1000),
+        **kwargs
+    }
+    # Structured JSON logging for GCP
+    print(json.dumps(log_entry))
+
+
+@app.post("/analyze/content")
+async def analyze_content(
+    request: Request,
+    content: ContentAnalysisRequest,
+):
+    """
+    Unified content analysis endpoint.
+    Runs all detections in parallel and returns results.
+    
+    This is the main integration point - Devvit apps call this endpoint
+    to get detection results for comments/posts.
+    """
+    check_rate_limit(request)
+    verify_api_key(request)
+    
+    start_time = time.time()
+    events_emitted = []
+    
+    # Run all detections
+    text = content.body
+    if content.title:
+        text = content.title + "\n\n" + content.body
+    # Haiku detection
+    haiku_result = detect_haiku(text)
+    
+    # Farewell detection
+    farewell_result = detect_farewell(text)
+    
+    # Political complaint detection
+    political_result = detect_political_complaint(text)
+    
+    # Crosslink detection
+    crosslink_result = detect_crosslinks(text, exclude_subreddit=content.subreddit)
+    
+    # Tone classification (async)
+    tone_result = await classify_tone(text)
+    
+    # Emit structured logs for detections
+    if haiku_result.detected:
+        emit_detection_log(
+            "haiku_detection",
+            subreddit=content.subreddit,
+            author=content.author,
+            content_id=content.id,
+        )
+        events_emitted.append("haiku_detection")
+    
+    if farewell_result.detected:
+        emit_detection_log(
+            "farewell_announcement",
+            subreddit=content.subreddit,
+            author=content.author,
+            content_id=content.id,
+            confidence=farewell_result.confidence,
+        )
+        events_emitted.append("farewell_announcement")
+    
+    if political_result.detected:
+        emit_detection_log(
+            "political_complaint",
+            subreddit=content.subreddit,
+            author=content.author,
+            content_id=content.id,
+            complaint_type=political_result.complaint_type,
+        )
+        events_emitted.append("political_complaint")
+    
+    if crosslink_result.detected:
+        # Check if any crosslinks are hostile
+        if tone_result.classification in ("adversarial", "hateful"):
+            for link in crosslink_result.links:
+                emit_detection_log(
+                    "hostile_crosslink",
+                    source_subreddit=link.subreddit,
+                    target_subreddit=content.subreddit,
+                    classification=tone_result.classification,
+                    content_id=content.id,
+                )
+            events_emitted.append("hostile_crosslink")
+    
+    processing_time = int((time.time() - start_time) * 1000)
+    
+    return ContentAnalysisResponse(
+        id=content.id,
+        type=content.type,
+        subreddit=content.subreddit,
+        author=content.author,
+        detections={
+            "haiku": {
+                "detected": haiku_result.detected,
+                "lines": haiku_result.lines,
+                "syllables": haiku_result.syllables,
+            },
+            "farewell": {
+                "detected": farewell_result.detected,
+                "confidence": farewell_result.confidence,
+                "matched_patterns": farewell_result.matched_patterns,
+            },
+            "political_complaint": {
+                "detected": political_result.detected,
+                "complaint_type": political_result.complaint_type,
+            },
+            "crosslink": {
+                "detected": crosslink_result.detected,
+                "links": [
+                    {
+                        "subreddit": link.subreddit,
+                        "full_url": link.full_url,
+                        "post_id": link.post_id,
+                        "comment_id": link.comment_id,
+                    }
+                    for link in crosslink_result.links
+                ],
+            },
+            "tone": {
+                "tone": tone_result.tone,
+                "confidence": tone_result.confidence,
+                "classification": tone_result.classification,
+                "trigger_phrase": tone_result.trigger_phrase,
+            },
+        },
+        events_emitted=events_emitted,
+        processing_time_ms=processing_time,
+    )
+
+
+@app.post("/analyze/batch")
+async def analyze_batch(
+    request: Request,
+    contents: list[ContentAnalysisRequest],
+):
+    """
+    Batch content analysis - analyze multiple items at once.
+    More efficient than calling /analyze/content multiple times.
+    """
+    check_rate_limit(request)
+    verify_api_key(request)
+    
+    # Limit batch size
+    if len(contents) > 50:
+        raise HTTPException(status_code=400, detail="Batch size exceeds limit of 50")
+    
+    results = []
+    for content in contents:
+        # Create a mock request for rate limiting bypass within batch
+        result = await analyze_content(request, content)
+        results.append(result)
+    
+    return {"results": results, "count": len(results)}
 
 
 if __name__ == "__main__":

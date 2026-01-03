@@ -14,21 +14,45 @@ from models import Event
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Event sources to scrape via Gemini
+# Tested December 2025 - ranked by reliability
 GEMINI_SOURCES = [
+    # Best sources (AI parsing works well)
+    {
+        "name": "Seattle Met",
+        "url": "https://www.seattlemet.com/arts-and-culture/things-to-do-in-seattle-events",
+        "query": "site:seattlemet.com things to do events Seattle",
+        "icon": "📰",
+    },
+    {
+        "name": "Visit Seattle",
+        "url": "https://visitseattle.org/things-to-do/events/",
+        "query": "site:visitseattle.org events Seattle",
+        "icon": "🏙️",
+    },
+    {
+        "name": "West Seattle Blog",
+        "url": "https://westseattleblog.com/events/",
+        "query": "site:westseattleblog.com events",
+        "icon": "🌊",
+    },
+    {
+        "name": "MoPOP",
+        "url": "https://www.mopop.org/events",
+        "query": "site:mopop.org/events upcoming events",
+        "icon": "🎸",
+    },
+    # May be blocked or require JS
     {
         "name": "EverOut Seattle",
-        "query": "EverOut Seattle events this week",
+        "url": "https://everout.com/seattle/events/",
+        "query": "site:everout.com/seattle/events upcoming events",
         "icon": "🎭",
     },
     {
         "name": "Seattle.gov",
-        "query": "Seattle.gov city events calendar this week",
+        "url": "https://www.seattle.gov/event-calendar",
+        "query": "site:seattle.gov/event-calendar upcoming events",
         "icon": "🏛️",
-    },
-    {
-        "name": "The Stranger",
-        "query": "The Stranger Seattle things to do events this week",
-        "icon": "📰",
     },
 ]
 
@@ -40,9 +64,9 @@ def get_gemini_model():
 
     genai.configure(api_key=GOOGLE_API_KEY)
 
-    # Use Gemini 1.5 Flash for cost efficiency
+    # Use Gemini 2.0 Flash (1.5 was deprecated April 2025)
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-2.0-flash",
         generation_config={
             "temperature": 0.1,  # Low temperature for factual extraction
             "top_p": 0.95,
