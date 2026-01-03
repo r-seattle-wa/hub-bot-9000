@@ -1,6 +1,7 @@
 import { Devvit } from '@devvit/public-api';
 import { appSettings } from './config/settings.js';
 import { CommunityPost } from './components/CommunityPost.js';
+import { EventFeed } from './components/EventFeed.js';
 import { handleDailyPost } from './scheduler/dailyPost.js';
 import { handleWeeklyPost } from './scheduler/weeklyPost.js';
 import {
@@ -60,6 +61,13 @@ Devvit.addCustomPostType({
   render: CommunityPost,
 });
 
+Devvit.addCustomPostType({
+  name: 'Hub Bot Events',
+  description: 'Live feed of hub-bot activity across all bots',
+  height: 'tall',
+  render: EventFeed,
+});
+
 // ============================================
 // Menu Items
 // ============================================
@@ -87,6 +95,28 @@ Devvit.addMenuItem({
     });
 
     context.ui.showToast({ text: 'Community Hub post created!', appearance: 'success' });
+    context.ui.navigateTo(post);
+  },
+});
+
+// Create Hub Bot Events Widget (subreddit menu)
+Devvit.addMenuItem({
+  label: 'Create Hub Bot Events Widget',
+  location: 'subreddit',
+  forUserType: 'moderator',
+  onPress: async (_event, context) => {
+    const subreddit = await context.reddit.getCurrentSubreddit();
+    const post = await context.reddit.submitPost({
+      subredditName: subreddit.name,
+      title: 'Hub Bot Events Feed',
+      preview: (
+        <vstack padding="medium" alignment="center middle" grow>
+          <text weight="bold" size="large">Hub Bot Events</text>
+          <text color="neutral-content-weak">Loading...</text>
+        </vstack>
+      ),
+    });
+    context.ui.showToast({ text: 'Hub Bot Events widget created!', appearance: 'success' });
     context.ui.navigateTo(post);
   },
 });
