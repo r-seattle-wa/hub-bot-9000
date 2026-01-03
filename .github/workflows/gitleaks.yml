@@ -1,3 +1,6 @@
+# Secret scanning with gitleaks (open source, no license required)
+# Uses gitleaks CLI directly - 100% free for all repos
+
 name: Secret Scanning
 
 on:
@@ -17,13 +20,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks
-        uses: DariuszPorowski/github-action-gitleaks@v2
-        with:
-          config: .gitleaks.toml
-          report_format: sarif
-          fail: true
-          verbose: true
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION="8.18.4"
+          wget -q "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Run gitleaks scan
+        run: |
+          gitleaks detect             --source .             --config .gitleaks.toml             --report-format sarif             --report-path gitleaks-report.sarif             --verbose
 
       - name: Upload SARIF report
         if: always() && hashFiles('gitleaks-report.sarif') != ''
