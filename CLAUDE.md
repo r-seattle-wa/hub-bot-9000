@@ -82,13 +82,13 @@ npm run build --workspace=@hub-bot/haiku-sensei
 
 # Devvit commands (run from package directory)
 cd packages/haiku-sensei
-devvit playtest r/YourTestSubreddit
+devvit playtest r/SeattleModTests
 devvit upload
-devvit install r/YourSubreddit
+devvit install r/SeattleWA
 devvit publish
 
 # Check logs
-devvit logs r/YourTestSubreddit
+devvit logs r/SeattleModTests
 ```
 
 ## Apps Overview
@@ -560,6 +560,22 @@ npm test  # Runs vitest across all packages
 - Only PUBLIC data analyzed - no sensitive attribute inference
 - Alt reports require mod confirmation - prevents abuse/false linking
 - OSINT is meta analysis only - deleted content never reposted
+
+## Testing
+
+| Environment | Subreddit | Purpose |
+|-------------|-----------|---------|
+| **Test** | r/SeattleModTests | Playtest and development |
+| **Production** | r/SeattleWA | Live deployment |
+
+**Test post**: https://www.reddit.com/r/SeattleModTests/comments/1pxbew3/seattle_community_hub_seattlemodtests/
+
+**Wiki storage paths** (in test subreddit):
+- `r/SeattleModTests/wiki/hub-bot-9000/events-feed`
+- `r/SeattleModTests/wiki/hub-bot-9000/hater-leaderboard`
+- `r/SeattleModTests/wiki/hub-bot-9000/community-events`
+
+**Cloud Run scraper**: `https://event-scraper-363939297796.us-central1.run.app`
 
 ## Community
 

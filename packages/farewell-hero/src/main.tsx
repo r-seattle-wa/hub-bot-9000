@@ -1,4 +1,4 @@
-import { Devvit, TriggerContext } from '@devvit/public-api';
+import { Devvit, TriggerContext, SettingScope } from '@devvit/public-api';
 import {
   detectUnsubscribePost,
   couldBeUnsubscribePost,
@@ -83,6 +83,7 @@ Devvit.addSettings([
     name: 'geminiApiKey',
     type: 'string',
     label: 'Gemini API Key (optional)',
+    scope: SettingScope.App,
     isSecret: true,
   },
   {
@@ -162,6 +163,7 @@ Devvit.addSettings([
     name: 'groqApiKey',
     type: 'string',
     label: 'Groq API Key (free tier, for tributes)',
+    scope: SettingScope.App,
     isSecret: true,
   },
 ]);

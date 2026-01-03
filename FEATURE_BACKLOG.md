@@ -777,6 +777,64 @@ score = adversarialCount
 
 ---
 
+
+
+### Feature 8: Thread Analysis System (COMPLETE)
+
+**Status:** Implemented
+**Location:** `packages/common/src/thread-analysis.ts`, `packages/common/src/__tests__/detection.test.ts`
+
+Comprehensive thread analysis system for crosslinked posts that analyzes hater activity and awards achievements.
+
+#### Thread Analysis Features
+- **Hater Detection**: Identifies commenters from adversarial/hateful sources
+- **Quote Extraction**: Captures representative quotes from hostile comments
+- **Meme Detection**: Uses `detectTalkingPoints()` to identify common complaints
+- **Achievement System**: Awards achievements based on hater activity
+- **Wiki Storage**: Saves detailed analyses to wiki for historical record
+
+#### Wiki Storage
+Thread analyses are saved to `hub-bot-9000/thread-analyses` with:
+- Full hater breakdown with usernames, quotes, sources
+- Achievement unlocks triggered by the thread
+- Summary statistics
+- Timestamps for each analysis
+
+#### Achievement XP System (NEW)
+Achievement unlocks now grant XP tracked on the leaderboard:
+
+| Tier | XP |
+|------|-----|
+| Bronze | 2 |
+| Silver | 5 |
+| Gold | 10 |
+| Platinum | 20 |
+| Diamond | 50 |
+
+#### Leaderboard Entry Enhancement
+`UserHaterEntry` now includes:
+```typescript
+{
+  // ... existing fields
+  unlockedAchievements?: Record<string, number>; // Achievement ID -> unlock timestamp
+  achievementXP?: number;                         // Bonus XP from achievements
+  highestAchievementTier?: string;               // Highest tier earned
+}
+```
+
+#### Sticky Comment Integration
+When crosslinks are detected, the bot can post sticky comments showing:
+- Hater leaderboard table with usernames and quotes
+- Achievement unlocks triggered
+- Links to evidence wiki pages
+
+#### Detection Tests
+66 comprehensive tests covering:
+- Meme detection (echo_chamber, transplants, mod_abuse, etc.)
+- Achievement definitions (tiers, thresholds, unique IDs)
+- Talking points coverage (categories, patterns)
+- False positive prevention
+
 ## Open Questions
 
 1. **Brigade Sentinel scope:** Should it also track outgoing links (when our users link to other subs)?

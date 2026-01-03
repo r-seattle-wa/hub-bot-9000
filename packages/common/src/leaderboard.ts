@@ -26,6 +26,15 @@ export interface SubredditHaterEntry {
   isAltOf?: string;
 }
 
+// Achievement XP values by tier
+export const ACHIEVEMENT_XP: Record<string, number> = {
+  bronze: 2,
+  silver: 5,
+  gold: 10,
+  platinum: 20,
+  diamond: 50,
+};
+
 // User entry
 export interface UserHaterEntry {
   username: string;
@@ -39,6 +48,16 @@ export interface UserHaterEntry {
   homeSubreddits: string[]; // Where they post from
   knownAlts?: string[];
   isAltOf?: string;
+
+  // Achievement tracking
+  unlockedAchievements?: Record<string, number>;  // Achievement ID -> unlock timestamp
+  achievementXP?: number;                         // Bonus XP from achievements
+  highestAchievementTier?: string;                // Highest tier earned
+
+  // Featured quote (most upvoted hateful comment)
+  featuredQuote?: string;
+  featuredQuoteScore?: number;
+  featuredQuoteLink?: string;
 
   // OSINT enrichment (from deleted content analysis)
   deletedContentSummary?: string;
@@ -523,6 +542,33 @@ export function formatLeaderboardMarkdown(data: LeaderboardData): string {
       md += `\n**Users:**\n`;
       userAlts.forEach(alt => md += `- u/${alt.username} → u/${alt.isAltOf}\n`);
     }
+  }
+
+  // Show featured quotes for top haters
+  const usersWithQuotes = data.topUsers
+    .slice(0, 5)
+    .map(u => data.users[u.username.toLowerCase()])
+    .filter(u => u?.featuredQuote);
+  
+  if (usersWithQuotes.length > 0) {
+    md += `
+
+---
+
+### 💬 Featured Quotes
+`;
+    usersWithQuotes.forEach(user => {
+      const quote = user.featuredQuote!;
+      md += `
+**u/${user.username}** (+${user.featuredQuoteScore || 0})
+`;
+      md += `> ${quote}...
+`;
+      if (user.featuredQuoteLink) {
+        md += `> [source](${user.featuredQuoteLink})
+`;
+      }
+    });
   }
 
   // Show OSINT insights for enriched users (The-Profiler + Deleted Content)

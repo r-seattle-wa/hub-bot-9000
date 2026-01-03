@@ -7,12 +7,19 @@ import {
   setJson,
   REDIS_PREFIX,
   findCrosslinks,
+  findCrosslinksRedditNative,
+  DRAMA_SUBREDDITS,
   getDeletedComments,
   geminiCrosslinkSearch,
   classifyPostTone,
   recordHater,
   getLeaderboard,
+  formatLeaderboardMarkdown,
   enrichTopHatersWithOSINT,
+  analyzeAndRecordThread,
+  formatStickyComment,
+  AnalysisResult,
+  Achievement,
   // Pending alt report system (requires mod approval)
   submitPendingAltReport,
   approveAltReport,
@@ -41,6 +48,7 @@ import {
   emitCommunityEvent,
 } from '@hub-bot/common';
 import { getBrigadeComment, getModmailBody } from './templates.js';
+import { initializeWikiPages, registerMenuActions } from './menu-actions.js';
 
 Devvit.configure({
   redditAPI: true,
@@ -200,6 +208,8 @@ interface BrigadeEvent {
   detectedAt: number;
   notifiedAt: number | null;
   classification: SourceClassification;
+  // Thread analysis data for sticky comment
+  analysisResult?: AnalysisResult;
 }
 
 // Scheduled job to scan for crosslinks
@@ -222,13 +232,28 @@ Devvit.addSchedulerJob({
     const lastScanTime = lastScan ? parseInt(lastScan, 10) : Date.now() - 24 * 60 * 60 * 1000;
 
     try {
-      // Try PullPush first, fall back to Gemini if configured
-      let posts = await findCrosslinks(subredditName, {
+      // Strategy: Reddit native search (reliable) -> PullPush (fallback) -> Gemini (AI fallback)
+      // Then use PullPush for deleted content analysis on found threads
+      
+      // 1. Try Reddit native search first (most reliable for finding new posts)
+      let posts = await findCrosslinksRedditNative(subredditName, {
         limit: 50,
-        after: Math.floor(lastScanTime / 1000),
+        time: 'week',
+        dramaSubredditsOnly: true,  // Focus on known drama subreddits
       });
+      console.log(`Reddit native search for r/${subredditName}: ${posts.length} results`);
 
-      // If PullPush returns empty and Gemini is configured, use as fallback
+      // 2. If Reddit search finds nothing, try PullPush (good for URL-based links)
+      if (posts.length === 0) {
+        console.log(`Reddit search empty, trying PullPush...`);
+        const pullpushResults = await findCrosslinks(subredditName, {
+          limit: 50,
+          after: Math.floor(lastScanTime / 1000),
+        });
+        posts = pullpushResults;
+      }
+
+      // 3. If still empty and Gemini is configured, use AI search as last resort
       if (posts.length === 0 && settings.geminiApiKey) {
         console.log(`PullPush empty for r/${subredditName}, trying Gemini fallback`);
         const geminiResults = await geminiCrosslinkSearch(
@@ -239,10 +264,13 @@ Devvit.addSchedulerJob({
           id: `gem_${Date.now()}_${r.subreddit}`,
           subreddit: r.subreddit,
           title: r.title,
+          selftext: undefined,
           url: r.url,
           permalink: r.url,
           created_utc: Math.floor(Date.now() / 1000),
           author: 'unknown',
+          score: undefined,
+          num_comments: undefined,
         }));
       }
 
@@ -257,7 +285,7 @@ Devvit.addSchedulerJob({
         if (await context.redis.get(processedKey)) continue;
 
         // Extract target post ID from URL
-        const targetPostId = extractTargetPostId(post.url, subredditName);
+        const targetPostId = extractTargetPostId(post.url || post.permalink, subredditName);
         if (!targetPostId) continue;
 
         // Classify the TONE of this specific linking post (not just the subreddit)
@@ -285,14 +313,21 @@ Devvit.addSchedulerJob({
           7 * 24 * 60 * 60 // 7 days TTL
         );
 
-        // Record to hater leaderboard if hostile
-        await recordHater(
-          context,
-          post.subreddit,
-          post.author,
-          toneClassification,
-          post.title
-        );
+        // Analyze thread and record all haters to leaderboard
+        const postUrl = post.url || post.permalink;
+        let analysisResult: AnalysisResult | undefined;
+        if (postUrl) {
+          const targetSub = await context.reddit.getCurrentSubredditName();
+          analysisResult = await analyzeAndRecordThread(context, postUrl, targetSub);
+          // Store analysis result in the brigade event for sticky comment
+          brigadeEvent.analysisResult = analysisResult;
+          await setJson(
+            context.redis,
+            `${REDIS_PREFIX.brigade}event:${brigadeEvent.id}`,
+            brigadeEvent,
+            7 * 24 * 60 * 60
+          );
+        }
 
         // Check for achievements if enabled
         if (settings.enableAchievements) {
@@ -409,13 +444,25 @@ Devvit.addSchedulerJob({
 
       // Post public comment if enabled (for crosslink alerts - this is the main feature)
       if (settings.publicComment) {
-        const commentBody = getBrigadeComment({
-          sourceSubreddit: brigadeEvent.sourceSubreddit,
-          sourceUrl: brigadeEvent.sourcePostUrl,
-          sourceTitle: brigadeEvent.sourcePostTitle,
-          classification: brigadeEvent.classification,
-          subreddit: subreddit.name,
-        });
+        let commentBody: string;
+        
+        // Use detailed hater analysis if we found haters, otherwise basic notice
+        const analysis = brigadeEvent.analysisResult?.analysis;
+        const achievements = brigadeEvent.analysisResult?.achievements || [];
+        
+        if (analysis && analysis.haters && analysis.haters.length > 0) {
+          // Rich sticky with hater table and achievements
+          commentBody = formatStickyComment(analysis, achievements, subreddit.name);
+        } else {
+          // Basic crosslink notice (no haters found)
+          commentBody = getBrigadeComment({
+            sourceSubreddit: brigadeEvent.sourceSubreddit,
+            sourceUrl: brigadeEvent.sourcePostUrl,
+            sourceTitle: brigadeEvent.sourcePostTitle,
+            classification: brigadeEvent.classification,
+            subreddit: subreddit.name,
+          });
+        }
 
         const comment = await context.reddit.submitComment({
           id: brigadeEvent.targetPostId,
@@ -867,6 +914,9 @@ Devvit.addSchedulerJob({
 Devvit.addTrigger({
   event: 'AppInstall',
   onEvent: async (_event, context) => {
+    // Initialize leaderboard wiki page
+    await initializeWikiPages(context);
+
     // Run crosslink scanner every 15 minutes
     await context.scheduler.runJob({
       name: 'scanForCrosslinks',
@@ -886,6 +936,9 @@ Devvit.addTrigger({
     });
   },
 });
+
+// Register mod menu actions
+registerMenuActions();
 
 // Helper functions
 function extractTargetPostId(url: string, targetSubreddit: string): string | null {

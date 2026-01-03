@@ -1,4 +1,4 @@
-import { Devvit } from '@devvit/public-api';
+import { Devvit, SettingScope } from '@devvit/public-api';
 import { detectHaiku, formatHaiku, couldBeHaiku } from './detector.js';
 import {
   getHaikuFooter,
@@ -51,6 +51,7 @@ Devvit.addSettings([
     name: 'geminiApiKey',
     type: 'string',
     label: 'Gemini API Key (for AI replies)',
+    scope: SettingScope.App,
     isSecret: true,
   },
   {

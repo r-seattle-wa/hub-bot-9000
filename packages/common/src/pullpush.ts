@@ -377,3 +377,139 @@ export async function findCrosslinksWithAllFallbacks(
   console.log('[crosslinks] No results from any source');
   return [];
 }
+
+/**
+ * Search Reddit using native API (no external dependencies)
+ * This is the most reliable and polite way to search for crosslinks
+ */
+export async function searchRedditNative(params: {
+  query: string;
+  subreddit?: string;  // Limit to specific subreddit
+  sort?: 'relevance' | 'new' | 'hot' | 'top';
+  time?: 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
+  limit?: number;
+}): Promise<PullPushSubmission[]> {
+  const { query, subreddit, sort = 'new', time = 'week', limit = 25 } = params;
+  
+  // Build search query - add subreddit restriction if specified
+  let searchQuery = query;
+  if (subreddit) {
+    searchQuery = `${query} subreddit:${subreddit}`;
+  }
+  
+  const searchParams = new URLSearchParams({
+    q: searchQuery,
+    sort,
+    t: time,
+    limit: String(limit),
+  });
+  
+  const url = `https://www.reddit.com/search.json?${searchParams.toString()}`;
+  
+  const result = await rateLimitedFetch<string>(url, {
+    headers: {
+      'User-Agent': 'HubBot9000/1.0 (by /r/SeattleWA)',
+    },
+  });
+  
+  if (!result.ok || !result.data) {
+    console.log('[reddit-search] Failed:', result.status);
+    return [];
+  }
+  
+  try {
+    const response = JSON.parse(result.data);
+    const posts = response?.data?.children || [];
+    
+    return posts.map((p: { data: Record<string, unknown> }) => ({
+      id: p.data.id as string,
+      author: p.data.author as string,
+      title: p.data.title as string,
+      selftext: p.data.selftext as string | undefined,
+      url: p.data.url as string | undefined,
+      permalink: `https://reddit.com${p.data.permalink}`,
+      created_utc: p.data.created_utc as number,
+      subreddit: p.data.subreddit as string,
+      score: p.data.score as number | undefined,
+      num_comments: p.data.num_comments as number | undefined,
+    }));
+  } catch (e) {
+    console.log('[reddit-search] Parse error:', e);
+    return [];
+  }
+}
+
+/**
+ * Known subreddits that commonly link to local city subs for drama
+ */
+export const DRAMA_SUBREDDITS = [
+  'SubredditDrama',
+  'Drama', 
+  'circlejerk',
+  'OutOfTheLoop',
+  'bestof',
+  'WorstOf',
+  'ShitRedditSays',
+];
+
+/**
+ * Search for crosslinks using Reddit native search
+ * Searches known drama subreddits for mentions of the target sub
+ */
+export async function findCrosslinksRedditNative(
+  targetSubreddit: string,
+  options?: {
+    limit?: number;
+    time?: 'day' | 'week' | 'month';
+    dramaSubredditsOnly?: boolean;
+  }
+): Promise<PullPushSubmission[]> {
+  const { limit = 25, time = 'week', dramaSubredditsOnly = false } = options || {};
+  
+  const allResults: PullPushSubmission[] = [];
+  const seenIds = new Set<string>();
+  
+  if (dramaSubredditsOnly) {
+    // Search each drama subreddit individually
+    for (const dramaSub of DRAMA_SUBREDDITS) {
+      const results = await searchRedditNative({
+        query: targetSubreddit,
+        subreddit: dramaSub,
+        sort: 'new',
+        time,
+        limit: Math.min(10, limit),  // Limit per sub to avoid rate limits
+      });
+      
+      for (const post of results) {
+        if (!seenIds.has(post.id)) {
+          seenIds.add(post.id);
+          allResults.push(post);
+        }
+      }
+      
+      // Polite delay between requests
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  } else {
+    // Global search for the subreddit name
+    const results = await searchRedditNative({
+      query: `r/${targetSubreddit}`,
+      sort: 'new',
+      time,
+      limit,
+    });
+    
+    // Filter out self-references
+    for (const post of results) {
+      if (post.subreddit.toLowerCase() !== targetSubreddit.toLowerCase() && !seenIds.has(post.id)) {
+        seenIds.add(post.id);
+        allResults.push(post);
+      }
+    }
+  }
+  
+  // Sort by creation date descending
+  allResults.sort((a, b) => b.created_utc - a.created_utc);
+  
+  return allResults.slice(0, limit);
+}

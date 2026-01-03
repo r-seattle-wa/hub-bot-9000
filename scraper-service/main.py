@@ -220,7 +220,16 @@ async def get_events(
         except Exception as e:
             logger.error(f"Gemini event scraper error: {type(e).__name__}: {e}")
     
-    # Fallback 1: Ollama multi-source (for local dev without API key)
+    # Always run web scrapers for Seattle to maximize coverage
+    if web_scrapers_enabled and location.lower() == "seattle":
+        try:
+            web_events = await fetch_all_seattle_events(days)
+            all_events.extend(web_events)
+            logger.info(f"Web scrapers: added {len(web_events)} events from EverOut/MoPOP/SeattleMet/Seattle.gov")
+        except Exception as e:
+            logger.error(f"Web scraper error: {type(e).__name__}: {e}")
+
+    # Ollama multi-source (for local dev without API key) - fallback only
     if not all_events and multi_source_scraper and location.lower() == "seattle":
         try:
             ollama_events = await multi_source_scraper()
@@ -228,15 +237,6 @@ async def get_events(
             logger.info(f"Ollama fallback: added {len(ollama_events)} events")
         except Exception as e:
             logger.error(f"Ollama scraper error: {type(e).__name__}: {e}")
-    
-    # Fallback 2: Direct web scrapers (no AI)
-    if not all_events and web_scrapers_enabled and location.lower() == "seattle":
-        try:
-            web_events = await fetch_all_seattle_events(days)
-            all_events.extend(web_events)
-            logger.info(f"Web scrapers: added {len(web_events)} events")
-        except Exception as e:
-            logger.error(f"Web scraper error: {type(e).__name__}: {e}")
 
     # Gemini scraper for AI-assisted extraction (optional fallback)
     if gemini_scraper and not all_events:  # Only use Gemini if no events from other sources

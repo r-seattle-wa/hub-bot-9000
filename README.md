@@ -130,6 +130,15 @@ Xbox-style achievements for dedicated haters:
 | Platinum | 50-99 | Legendary Salt Lord |
 | Diamond | 100+ | Transcendent Malcontent |
 
+#### Thread Analysis & Sticky Comments
+When crosslinks are detected, brigade-sentinel can:
+- Analyze thread for hostile commenters
+- Extract representative quotes
+- Detect meme/talking point usage
+- Award achievements to repeat offenders
+- Post sticky comment with hater breakdown table
+- Save detailed analysis to wiki for historical record
+
 #### Traffic Spike Detection
 Real-time detection of unusual comment velocity - potential early warning for brigades.
 - Configurable threshold (default: 10 comments in 5 minutes)
@@ -304,6 +313,7 @@ All apps use standardized wiki paths under `hub-bot-9000/`:
 | `hub-bot-9000/hater-leaderboard` | Hater scores |
 | `hub-bot-9000/user-achievements` | Achievement tracking |
 | `hub-bot-9000/community-events` | User-submitted events |
+| `hub-bot-9000/thread-analyses` | Detailed thread analysis reports |
 
 ---
 
