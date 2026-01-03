@@ -1,7 +1,6 @@
 import { Devvit } from '@devvit/public-api';
 import { appSettings } from './config/settings.js';
 import { CommunityPost } from './components/CommunityPost.js';
-import { EventFeed } from './components/EventFeed.js';
 import { handleDailyPost } from './scheduler/dailyPost.js';
 import { handleWeeklyPost } from './scheduler/weeklyPost.js';
 import {
@@ -61,13 +60,6 @@ Devvit.addCustomPostType({
   render: CommunityPost,
 });
 
-Devvit.addCustomPostType({
-  name: 'Hub Bot Events',
-  description: 'Live feed of hub-bot activity across all bots',
-  height: 'tall',
-  render: EventFeed,
-});
-
 // ============================================
 // Menu Items
 // ============================================
@@ -101,7 +93,7 @@ Devvit.addMenuItem({
 
 // Create Hub Bot Events Widget (subreddit menu)
 Devvit.addMenuItem({
-  label: 'Create Hub Bot Events Widget',
+  label: 'Create Hub Bot Events Feed',
   location: 'subreddit',
   forUserType: 'moderator',
   onPress: async (_event, context) => {
@@ -116,7 +108,7 @@ Devvit.addMenuItem({
         </vstack>
       ),
     });
-    context.ui.showToast({ text: 'Hub Bot Events widget created!', appearance: 'success' });
+    context.ui.showToast({ text: 'Hub Bot Events feed post created!', appearance: 'success' });
     context.ui.navigateTo(post);
   },
 });

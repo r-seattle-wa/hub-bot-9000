@@ -12,7 +12,7 @@ A suite of [Reddit Developer Platform (Devvit)](https://developers.reddit.com) a
 | [haiku-sensei](#haiku-sensei) | Detects accidental 5-7-5 haikus in comments | Ready |
 | [brigade-sentinel](#brigade-sentinel) | Cross-subreddit link alerts with hater tracking | Ready |
 | [farewell-hero](#farewell-hero) | Witty responses + satirical tributes (!tribute) | Ready |
-| [hub-widget](#hub-widget) | Bot activity feed showing all hub-bot events | Ready |
+| hub-bot-9000 | Community dashboard + bot activity feed | Ready |
 
 ---
 
@@ -210,37 +210,30 @@ Satirical tribute generator that channels the essence of subreddits and users. S
 
 ---
 
-## Hub Widget
+## Hub Bot Events Feed
 
-Bot activity feed showing events from all hub-bot apps as a Reddit Custom Post Type.
+Bot activity feed stored in wiki pages for cross-app visibility.
 
-### Features
-- **Live event feed** - Shows recent events from all bots
-- **Color-coded events** - Each event type has distinct icon/color
-- **Auto-refresh** - Updates every 60 seconds
-- **Wiki-based storage** - Events stored in shared wiki page
+### Wiki Pages
+| Page | Format | Purpose |
+|------|--------|---------|
+| `hub-bot-9000/events-feed` | JSON | Programmatic access |
+| `hub-bot-9000/events-feed-display` | Markdown | Human-readable display |
+
+The markdown wiki page can be linked in your subreddit sidebar.
 
 ### Event Types
 
-| Type | Icon | Color |
-|------|------|-------|
-| Brigade Alert | `!` | Red |
-| Haiku Detection | `*` | Teal |
-| Farewell | `~` | Yellow |
-| Court Docket | `#` | Green |
-| Traffic Spike | `^` | Orange |
-| Community Event | `@` | Purple |
-| System | `i` | Light green |
-
-### Deployment
-
-```bash
-cd packages/hub-widget
-devvit upload
-devvit install r/YourSubreddit
-
-# Then use subreddit menu: "Create Hub Bot Events Widget"
-```
+| Type | Icon |
+|------|------|
+| Brigade Alert | `!` |
+| Haiku Detection | `*` |
+| Farewell | `~` |
+| Court Docket | `#` |
+| Traffic Spike | `^` |
+| Community Event | `@` |
+| Tribute | `+` |
+| System | `i` |
 
 ---
 
@@ -308,7 +301,8 @@ All apps use standardized wiki paths under `hub-bot-9000/`:
 
 | Path | Purpose |
 |------|---------|
-| `hub-bot-9000/events-feed` | Cross-app bot activity feed |
+| `hub-bot-9000/events-feed` | Cross-app bot activity feed (JSON) |
+| `hub-bot-9000/events-feed-display` | Human-readable event feed (Markdown) |
 | `hub-bot-9000/opt-out` | User opt-out list |
 | `hub-bot-9000/hater-leaderboard` | Hater scores |
 | `hub-bot-9000/user-achievements` | Achievement tracking |
