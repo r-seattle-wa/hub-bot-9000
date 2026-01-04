@@ -1,441 +1,206 @@
 # Hub Bot 9000
 
-A suite of [Reddit Developer Platform (Devvit)](https://developers.reddit.com) apps for community engagement, moderation, and entertainment.
+**The complete Reddit community toolkit.**
 
-**Originally built for [r/SeattleWA](https://reddit.com/r/SeattleWA)**, but designed to be adopted by any subreddit.
-
-## Apps
-
-| App | Purpose | Status |
-|-----|---------|--------|
-| [community-hub](#community-hub) | Community dashboard with events, weather, and links | Ready |
-| [haiku-sensei](#haiku-sensei) | Detects accidental 5-7-5 haikus in comments | Ready |
-| [brigade-sentinel](#brigade-sentinel) | Cross-subreddit link alerts with hater tracking | Ready |
-| [farewell-hero](#farewell-hero) | Witty responses + satirical tributes (!tribute) | Ready |
-| hub-bot-9000 | Community dashboard + bot activity feed | Ready |
+Hub Bot 9000 is an integrated suite of [Devvit](https://developers.reddit.com) applications that work together to help moderators build engaged, self-aware communities. Originally forged in the fires of [r/SeattleWA](https://reddit.com/r/SeattleWA), now available for any subreddit.
 
 ---
 
-## Community Hub
+## The Suite
 
-A full-featured community dashboard as a Reddit Custom Post Type with tabbed navigation.
+### Brigade Sentinel
+**brigade-sentinel** - The TotesMessenger revival with teeth
 
-### Features
+Monitors when other subreddits link to yours, analyzes threads for coordinated activity, and maintains transparency about outside influence.
 
-#### Tabbed Interface
-- **Events** - Upcoming community events with time period filtering
-- **Weather** - Current forecast via weather.gov (US only)
-- **Links** - Event calendars and community resources
+**Features:**
+- **Crosslink Detection** - Real-time via PullPush.io with Gemini AI fallback
+- **Brigade Analysis** - Analyzes target threads for first-time posters, suspicious timing, and origin tracking
+- **Hater Leaderboard** - Tracks hostile actors across subreddits and individuals
+- **Hall of Shame** - Human-readable wiki page showcasing top haters
+- **Achievement System** - 27 Xbox-style achievements for dedicated detractors
+- **Traffic Spike Detection** - Early warning for unusual activity
 
-#### Scheduled Posts
-- **Daily Thread** - Auto-generated community discussion thread
-- **Weekly Thread** - Weekly roundup with weather outlook and events
+#### Settings
 
-#### User Event Submissions
-- Community members can submit events via in-post form
-- Link validation (only trusted domains)
-- Mod approval queue before public display
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| enabled | boolean | true | Master toggle |
+| homeSubreddit | string | installed sub | Target subreddit to monitor |
+| publicComment | boolean | true | Post public alert in linked thread |
+| modmailNotify | boolean | true | Send modmail for adversarial sources |
+| stickyComment | boolean | false | Sticky the bot comment |
+| showStickyOnFirstTimePosters | boolean | true | Show brigade evidence in sticky |
+| firstTimePosterThreshold | number | 3 | Min first-time posters to show sticky |
+| firstTimePosterPercentThreshold | number | 20 | Min percent first-timers to show sticky |
+| adversarialThreshold | number | 3 | Adversarial links before sticky |
+| hatefulThreshold | number | 1 | Hateful links before sticky |
+| geminiApiKey | secret | - | For AI classification (BYOK) |
 
-### Settings
+#### Example: Brigade Alert Sticky Comment
 
-| Setting | Description |
-|---------|-------------|
-| `enableDailyPost` | Auto-post daily community thread |
-| `enableWeeklyPost` | Auto-post weekly thread |
-| `enableWeather` | Include weather forecast |
-| `weatherGridPoint` | NWS grid point (e.g., SEW/123,68) |
-| `weatherLocation` | Display name (e.g., "Portland, OR") |
-| `eventSources` | JSON array of event calendar links |
-| `communityLinks` | JSON array of community resource links |
-| `headerTitle` | Hub title displayed in header |
-| `headerEmoji` | Emoji displayed in header |
+When a thread is crosslinked and brigade evidence is detected:
 
-### Deployment
+**Brigade Evidence Analysis**
 
-```bash
-cd packages/community-hub
-devvit upload
-devvit install r/YourSubreddit
+| Metric | Value |
+|--------|-------|
+| Unique commenters | 47 |
+| First-time posters | 19 (40%) |
+| Confidence | HIGH |
 
-# Then use subreddit menu: "Create Community Hub"
-```
+**Top Source Communities:**
+- r/SubredditDrama: 12 users
+- r/Drama: 4 users
+- r/HobbyDrama: 3 users
 
----
-
-## Haiku Sensei
-
-Detects when users accidentally write comments in 5-7-5 haiku syllable pattern and replies with their words formatted as a haiku.
-
-### Features
-- Syllable counting with dictionary fallback
-- Rate limiting per user to prevent spam
-- Configurable delay before replying
-- Wiki-based opt-out system
-- Bot disclosure footer
-
-### Example
-```
-User comment: "I went to the store and bought some milk for my cat"
-
-Bot reply:
-I went to the store
-and bought some milk for my cat
-~ A haiku by u/example
-```
+**Notable Patterns:**
+- Temporal clustering: 15 comments within 30 minutes of crosslink
+- New accounts: 3 accounts less than 30 days old
+- Negative karma: 5 commenters with negative subreddit karma
 
 ---
 
-## Brigade Sentinel
+### Haiku Sensei
+**haiku-sensei** - The accidental poet detector
 
-A spiritual successor to TotesMessenger - detects when other subreddits link to your community and provides transparency about crosslinks.
+Catches users accidentally writing in 5-7-5 syllable patterns and gently illuminates their unintentional poetry.
 
-### Features
+#### Settings
 
-#### Cross-link Detection
-- **PullPush.io integration** - Finds posts that link to your subreddit
-- **Gemini AI fallback** - When PullPush is blocked, uses AI search grounding
-- **Tone classification** - Each linking post classified as FRIENDLY, NEUTRAL, ADVERSARIAL, or HATEFUL
-- **Configurable delay** - Wait before posting to avoid false positives
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| enabled | boolean | true | Master toggle |
+| replyDelaySeconds | number | 30 | Delay before reply |
+| enableBotReplies | boolean | true | AI replies to users who respond |
+| geminiApiKey | secret | - | For AI-powered replies (BYOK) |
 
-#### Hater Leaderboard
-Track hostile crosslinks with dual leaderboards:
+---
 
-**Subreddit Leaderboard**
-- Tracks which subreddits most frequently link with hostile intent
-- Alt subreddit mapping (e.g., r/ExampleCirclejerk -> r/Example)
+### Farewell Hero
+**farewell-hero** - The unsubscribe statistician + tribute generator
 
-**User Leaderboard**
-- Tracks individual users who post hostile crosslinks
-- Alt account mapping for serial offenders
-- Mod log integration (+2 per removal, +6 per ban)
-- OSINT enrichment via deleted content analysis
+Responds to unsubscribing posts with statistical analysis and handles the tribute command.
 
-**Score Formula:**
-```
-Score = adversarial + (hateful x 3) + (mod log spam x 2) + (deleted content flags x 2) + (tributes x 0.5)
-```
+#### Settings
 
-#### Hater Achievement System
-Xbox-style achievements for dedicated haters:
-- **27 achievements** across 5 tiers (Bronze -> Diamond)
-- **AI-generated roasts** - Personalized mockery using Gemini
-- **Talking point detection** - Tracks common complaints/memes
-- **Wiki debunk links** - Links to evidence pages
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| enabled | boolean | true | Master toggle |
+| sarcasmLevel | select | neutral | polite/neutral/snarky/roast/freakout |
+| matchToneToUser | boolean | true | Match response to user tone |
+| enableTributes | boolean | true | Enable tribute command |
+| allowUserTributes | boolean | true | Allow u/username targets |
+| defaultTributeTarget | string | Seattle | Default subreddit for tribute |
+| groqApiKey | secret | - | Groq API (free tier) for tributes |
+| geminiApiKey | secret | - | Gemini fallback |
 
-| Tier | Score | Example Achievement |
-|------|-------|---------------------|
-| Bronze | 5-9 | Casual Complainer |
-| Silver | 10-24 | Serial Brigader |
-| Gold | 25-49 | Professional Hater |
-| Platinum | 50-99 | Legendary Salt Lord |
+#### Sarcasm Levels
+
+| Level | Example |
+|-------|---------|
+| POLITE | Thank you for being part of our community. Best wishes\! |
+| NEUTRAL | Activity summary: 12 posts, 47 comments over 2 years. |
+| SNARKY | We will definitely notice your 2 contributions. |
+| ROAST | Your 2 contributions will be missed. By literally no one. |
+| FREAKOUT | OH NO\! NOT SOMEONE WITH 2 CONTRIBUTIONS\! |
+
+---
+
+### Hub Widget
+**hub-widget** - Unified activity dashboard
+
+Custom Post Type showing bot activity with color-coded events.
+
+| Type | Icon | Color | Description |
+|------|------|-------|-------------|
+| Brigade Alert | \! | Red | Cross-subreddit link detected |
+| Haiku Detection | * | Teal | Haiku found |
+| Farewell | ~ | Yellow | Unsubscribe announcement |
+| Traffic Spike | ^ | Orange | Unusual activity |
+| Community Event | @ | Purple | Local events |
+
+---
+
+## Achievement System
+
+27 achievements across 5 tiers:
+
+| Tier | Threshold | Examples |
+|------|-----------|----------|
+| Bronze | 5+ | Casual Complainer, Echo Enthusiast |
+| Silver | 10+ | Serial Brigader, Rage Machine |
+| Gold | 25+ | Professional Hater, Evidence Eraser |
+| Platinum | 50+ | Legendary Salt Lord |
 | Diamond | 100+ | Transcendent Malcontent |
 
-#### Thread Analysis & Sticky Comments
-When crosslinks are detected, brigade-sentinel can:
-- Analyze thread for hostile commenters
-- Extract representative quotes
-- Detect meme/talking point usage
-- Award achievements to repeat offenders
-- Post sticky comment with hater breakdown table
-- Save detailed analysis to wiki for historical record
+---
 
-#### Traffic Spike Detection
-Real-time detection of unusual comment velocity - potential early warning for brigades.
-- Configurable threshold (default: 10 comments in 5 minutes)
-- Modmail alerts when spike occurs
-- Hub-widget integration
+## Wiki Pages
 
-#### Notifications
-- **Public comment** - Transparency about crosslinks (optional)
-- **Modmail alert** - For adversarial/hateful sources (optional)
-- **Traffic spike alert** - When comment velocity exceeds threshold
-
-### Settings
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `enabled` | Enable brigade detection | `true` |
-| `publicComment` | Post public comment on crosslinks | `true` |
-| `modmailNotify` | Send modmail for hostile sources | `false` |
-| `stickyComment` | Sticky the bot comment | `true` |
-| `minimumLinkAge` | Wait time before notifying (minutes) | `5` |
-| `aiProvider` | Tone classification provider | `none` |
-| `geminiApiKey` | Your Gemini API key (BYOK) | `""` |
-| `detectTrafficSpikes` | Enable traffic spike detection | `true` |
-| `velocityThreshold` | Comments per 5 min to trigger alert | `10` |
-| `enableAchievements` | Enable hater achievement comments | `true` |
+| Wiki Page | Purpose | Format |
+|-----------|---------|--------|
+| hub-bot-9000/hater-leaderboard | Raw leaderboard data | JSON |
+| hub-bot-9000/hall-of-shame | Human-readable leaderboard | Markdown |
+| hub-bot-9000/events-feed | Activity log | JSON |
+| hub-bot-9000/community-events | Local events | JSON |
+| hub-bot-9000/user-achievements | Achievement tracking | JSON |
+| hub-bot-9000/opt-out | Opt-out list | JSON |
 
 ---
 
-## Farewell Hero
+## AI Features (BYOK)
 
-Responds to "I'm unsubscribing" posts with a witty statistical analysis of the user's activity. Also includes the **Tribute** feature for generating satirical homages to users and subreddits.
+All AI features use Bring Your Own Key:
 
-### Farewell Features
-- Pattern detection for farewell posts
-- User activity analysis
-- 5 sarcasm levels (Polite → Freakout)
-- Tone matching to user's mood
-- Political complaint detection with wiki survey links
-- Best post/comment showcase
-- Hater leaderboard integration
-
-### Tribute Feature
-
-Satirical tribute generator that channels the essence of subreddits and users. Spiritual successor to [Seattle-Simulator](https://github.com/r-seattle-wa/Seattle-Simulator).
-
-**Commands:**
-```
-!tribute              # Tribute to default subreddit
-!tribute r/Seattle    # Tribute to specific subreddit
-!tribute u/username   # Tribute to specific user
-"what would u/user say about this?"  # Natural language
-```
-
-**AI Providers:**
-- **Groq** (primary) - Free tier, Llama 3.1-8b-instant
-- **Gemini** (fallback) - BYOK
-
-**Leaderboard Integration:** Each tribute request adds +0.5 hater points (playful rivalry).
-
-### Sarcasm Levels
-
-| Level | Style |
-|-------|-------|
-| POLITE | "Thank you for being part of our community." |
-| NEUTRAL | "Activity summary: X contributions over Y days." |
-| SNARKY | "We will definitely notice your *checks notes* 2 contributions." |
-| ROAST | "Your 2 contributions will be missed. By literally no one." |
-| FREAKOUT | "OH NO! NOT SOMEONE WITH 2 CONTRIBUTIONS!" |
+| Provider | Used For | Cost |
+|----------|----------|------|
+| Gemini Flash | Tone classification, roasts, brigade analysis | Free tier |
+| Groq | Primary tribute generation | Free tier |
 
 ---
 
-## Hub Bot Events Feed
+## Mod Menu Actions
 
-Bot activity feed stored in wiki pages for cross-app visibility.
-
-### Wiki Pages
-| Page | Format | Purpose |
-|------|--------|---------|
-| `hub-bot-9000/events-feed` | JSON | Programmatic access |
-| `hub-bot-9000/events-feed-display` | Markdown | Human-readable display |
-
-The markdown wiki page can be linked in your subreddit sidebar.
-
-### Event Types
-
-| Type | Icon |
-|------|------|
-| Brigade Alert | `!` |
-| Haiku Detection | `*` |
-| Farewell | `~` |
-| Court Docket | `#` |
-| Traffic Spike | `^` |
-| Community Event | `@` |
-| Tribute | `+` |
-| System | `i` |
+| Action | Location | Description |
+|--------|----------|-------------|
+| Analyze Drama Thread | Subreddit | Analyze drama thread URL for haters |
+| Analyze for Brigade | Post | Analyze post for brigade evidence |
+| View Hater Leaderboard | Subreddit | Quick leaderboard access |
+| Update Hall of Shame | Subreddit | Regenerate wiki |
+| Scan for Crosslinks Now | Subreddit | Force crosslink scan |
 
 ---
 
-## Architecture
+## Scheduled Jobs
 
-```
-hub-bot-9000/
-├── packages/
-│   ├── common/                   # Shared utilities (@hub-bot/common)
-│   │   └── src/
-│   │       ├── redis.ts          # Redis helpers
-│   │       ├── rate-limiter.ts   # Configurable rate limiting
-│   │       ├── ai-provider.ts    # Gemini BYOK integration
-│   │       ├── pullpush.ts       # PullPush.io API client
-│   │       ├── leaderboard.ts    # Hater tracking system
-│   │       ├── tribute.ts        # Tribute generation
-│   │       ├── achievements.ts   # Achievement system
-│   │       ├── events-feed.ts    # Cross-app event feed
-│   │       ├── wiki.ts           # Wiki storage paths
-│   │       └── types.ts          # Shared types
-│   │
-│   ├── community-hub/            # Community dashboard
-│   │   ├── src/
-│   │   │   ├── main.tsx          # Devvit app entry
-│   │   │   ├── components/       # UI components
-│   │   │   ├── scheduler/        # Daily/weekly post jobs
-│   │   │   └── services/         # Weather, events
-│   │   └── devvit.yaml
-│   │
-│   ├── haiku-sensei/             # Haiku detection bot
-│   │   ├── src/
-│   │   │   ├── main.tsx
-│   │   │   ├── detector.ts
-│   │   │   └── syllables.ts
-│   │   └── devvit.yaml
-│   │
-│   ├── brigade-sentinel/         # TotesMessenger revival
-│   │   ├── src/
-│   │   │   ├── main.tsx
-│   │   │   └── templates.ts
-│   │   └── devvit.yaml
-│   │
-│   ├── farewell-hero/            # Unsubscribe responder
-│   │   ├── src/
-│   │   │   ├── main.tsx
-│   │   │   ├── detector.ts
-│   │   │   └── responses.ts
-│   │   └── devvit.yaml
-│   │
-│   └── hub-widget/               # Bot activity feed
-│       ├── src/
-│       │   └── main.tsx
-│       └── devvit.yaml
-│
-├── scraper-service/              # Cloud Run service (Python)
-│   └── main.py
-│
-└── infrastructure/               # GCP Terraform
-    └── terraform/
-```
-
-## Wiki Storage
-
-All apps use standardized wiki paths under `hub-bot-9000/`:
-
-| Path | Purpose |
-|------|---------|
-| `hub-bot-9000/events-feed` | Cross-app bot activity feed (JSON) |
-| `hub-bot-9000/events-feed-display` | Human-readable event feed (Markdown) |
-| `hub-bot-9000/opt-out` | User opt-out list |
-| `hub-bot-9000/hater-leaderboard` | Hater scores |
-| `hub-bot-9000/user-achievements` | Achievement tracking |
-| `hub-bot-9000/community-events` | User-submitted events |
-| `hub-bot-9000/thread-analyses` | Detailed thread analysis reports |
+| Job | Schedule | Purpose |
+|-----|----------|---------|
+| scanForCrosslinks | Every 15 min | Find crosslinks, analyze targets |
+| enrichHatersOSINT | Daily 3am | Analyze deleted content |
+| fetchCommunityEventsJob | Every 6 hours | Fetch local events |
+| updateHallOfShameJob | Every 6 hours | Regenerate Hall of Shame |
 
 ---
 
-## Development
+## Privacy and Compliance
 
-### Prerequisites
-- Node.js 18+
-- npm 9+
-- [Devvit CLI](https://developers.reddit.com/docs/quickstart)
+- All bot comments include disclosure footers
+- Only public data analyzed
+- No sensitive attribute inference
+- Opt-out by blocking the bot account
+- Rate limiting prevents spam
+- BYOK model - mods pay for their own AI usage
 
-### Setup
-
-```bash
-# Clone the repo
-git clone https://github.com/r-seattle-wa/hub-bot-9000.git
-cd hub-bot-9000
-
-# Install dependencies
-npm install
-
-# Build all packages
-npm run build
-
-# Login to Reddit
-devvit login
-```
-
-### Working with Apps
-
-```bash
-# Build specific package
-cd packages/community-hub && npm run build
-
-# Playtest an app
-cd packages/brigade-sentinel
-devvit playtest r/YourTestSubreddit
-
-# View logs
-devvit logs r/YourTestSubreddit
-
-# Upload for production
-devvit upload
-devvit publish
-```
-
----
-
-## Cloud Run Deployment
-
-The scraper-service runs on Google Cloud Run. Deployment can be triggered manually via GitHub Actions.
-
-### Prerequisites
-
-1. **GCP Project**: `reddit-botting` (or your project)
-2. **Service Account**: Create with roles:
-   - Cloud Run Admin
-   - Artifact Registry Writer
-3. **GitHub Secrets**: Add to repository settings:
-   - `GCP_SA_KEY`: Base64-encoded service account JSON key
-
-### Deploy via GitHub Actions
-
-1. Go to **Actions** tab in GitHub
-2. Select **Deploy Scraper Service**
-3. Click **Run workflow**
-4. Select environment (production/staging)
-5. Click **Run workflow**
-
-### Deploy via gcloud CLI
-
-```bash
-cd scraper-service
-
-# Build and deploy directly
-gcloud run deploy event-scraper   --source .   --region us-west1   --allow-unauthenticated   --memory 512Mi   --set-env-vars "RATE_LIMIT=30,ENABLE_DOCS=false"
-
-# Or use Cloud Build
-gcloud builds submit --config cloudbuild.yaml
-```
-
-### Service Endpoints
-
-| Endpoint | Purpose |
-|----------|---------|
-| `/events` | Fetch Seattle events |
-| `/wiki-format` | Events formatted for wiki |
-| `/health` | Health check |
-| `/analyze/content` | Content analysis |
-
----
-
-## External APIs
-
-| API | Used By | Auth | Purpose |
-|-----|---------|------|---------|
-| Reddit API | All apps | Devvit context | Core functionality |
-| weather.gov | community-hub | None | Weather forecasts (US) |
-| PullPush.io | brigade-sentinel | None (rate-limited) | Deleted content, crosslinks |
-| Groq API | farewell-hero | BYOK (free tier) | Tribute generation (Llama 3.1) |
-| Gemini Flash | All apps (optional) | BYOK | AI classification, tribute fallback |
-
-## BYOK Model
-
-All AI features use **Bring Your Own Key** - moderators provide their own Gemini API key:
-- No cost to app developer
-- Mods control their API usage
-- Free tier available at [ai.google.dev](https://ai.google.dev)
-
----
-
-## Privacy & Compliance
-
-- **Bot disclosure** - All bot comments include disclosure footer
-- **Public data only** - Only analyzes public posts/comments
-- **No sensitive inference** - Does NOT derive health, politics, religion, etc.
-- **Opt-out support** - Users can block the bot to opt out
-- **Rate limiting** - Prevents spam and API abuse
-
-See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md) for details.
+See PRIVACY.md and TERMS.md.
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT - see LICENSE
 
 ## Community
 
-- **Discord**: [discord.gg/seattle](https://discord.gg/seattle) - Seattle Discord community
-- **Subreddits**: r/Seattle, r/SeattleWA, and others
-- **Issues**: [GitHub Issues](https://github.com/r-seattle-wa/hub-bot-9000/issues)
+- Discord: discord.gg/seattle
+- Issues: GitHub Issues

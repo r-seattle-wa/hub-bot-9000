@@ -50,12 +50,11 @@ export interface MoonPhase {
 
 // Settings Types
 export interface AppSettings {
-  // Scheduling
-  enableDailyPost: boolean;
-  dailyPostTime: string;
+  // Weekly Community Thread
   enableWeeklyPost: boolean;
   weeklyPostDay: string;
   weeklyPostTime: string;
+  stickyWeeklyPost: boolean;
 
   // Weather
   enableWeather: boolean;
@@ -73,6 +72,5 @@ export interface AppSettings {
 
   // Branding
   botName: string;
-  postTitleDaily: string;
   postTitleWeekly: string;
 }

@@ -40,7 +40,8 @@ hub-bot-9000/
 │   │
 │   ├── brigade-sentinel/         # TotesMessenger revival + hater tracking
 │   │   ├── src/
-│   │   │   ├── main.tsx          # Devvit app entry + AI reply handler
+│   │   │   ├── main.tsx          # Devvit app entry + scheduled jobs
+│   │   │   ├── menu-actions.ts   # Mod menu actions + wiki init
 │   │   │   └── templates.ts      # Comment templates
 │   │   └── devvit.yaml
 │   │
@@ -96,7 +97,7 @@ devvit logs r/SeattleModTests
 | App | Purpose | Key Features |
 |-----|---------|--------------|
 | **haiku-sensei** | Detects accidental 5-7-5 haikus | Syllable counting, AI replies to users |
-| **brigade-sentinel** | Cross-subreddit link alerts + hater leaderboard | OSINT, alt tracking, modmail alerts, traffic spike detection, achievements, community events |
+| **brigade-sentinel** | Cross-subreddit link alerts + hater leaderboard | Brigade analysis, Hall of Shame, OSINT, modmail alerts, traffic spike detection, achievements |
 | **farewell-hero** | "I'm unsubscribing" responder + tributes | 5 sarcasm levels, tone matching, best post/comment, political complaint detection, hater leaderboard integration, !tribute command |
 | **hub-widget** | Unified events dashboard | Color-coded feed, auto-refresh, Custom Post Type |
 
@@ -527,9 +528,10 @@ const REDIS_PREFIX = {
 
 | Job | App | Schedule | Purpose |
 |-----|-----|----------|---------|
-| `scanForCrosslinks` | brigade-sentinel | Every 15 min | Find new crosslinks |
-| `enrichHatersOSINT` | brigade-sentinel | Daily 3am | Analyze top haters' deleted content |
+| `scanForCrosslinks` | brigade-sentinel | Every 15 min | Find crosslinks + analyze targets |
+| `enrichHatersOSINT` | brigade-sentinel | Daily 3am | Analyze top haters deleted content |
 | `fetchCommunityEventsJob` | brigade-sentinel | Every 6 hours | Fetch local community events |
+| `updateHallOfShameJob` | brigade-sentinel | Every 6 hours | Regenerate Hall of Shame wiki |
 | `postAchievementComment` | brigade-sentinel | On-demand | Post achievement announcements |
 | `notifyBrigade` | brigade-sentinel | On-demand | Delayed crosslink notification |
 | `postHaikuReply` | haiku-sensei | On-demand | Delayed haiku reply |

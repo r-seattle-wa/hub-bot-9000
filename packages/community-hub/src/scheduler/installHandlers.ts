@@ -2,7 +2,6 @@ import { TriggerContext } from '@devvit/public-api';
 import { parseTime } from '../utils/dateUtils.js';
 
 // Job names
-export const JOB_DAILY_POST = 'dailyPost';
 export const JOB_WEEKLY_POST = 'weeklyPost';
 export const JOB_CLEANUP_EVENTS = 'cleanupEvents';
 export const JOB_FETCH_EVENTS = 'fetchEvents';
@@ -22,18 +21,6 @@ export async function handleInstallUpgrade(_: unknown, context: TriggerContext):
 
     // Get settings
     const settings = await context.settings.getAll();
-
-    // Schedule daily post
-    if (settings.enableDailyPost) {
-      const dailyTime = settings.dailyPostTime as string || '15:00';
-      const { hours, minutes } = parseTime(dailyTime);
-
-      await context.scheduler.runJob({
-        name: JOB_DAILY_POST,
-        cron: `${minutes} ${hours} * * *`, // Every day at specified time
-      });
-      console.log(`Scheduled daily post at ${dailyTime} UTC`);
-    }
 
     // Schedule weekly post
     if (settings.enableWeeklyPost) {
@@ -98,7 +85,7 @@ Thank you for installing Hub Bot 9000 on r/${subredditName}!
    - Community links (Discord, wiki, rules)
    - Posting schedule and times
 
-2. **Daily & Weekly Posts** will automatically be created based on your schedule settings.
+2. **Weekly Posts** will automatically be created based on your schedule settings (and can be stickied).
 
 3. **Interactive Community Hub** - Create an interactive pinned post:
    - Go to your subreddit

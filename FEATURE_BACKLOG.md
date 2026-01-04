@@ -835,6 +835,46 @@ When crosslinks are detected, the bot can post sticky comments showing:
 - Talking points coverage (categories, patterns)
 - False positive prevention
 
+
+
+### Feature 9: Brigade Evidence Sticky Comments (COMPLETE)
+
+**Status:** Implemented
+**Location:** packages/common/src/thread-analysis.ts, packages/brigade-sentinel/src/main.tsx
+
+When crosslinks are detected, the system now analyzes the TARGET post (not just the source) to show actual brigade evidence in sticky comments.
+
+#### Features
+- **Target Post Analysis**: Calls analyzeThreadForBrigade() on the brigaded thread
+- **First-Time Poster Detection**: Identifies users who have never posted in the subreddit
+- **Origin Tracking**: Shows which subreddits the commenters come from
+- **Temporal Analysis**: Detects suspicious clustering of comments
+- **Configurable Thresholds**: firstTimePosterThreshold, firstTimePosterPercentThreshold
+
+#### BrigadeEvidence Interface
+```typescript
+interface BrigadeEvidence {
+  postId: string;
+  postTitle: string;
+  uniqueCommenters: number;
+  firstTimePosters: number;
+  firstTimePosterPercentage: number;
+  topSourceSubreddits: { subreddit: string; count: number }[];
+  suspiciousProfiles: SuspiciousProfile[];
+  temporalWaves: TemporalWave[];
+  confidence: 'low' | 'medium' | 'high';
+  confidenceScore: number;
+}
+```
+
+#### Sticky Comment Format
+Shows brigade evidence table with:
+- Unique commenters count
+- First-time poster count and percentage
+- Confidence level
+- Top source communities
+- Notable patterns (temporal clustering, new accounts, negative karma)
+
 ## Open Questions
 
 1. **Brigade Sentinel scope:** Should it also track outgoing links (when our users link to other subs)?
@@ -846,3 +886,50 @@ When crosslinks are detected, the bot can post sticky comments showing:
 4. **Cross-app communication:** If Stat Tracker and Farewell Statistician are separate apps, how do they share data? Redis namespace conventions?
 
 5. **Legal considerations:** Any GDPR/privacy concerns with aggregating user stats even from public data?
+
+---
+
+## Backlog: Input Sanitization & Security Hardening
+
+**Status:** Planned
+**Priority:** Medium
+**Complexity:** Medium
+
+### Problem
+Content from hostile communities may contain prompt injection attempts or malicious patterns designed to manipulate AI analysis or break rendering.
+
+### Proposed Solution
+Create `packages/common/src/sanitize.ts` module with:
+
+```typescript
+// Functions needed:
+sanitizeContent(text, type)     // Strip injection patterns, limit length
+sanitizeUsername(username)      // Alphanumeric only
+sanitizeSubreddit(subreddit)    // Valid subreddit chars only
+sanitizeMarkdown(content)       // Escape markdown special chars
+isContentSafe(content)          // Check for suspicious patterns
+logSuspiciousContent(...)       // Audit logging
+```
+
+### Patterns to Filter
+- `ignore.*previous.*instructions` - Prompt injection
+- `system.*prompt` - Prompt injection
+- `[[...]]` - Wiki-style injection
+- `<script>` - XSS attempts
+- `${...}` / `{{...}}` - Template injection
+- Control characters (except newlines/tabs)
+
+### Integration Points
+- Quote extraction in thread-analysis.ts
+- User content display in Hall of Shame
+- Any AI prompt construction
+- Markdown rendering in wiki pages
+
+### Length Limits
+| Type | Max Length |
+|------|------------|
+| username | 50 |
+| title | 500 |
+| quote | 1000 |
+| comment | 2000 |
+| summary | 500 |

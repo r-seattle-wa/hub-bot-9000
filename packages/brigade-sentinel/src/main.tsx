@@ -46,6 +46,13 @@ import {
   // Event fetching
   fetchCommunityEvents,
   emitCommunityEvent,
+  // Hall of Shame update
+  updateHallOfShame,
+  // Brigade detection
+  analyzeThreadForBrigade,
+  formatBrigadeReport,
+  formatBrigadeStickyComment,
+  BrigadeEvidence,
 } from '@hub-bot/common';
 import { getBrigadeComment, getModmailBody } from './templates.js';
 import { initializeWikiPages, registerMenuActions } from './menu-actions.js';
@@ -63,6 +70,13 @@ Devvit.addSettings([
     type: 'boolean',
     label: 'Enable brigade detection',
     defaultValue: true,
+  },
+  {
+    name: 'homeSubreddit',
+    type: 'string',
+    label: 'Home subreddit being defended (e.g., Seattle)',
+    helpText: 'The subreddit this bot protects. All analysis targets this sub.',
+    defaultValue: '',
   },
   {
     name: 'publicComment',
@@ -210,6 +224,8 @@ interface BrigadeEvent {
   classification: SourceClassification;
   // Thread analysis data for sticky comment
   analysisResult?: AnalysisResult;
+  // Brigade evidence (target post analysis - for sticky comment)
+  brigadeEvidence?: BrigadeEvidence;
 }
 
 // Scheduled job to scan for crosslinks
@@ -319,15 +335,30 @@ Devvit.addSchedulerJob({
         if (postUrl) {
           const targetSub = await context.reddit.getCurrentSubredditName();
           analysisResult = await analyzeAndRecordThread(context, postUrl, targetSub);
-          // Store analysis result in the brigade event for sticky comment
+          // Store analysis result in the brigade event (for hater recording)
           brigadeEvent.analysisResult = analysisResult;
-          await setJson(
-            context.redis,
-            `${REDIS_PREFIX.brigade}event:${brigadeEvent.id}`,
-            brigadeEvent,
-            7 * 24 * 60 * 60
-          );
         }
+
+        // Analyze the TARGET post for brigade evidence (for sticky comment)
+        try {
+          const evidence = await analyzeThreadForBrigade(context, targetPostId, {
+            maxComments: 100,
+            historyDepth: 50,
+            includeDeleted: true,
+          });
+          brigadeEvent.brigadeEvidence = evidence;
+          console.log(`[brigade] Target analysis: ${evidence.firstTimePosters}/${evidence.uniqueCommenters} first-time posters`);
+        } catch (error) {
+          console.error('[brigade] Target post analysis failed:', error);
+        }
+
+        // Save event with all analysis data
+        await setJson(
+          context.redis,
+          `${REDIS_PREFIX.brigade}event:${brigadeEvent.id}`,
+          brigadeEvent,
+          7 * 24 * 60 * 60
+        );
 
         // Check for achievements if enabled
         if (settings.enableAchievements) {
@@ -446,15 +477,18 @@ Devvit.addSchedulerJob({
       if (settings.publicComment) {
         let commentBody: string;
         
-        // Use detailed hater analysis if we found haters, otherwise basic notice
-        const analysis = brigadeEvent.analysisResult?.analysis;
-        const achievements = brigadeEvent.analysisResult?.achievements || [];
+        // Use brigade evidence from TARGET post analysis (who's brigading THIS post)
+        const evidence = brigadeEvent.brigadeEvidence;
         
-        if (analysis && analysis.haters && analysis.haters.length > 0) {
-          // Rich sticky with hater table and achievements
-          commentBody = formatStickyComment(analysis, achievements, subreddit.name);
+        if (evidence && (evidence.firstTimePosters >= 3 || evidence.firstTimePosterPercentage >= 20)) {
+          // Rich sticky with brigade evidence from this post
+          commentBody = formatBrigadeStickyComment(
+            evidence,
+            brigadeEvent.sourceSubreddit,
+            brigadeEvent.sourcePostUrl
+          );
         } else {
-          // Basic crosslink notice (no haters found)
+          // Basic crosslink notice (no significant brigade detected)
           commentBody = getBrigadeComment({
             sourceSubreddit: brigadeEvent.sourceSubreddit,
             sourceUrl: brigadeEvent.sourcePostUrl,
@@ -752,6 +786,29 @@ Devvit.addSchedulerJob({
 });
 
 // =============================================================================
+// HALL OF SHAME UPDATE JOB
+// Updates the human-readable Hall of Shame wiki page
+// =============================================================================
+
+Devvit.addSchedulerJob({
+  name: 'updateHallOfShameJob',
+  onRun: async (_event, context) => {
+    const settings = await context.settings.getAll();
+    if (!settings.enabled) return;
+
+    try {
+      const installedSub = await context.reddit.getCurrentSubredditName();
+      const homeSubreddit = (settings.homeSubreddit as string)?.trim() || installedSub;
+      
+      const result = await updateHallOfShame(context, homeSubreddit);
+      console.log(`[hall-of-shame] Update result: ${result.message}`);
+    } catch (error) {
+      console.error('[hall-of-shame] Update failed:', error);
+    }
+  },
+});
+
+// =============================================================================
 // COMMUNITY EVENT FETCHING JOB
 // Fetches local events and emits to hub-widget events feed
 // =============================================================================
@@ -927,6 +984,12 @@ Devvit.addTrigger({
     await context.scheduler.runJob({
       name: 'enrichHatersOSINT',
       cron: '0 3 * * *',
+    });
+
+    // Update Hall of Shame every 6 hours
+    await context.scheduler.runJob({
+      name: 'updateHallOfShameJob',
+      cron: '0 */6 * * *',
     });
 
     // Run community events fetch every 6 hours

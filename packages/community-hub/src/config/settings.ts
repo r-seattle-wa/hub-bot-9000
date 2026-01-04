@@ -4,33 +4,19 @@ export const appSettings: SettingsFormField[] = [
   // Scheduling Settings
   {
     type: 'group',
-    label: 'Scheduled Posts',
+    label: 'Weekly Community Thread',
     fields: [
-      {
-        type: 'boolean',
-        name: 'enableDailyPost',
-        label: 'Enable Daily Post',
-        helpText: 'Automatically post a daily community thread',
-        defaultValue: false,
-      },
-      {
-        type: 'string',
-        name: 'dailyPostTime',
-        label: 'Daily Post Time (UTC)',
-        helpText: 'Time to post daily thread in 24h format (e.g., 15:00 = 8am PST)',
-        defaultValue: '15:00',
-      },
       {
         type: 'boolean',
         name: 'enableWeeklyPost',
         label: 'Enable Weekly Post',
-        helpText: 'Automatically post a weekly roundup thread',
+        helpText: 'Automatically post a weekly community thread (intended to be stickied)',
         defaultValue: false,
       },
       {
         type: 'select',
         name: 'weeklyPostDay',
-        label: 'Weekly Post Day',
+        label: 'Post Day',
         options: [
           { label: 'Sunday', value: '0' },
           { label: 'Monday', value: '1' },
@@ -45,9 +31,16 @@ export const appSettings: SettingsFormField[] = [
       {
         type: 'string',
         name: 'weeklyPostTime',
-        label: 'Weekly Post Time (UTC)',
-        helpText: 'Time to post weekly thread in 24h format',
+        label: 'Post Time (UTC)',
+        helpText: 'Time to post weekly thread in 24h format (e.g., 15:00 = 8am PST)',
         defaultValue: '15:00',
+      },
+      {
+        type: 'boolean',
+        name: 'stickyWeeklyPost',
+        label: 'Sticky the Weekly Post',
+        helpText: 'Automatically sticky the weekly post (requires mod permissions)',
+        defaultValue: true,
       },
     ],
   },
@@ -174,13 +167,6 @@ export const appSettings: SettingsFormField[] = [
         label: 'Bot Name',
         helpText: 'Name displayed in posts',
         defaultValue: 'Community Hub',
-      },
-      {
-        type: 'string',
-        name: 'postTitleDaily',
-        label: 'Daily Post Title Template',
-        helpText: 'Variables: {location}, {date}, {dayOfWeek}, {subreddit}',
-        defaultValue: '{location} Daily Thread - {dayOfWeek}, {date}',
       },
       {
         type: 'string',

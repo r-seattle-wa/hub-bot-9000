@@ -6,6 +6,7 @@
 import { TriggerContext, JobContext } from '@devvit/public-api';
 import { SourceClassification } from './types.js';
 import { analyzeDeletedContent, analyzeUser, BehavioralProfile } from './user-analysis.js';
+import { ACHIEVEMENTS, AchievementTier } from './achievements.js';
 
 type AppContext = TriggerContext | JobContext;
 
@@ -739,4 +740,234 @@ export async function getHaterOSINTReport(
     deletedAnalysis,
     behavioralProfile: fullAnalysis.behavioralProfile,
   };
+}
+
+// Hall of Shame wiki page (human-readable)
+export const HALL_OF_SHAME_WIKI = 'hub-bot-9000/hall-of-shame';
+
+// Rank titles for leaderboard positions
+const RANK_TITLES = [
+  '🏆 Supreme Antagonist',
+  '🥈 Silver-Tongued Hater',
+  '🥉 Bronze Buzzkill',
+  '4th - Dedicated Detractor',
+  '5th - Persistent Pest',
+  '6th - Committed Complainer',
+  '7th - Reliable Ranter',
+  '8th - Steady Saltlord',
+  '9th - Aspiring Antagonist',
+  '10th - Honorable Mention',
+];
+
+// Achievement tier display
+const TIER_DISPLAY: Record<string, { icon: string; title: string }> = {
+  bronze: { icon: '🥉', title: 'Bronze' },
+  silver: { icon: '🥈', title: 'Silver' },
+  gold: { icon: '🥇', title: 'Gold' },
+  platinum: { icon: '💎', title: 'Platinum' },
+  diamond: { icon: '👑', title: 'Diamond' },
+};
+
+/**
+ * Generate human-readable Hall of Shame markdown
+ * This is the shareable, amusing version of the leaderboard
+ */
+export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string): string {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+  });
+
+  let md = `# 🏛️ The Hall of Shame
+  
+*r/${homeSubreddit}'s Official Registry of Distinguished Haters*
+
+---
+
+**Last Updated:** ${dateStr}  
+**Total Hostile Crosslinks:** ${data.totalHostileLinks}  
+**Registered Haters:** ${Object.keys(data.users).length}
+
+---
+
+## 🎖️ Top 10 Most Dedicated Haters
+
+*These individuals have demonstrated exceptional commitment to criticizing our community.*
+
+`;
+
+  if (data.topUsers.length === 0) {
+    md += `*No haters registered yet. How wholesome!* 🌈\n\n`;
+  } else {
+    for (let i = 0; i < Math.min(10, data.topUsers.length); i++) {
+      const entry = data.topUsers[i];
+      const userData = data.users[entry.username.toLowerCase()];
+      const rankTitle = RANK_TITLES[i] || `${i + 1}th Place`;
+      
+      // Get highest achievement
+      let achievementBadge = '';
+      if (userData?.highestAchievementTier) {
+        const tier = TIER_DISPLAY[userData.highestAchievementTier];
+        if (tier) {
+          achievementBadge = ` ${tier.icon}`;
+        }
+      }
+      
+      md += `### ${rankTitle}${achievementBadge}
+
+**u/${entry.username}** — ${entry.score} points
+
+`;
+      
+      // Add home subreddits
+      if (userData?.homeSubreddits?.length) {
+        const homeSubs = userData.homeSubreddits.slice(0, 3).map(s => `r/${s}`).join(', ');
+        md += `📍 *Operates from: ${homeSubs}*\n\n`;
+      }
+      
+      // Add featured quote
+      if (userData?.featuredQuote) {
+        const quote = userData.featuredQuote.length > 300 
+          ? userData.featuredQuote.slice(0, 300) + '...' 
+          : userData.featuredQuote;
+        md += `> "${quote}"\n`;
+        if (userData.featuredQuoteScore) {
+          md += `> — *+${userData.featuredQuoteScore} upvotes*`;
+          if (userData.featuredQuoteLink) {
+            md += ` ([source](${userData.featuredQuoteLink}))`;
+          }
+          md += `\n`;
+        }
+        md += `\n`;
+      }
+      
+      // Add achievements with actual names
+      if (userData?.unlockedAchievements) {
+        const achievementIds = Object.keys(userData.unlockedAchievements);
+        if (achievementIds.length > 0) {
+          md += `**🏅 Achievements (${achievementIds.length}):**
+`;
+          // Sort by tier (highest first), then show top 5
+          const sortedAchievements = achievementIds
+            .map(id => ACHIEVEMENTS.find(a => a.id === id))
+            .filter(Boolean)
+            .sort((a, b) => {
+              const tierOrder = ['diamond', 'platinum', 'gold', 'silver', 'bronze'];
+              return tierOrder.indexOf(a!.tier) - tierOrder.indexOf(b!.tier);
+            })
+            .slice(0, 5);
+
+          for (const ach of sortedAchievements) {
+            const tierInfo = TIER_DISPLAY[ach!.tier];
+            md += `- ${tierInfo?.icon || '🏅'} **${ach!.name}** — *${ach!.description}*
+`;
+          }
+          if (achievementIds.length > 5) {
+            md += `- *...and ${achievementIds.length - 5} more*
+`;
+          }
+          md += `
+`;
+        }
+      }
+      
+      md += `---\n\n`;
+    }
+  }
+
+  // Hostile Subreddits Section
+  if (data.topSubreddits.length > 0) {
+    md += `## 🏘️ Hostile Subreddit Origins
+
+*Where do our biggest fans come from?*
+
+| Rank | Subreddit | Hostility Score |
+|------|-----------|-----------------|
+`;
+    data.topSubreddits.slice(0, 10).forEach((sub, i) => {
+      const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+      md += `| ${rank} | r/${sub.subreddit} | ${sub.score} |\n`;
+    });
+    md += `\n`;
+  }
+
+  // Stats Section
+  md += `## 📊 Statistics
+
+- **Total Crosslinks Tracked:** ${data.totalHostileLinks}
+- **Unique Haters:** ${Object.keys(data.users).length}
+- **Hostile Subreddits:** ${Object.keys(data.subreddits).length}
+`;
+
+  // Count achievements
+  let totalAchievements = 0;
+  let highestTier = '';
+  for (const user of Object.values(data.users)) {
+    if (user.unlockedAchievements) {
+      totalAchievements += Object.keys(user.unlockedAchievements).length;
+    }
+    if (user.highestAchievementTier) {
+      const tierRank = ['bronze', 'silver', 'gold', 'platinum', 'diamond'].indexOf(user.highestAchievementTier);
+      const highestRank = ['bronze', 'silver', 'gold', 'platinum', 'diamond'].indexOf(highestTier);
+      if (tierRank > highestRank) {
+        highestTier = user.highestAchievementTier;
+      }
+    }
+  }
+  
+  if (totalAchievements > 0) {
+    md += `- **Total Achievements Unlocked:** ${totalAchievements}\n`;
+  }
+  if (highestTier) {
+    const tier = TIER_DISPLAY[highestTier];
+    md += `- **Highest Achievement Tier Reached:** ${tier?.icon} ${tier?.title}\n`;
+  }
+
+  md += `
+---
+
+*This leaderboard is updated periodically. Data is collected from crosslinks and analyzed automatically.*
+
+*Tracked by brigade-sentinel | [Raw Data](/r/${homeSubreddit}/wiki/hub-bot-9000/hater-leaderboard)*
+`;
+
+  return md;
+}
+
+/**
+ * Update the Hall of Shame wiki page
+ */
+export async function updateHallOfShame(
+  context: AppContext,
+  homeSubreddit: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const data = await getLeaderboard(context);
+    if (!data) {
+      return { success: false, message: 'No leaderboard data found' };
+    }
+
+    const markdown = generateHallOfShame(data, homeSubreddit);
+    const subredditName = await context.reddit.getCurrentSubredditName();
+
+    try {
+      await context.reddit.updateWikiPage({
+        subredditName,
+        page: HALL_OF_SHAME_WIKI,
+        content: markdown,
+      });
+    } catch {
+      await context.reddit.createWikiPage({
+        subredditName,
+        page: HALL_OF_SHAME_WIKI,
+        content: markdown,
+      });
+    }
+
+    console.log(`[hall-of-shame] Updated wiki page`);
+    return { success: true, message: 'Hall of Shame updated' };
+  } catch (error) {
+    console.error(`[hall-of-shame] Failed to update:`, error);
+    return { success: false, message: `Failed: ${error}` };
+  }
 }

@@ -41,6 +41,16 @@ export async function handleWeeklyPost(_: unknown, context: JobContext): Promise
 
     console.log(`Weekly post created: ${post.id}`);
 
+    // Sticky the post if enabled
+    if (settings.stickyWeeklyPost) {
+      try {
+        await post.sticky();
+        console.log(`Weekly post stickied: ${post.id}`);
+      } catch (stickyError) {
+        console.error('Failed to sticky weekly post (may lack permissions):', stickyError);
+      }
+    }
+
   } catch (error) {
     console.error('Failed to create weekly post:', error);
   }
