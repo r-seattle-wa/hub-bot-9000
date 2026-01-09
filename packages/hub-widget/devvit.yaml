@@ -1,5 +1,5 @@
 name: hub-bot-9000
-version: 0.0.16
+version: 0.0.17
 api: devvit-runtime
 runtime:
   version: node
