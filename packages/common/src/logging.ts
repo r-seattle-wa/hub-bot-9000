@@ -202,11 +202,7 @@ export function logBehavioralAnalysis(
   });
 }
 
-export function logModLogSpam(
-  username: string,
-  spamCount: number,
-  actionTypes?: string[]
-): void {
+export function logModLogSpam(username: string, spamCount: number, actionTypes?: string[]): void {
   logEvent({
     event: 'mod_log_spam_found',
     username,

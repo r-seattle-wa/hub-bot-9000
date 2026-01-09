@@ -39,7 +39,7 @@ export class EventService {
   static async getApprovedEvents(context: Devvit.Context): Promise<UserEvent[]> {
     const events = await this.getAllEvents(context);
     return Object.values(events)
-      .filter(e => e.approved)
+      .filter((e) => e.approved)
       .sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
   }
 
@@ -49,27 +49,31 @@ export class EventService {
   static async getPendingEvents(context: Devvit.Context): Promise<UserEvent[]> {
     const events = await this.getAllEvents(context);
     return Object.values(events)
-      .filter(e => !e.approved)
+      .filter((e) => !e.approved)
       .sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
   }
 
   /**
    * Get upcoming events (approved, future dates)
    */
-  static async getUpcomingEvents(context: Devvit.Context, limit: number = 10): Promise<UserEvent[]> {
+  static async getUpcomingEvents(
+    context: Devvit.Context,
+    limit: number = 10
+  ): Promise<UserEvent[]> {
     const events = await this.getApprovedEvents(context);
     const now = new Date();
 
-    return events
-      .filter(e => new Date(e.dateStart) >= now)
-      .slice(0, limit);
+    return events.filter((e) => new Date(e.dateStart) >= now).slice(0, limit);
   }
 
   /**
    * Get scraped events - tries wiki first, falls back to Redis cache
    * @param daysAhead - Number of days to look ahead (1, 3, or 7)
    */
-  static async getScrapedEvents(context: Devvit.Context, daysAhead: number = 3): Promise<UserEvent[]> {
+  static async getScrapedEvents(
+    context: Devvit.Context,
+    daysAhead: number = 3
+  ): Promise<UserEvent[]> {
     try {
       let events: UserEvent[] = [];
 
@@ -100,7 +104,7 @@ export class EventService {
       const endDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
       return events
-        .filter(e => {
+        .filter((e) => {
           const eventDate = new Date(e.dateStart);
           return eventDate >= now && eventDate <= endDate;
         })
@@ -138,7 +142,8 @@ export class EventService {
     if (!isLinkAllowed(event.url, allowedDomains)) {
       return {
         success: false,
-        error: 'Link must be from an approved domain (Eventbrite, Meetup, Facebook Events, government sites, etc.)',
+        error:
+          'Link must be from an approved domain (Eventbrite, Meetup, Facebook Events, government sites, etc.)',
       };
     }
 
@@ -209,14 +214,20 @@ export class EventService {
   /**
    * Approve an event
    */
-  static async approveEvent(eventId: string, context: Devvit.Context): Promise<{ success: boolean; error?: string }> {
+  static async approveEvent(
+    eventId: string,
+    context: Devvit.Context
+  ): Promise<{ success: boolean; error?: string }> {
     return this.updateEvent(eventId, { approved: true }, context);
   }
 
   /**
    * Reject/delete an event
    */
-  static async deleteEvent(eventId: string, context: Devvit.Context): Promise<{ success: boolean; error?: string }> {
+  static async deleteEvent(
+    eventId: string,
+    context: Devvit.Context
+  ): Promise<{ success: boolean; error?: string }> {
     const events = await this.getAllEvents(context);
 
     if (!events[eventId]) {

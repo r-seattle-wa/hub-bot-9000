@@ -16,8 +16,12 @@ interface ResponseSet {
 const RESPONSES: Record<SarcasmLevel, ResponseSet> = {
   [SarcasmLevel.POLITE]: {
     lurker: ['Thank you for being part of our community. We wish you all the best.'],
-    powerUser: ['Thank you for your {totalActivity} contributions over {timespan}. You have been valuable.'],
-    notableContributor: ['You have been one of our top contributors. Thank you for making this community better.'],
+    powerUser: [
+      'Thank you for your {totalActivity} contributions over {timespan}. You have been valuable.',
+    ],
+    notableContributor: [
+      'You have been one of our top contributors. Thank you for making this community better.',
+    ],
     standard: ['Thank you for being part of r/{subreddit}. Best wishes.'],
     repeat: ['Welcome back! Hope to see you again soon!'],
   },
@@ -29,7 +33,9 @@ const RESPONSES: Record<SarcasmLevel, ResponseSet> = {
     repeat: ['Departure announcement #{count}. Stats available.'],
   },
   [SarcasmLevel.SNARKY]: {
-    lurker: ['We will definitely notice the absence of your *checks notes* {totalActivity} contributions.'],
+    lurker: [
+      'We will definitely notice the absence of your *checks notes* {totalActivity} contributions.',
+    ],
     powerUser: ['Credit where due: {totalActivity} contributions is actually respectable.'],
     notableContributor: ['A top contributor is leaving? Let me update the wiki... eventually.'],
     standard: ['Another dramatic exit. Here are your stats, for what it is worth.'],
@@ -38,7 +44,9 @@ const RESPONSES: Record<SarcasmLevel, ResponseSet> = {
   [SarcasmLevel.ROAST]: {
     lurker: ['Your {totalActivity} contributions will be missed. By literally no one.'],
     powerUser: ['The person who posted {totalActivity} times finally ran out of things to say.'],
-    notableContributor: ['Top contributor leaving? Updating wiki under Notable Departures (Dramatic).'],
+    notableContributor: [
+      'Top contributor leaving? Updating wiki under Notable Departures (Dramatic).',
+    ],
     standard: ['The Grand Departure. Let me pull up your receipt.'],
     repeat: ['Round #{count}! At this point you are commuting, not leaving.'],
   },
@@ -58,17 +66,29 @@ export function determineSarcasmLevel(
 ): SarcasmLevel {
   if (!matchToneToUser) return defaultLevel;
   switch (detectedTone) {
-    case UserTone.POLITE: return SarcasmLevel.POLITE;
-    case UserTone.NEUTRAL: return defaultLevel;
-    case UserTone.FRUSTRATED: return higherSarcasm(defaultLevel, SarcasmLevel.SNARKY);
-    case UserTone.HOSTILE: return higherSarcasm(defaultLevel, SarcasmLevel.ROAST);
-    case UserTone.DRAMATIC: return SarcasmLevel.FREAKOUT;
-    default: return defaultLevel;
+    case UserTone.POLITE:
+      return SarcasmLevel.POLITE;
+    case UserTone.NEUTRAL:
+      return defaultLevel;
+    case UserTone.FRUSTRATED:
+      return higherSarcasm(defaultLevel, SarcasmLevel.SNARKY);
+    case UserTone.HOSTILE:
+      return higherSarcasm(defaultLevel, SarcasmLevel.ROAST);
+    case UserTone.DRAMATIC:
+      return SarcasmLevel.FREAKOUT;
+    default:
+      return defaultLevel;
   }
 }
 
 function higherSarcasm(a: SarcasmLevel, b: SarcasmLevel): SarcasmLevel {
-  const order = [SarcasmLevel.POLITE, SarcasmLevel.NEUTRAL, SarcasmLevel.SNARKY, SarcasmLevel.ROAST, SarcasmLevel.FREAKOUT];
+  const order = [
+    SarcasmLevel.POLITE,
+    SarcasmLevel.NEUTRAL,
+    SarcasmLevel.SNARKY,
+    SarcasmLevel.ROAST,
+    SarcasmLevel.FREAKOUT,
+  ];
   return order.indexOf(a) >= order.indexOf(b) ? a : b;
 }
 
@@ -102,13 +122,21 @@ export function generateFarewellResponse(
   let intro: string;
 
   if (repeatCount && repeatCount > 1) {
-    intro = pickRandom(responses.repeat).replace('{count}', String(repeatCount)).replace('{ordinal}', getOrdinal(repeatCount));
+    intro = pickRandom(responses.repeat)
+      .replace('{count}', String(repeatCount))
+      .replace('{ordinal}', getOrdinal(repeatCount));
   } else if (stats.isLurker) {
-    intro = pickRandom(responses.lurker).replace('{totalActivity}', String(totalActivity)).replace('{timespan}', timespan);
+    intro = pickRandom(responses.lurker)
+      .replace('{totalActivity}', String(totalActivity))
+      .replace('{timespan}', timespan);
   } else if (stats.isNotableContributor) {
     intro = pickRandom(responses.notableContributor);
   } else if (stats.isPowerUser) {
-    intro = pickRandom(responses.powerUser).replace('{totalPosts}', String(stats.totalPosts)).replace('{totalComments}', String(stats.totalComments)).replace('{totalActivity}', String(totalActivity)).replace('{timespan}', timespan);
+    intro = pickRandom(responses.powerUser)
+      .replace('{totalPosts}', String(stats.totalPosts))
+      .replace('{totalComments}', String(stats.totalComments))
+      .replace('{totalActivity}', String(totalActivity))
+      .replace('{timespan}', timespan);
   } else {
     intro = pickRandom(responses.standard).replace('{subreddit}', stats.subreddit);
   }
@@ -117,17 +145,33 @@ export function generateFarewellResponse(
   let footer = getStatsFooter();
 
   if (toneResult) {
-    footer += '\n\n---\n*Tone: ' + toneResult.tone.toUpperCase() + ' | Response: ' + sarcasmLevel.toUpperCase() + '*';
+    footer +=
+      '\n\n---\n*Tone: ' +
+      toneResult.tone.toUpperCase() +
+      ' | Response: ' +
+      sarcasmLevel.toUpperCase() +
+      '*';
   }
 
-  return '**Farewell Statistics for u/' + stats.username + '**\n\n' + intro + '\n\n' + statsTable + footer;
+  return (
+    '**Farewell Statistics for u/' +
+    stats.username +
+    '**\n\n' +
+    intro +
+    '\n\n' +
+    statsTable +
+    footer
+  );
 }
 
 /**
  * Responses for political/echo chamber complaints
  * References wiki demographic/political surveys
  */
-const POLITICAL_COMPLAINT_RESPONSES: Record<SarcasmLevel, { rightLeaning: string[]; leftLeaning: string[]; general: string[] }> = {
+const POLITICAL_COMPLAINT_RESPONSES: Record<
+  SarcasmLevel,
+  { rightLeaning: string[]; leftLeaning: string[]; general: string[] }
+> = {
   [SarcasmLevel.POLITE]: {
     rightLeaning: [
       'We understand the concern. Our [demographic surveys](/r/{subreddit}/wiki/surveys) show the community is actually quite politically diverse.',

@@ -103,9 +103,7 @@ export async function getUserStats(
         lastPostDate = new Date(Math.max(...dates.map((d) => d.getTime())));
 
         // Find best post by score
-        const topPost = subredditPosts.reduce((best, p) =>
-          p.score > best.score ? p : best
-        );
+        const topPost = subredditPosts.reduce((best, p) => (p.score > best.score ? p : best));
         if (topPost.score > 0) {
           bestPost = {
             title: topPost.title,
@@ -148,14 +146,13 @@ export async function getUserStats(
         lastCommentDate = new Date(Math.max(...dates.map((d) => d.getTime())));
 
         // Find best comment by score
-        const topComment = subredditComments.reduce((best, c) =>
-          c.score > best.score ? c : best
-        );
+        const topComment = subredditComments.reduce((best, c) => (c.score > best.score ? c : best));
         if (topComment.score > 0) {
           // Truncate comment body for display (first 80 chars)
-          const preview = topComment.body.length > 80
-            ? topComment.body.substring(0, 80) + '...'
-            : topComment.body;
+          const preview =
+            topComment.body.length > 80
+              ? topComment.body.substring(0, 80) + '...'
+              : topComment.body;
           bestComment = {
             title: preview.replace(/\n/g, ' '),
             score: topComment.score,

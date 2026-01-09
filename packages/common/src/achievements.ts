@@ -22,8 +22,8 @@ export interface Achievement {
   name: string;
   description: string;
   tier: AchievementTier;
-  scoreThreshold?: number;  // Min score to unlock
-  rankThreshold?: number;   // Min rank to unlock (e.g., top 10)
+  scoreThreshold?: number; // Min score to unlock
+  rankThreshold?: number; // Min rank to unlock (e.g., top 10)
   special?:
     | 'first_offense'
     | 'alt_exposed'
@@ -46,15 +46,15 @@ export interface Achievement {
     | 'deleted_evidence'
     | 'high_troll_risk'
     | 'deception_detected';
-  imagePrompt: string;      // For GenAI image generation
-  roastTemplate: string;    // Base template for AI to enhance
+  imagePrompt: string; // For GenAI image generation
+  roastTemplate: string; // Base template for AI to enhance
 }
 
 // User's achievement record
 export interface UserAchievements {
   username: string;
-  unlockedAchievements: string[];     // Achievement IDs
-  notifiedAchievements: string[];     // Already commented about
+  unlockedAchievements: string[]; // Achievement IDs
+  notifiedAchievements: string[]; // Already commented about
   lastAchievementAt: number;
   lastNotificationAt: number;
   totalAchievements: number;
@@ -64,8 +64,8 @@ export interface UserAchievements {
 // Achievement unlock result
 export interface AchievementUnlock {
   achievement: Achievement;
-  isNew: boolean;               // First time unlocking
-  shouldNotify: boolean;        // Should post comment (cooldown check)
+  isNew: boolean; // First time unlocking
+  shouldNotify: boolean; // Should post comment (cooldown check)
   leaderboardPosition: number;
   previousPosition?: number;
 }
@@ -79,7 +79,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Achieved 5 salt points',
     tier: AchievementTier.BRONZE,
     scoreThreshold: 5,
-    imagePrompt: 'A small bronze participation trophy with a tiny salt shaker on top, pixel art style, retro gaming aesthetic',
+    imagePrompt:
+      'A small bronze participation trophy with a tiny salt shaker on top, pixel art style, retro gaming aesthetic',
     roastTemplate: 'Welcome to the leaderboard! Your dedication to mild annoyance has been noted.',
   },
   {
@@ -88,7 +89,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Achieved 10 salt points',
     tier: AchievementTier.SILVER,
     scoreThreshold: 10,
-    imagePrompt: 'A silver badge with an angry keyboard warrior silhouette, dramatic lighting, gaming achievement style',
+    imagePrompt:
+      'A silver badge with an angry keyboard warrior silhouette, dramatic lighting, gaming achievement style',
     roastTemplate: 'Double digits! Your commitment to being upset is truly inspiring.',
   },
   {
@@ -97,8 +99,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Achieved 25 salt points',
     tier: AchievementTier.GOLD,
     scoreThreshold: 25,
-    imagePrompt: 'A gleaming gold medal with a rage face emoji, surrounded by salt crystals, epic gaming achievement',
-    roastTemplate: 'At this point, you should put this on your resume. Professional-grade salt mining.',
+    imagePrompt:
+      'A gleaming gold medal with a rage face emoji, surrounded by salt crystals, epic gaming achievement',
+    roastTemplate:
+      'At this point, you should put this on your resume. Professional-grade salt mining.',
   },
   {
     id: 'legendary_salt_lord',
@@ -106,8 +110,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Achieved 50 salt points',
     tier: AchievementTier.PLATINUM,
     scoreThreshold: 50,
-    imagePrompt: 'A platinum crown made of crystallized salt, glowing with inner rage, legendary item style',
-    roastTemplate: 'You have achieved Salt Enlightenment. The Dead Sea is jealous of your sodium levels.',
+    imagePrompt:
+      'A platinum crown made of crystallized salt, glowing with inner rage, legendary item style',
+    roastTemplate:
+      'You have achieved Salt Enlightenment. The Dead Sea is jealous of your sodium levels.',
   },
   {
     id: 'transcendent_malcontent',
@@ -115,8 +121,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Achieved 100 salt points',
     tier: AchievementTier.DIAMOND,
     scoreThreshold: 100,
-    imagePrompt: 'A diamond keyboard warrior statue ascending to the heavens, surrounded by pure crystalline rage, ultimate achievement',
-    roastTemplate: 'You have transcended mere mortal hatred. Scientists wish to study your salt glands.',
+    imagePrompt:
+      'A diamond keyboard warrior statue ascending to the heavens, surrounded by pure crystalline rage, ultimate achievement',
+    roastTemplate:
+      'You have transcended mere mortal hatred. Scientists wish to study your salt glands.',
   },
 
   // ===== RANK ACHIEVEMENTS =====
@@ -135,7 +143,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Reached top 3 on the leaderboard',
     tier: AchievementTier.GOLD,
     rankThreshold: 3,
-    imagePrompt: 'A bronze/silver/gold podium with an angry gamer on top, victory pose, esports style',
+    imagePrompt:
+      'A bronze/silver/gold podium with an angry gamer on top, victory pose, esports style',
     roastTemplate: 'Top 3! At this point you might as well go for gold. We believe in you.',
   },
   {
@@ -144,8 +153,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Became the #1 hater',
     tier: AchievementTier.DIAMOND,
     rankThreshold: 1,
-    imagePrompt: 'A massive golden throne made of salt crystals, with "SUPREME HATER" engraved, boss battle style',
-    roastTemplate: 'CONGRATULATIONS! You are now the #1 hater. The crown is heavy, but you carry it with such dedication.',
+    imagePrompt:
+      'A massive golden throne made of salt crystals, with "SUPREME HATER" engraved, boss battle style',
+    roastTemplate:
+      'CONGRATULATIONS! You are now the #1 hater. The crown is heavy, but you carry it with such dedication.',
   },
 
   // ===== SPECIAL ACHIEVEMENTS =====
@@ -155,8 +166,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'First hostile link detected',
     tier: AchievementTier.BRONZE,
     special: 'first_offense',
-    imagePrompt: 'A "NEW CHALLENGER" arcade screen with a silhouette entering, street fighter style',
-    roastTemplate: 'Welcome! Your first contribution to our hater leaderboard has been recorded for posterity.',
+    imagePrompt:
+      'A "NEW CHALLENGER" arcade screen with a silhouette entering, street fighter style',
+    roastTemplate:
+      'Welcome! Your first contribution to our hater leaderboard has been recorded for posterity.',
   },
   {
     id: 'mask_off',
@@ -165,7 +178,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.GOLD,
     special: 'alt_exposed',
     imagePrompt: 'A dramatic unmasking scene, Scooby-Doo reveal style, "It was YOU all along!"',
-    roastTemplate: 'Your alt has been linked! The sockpuppet theater has been exposed. Standing ovation.',
+    roastTemplate:
+      'Your alt has been linked! The sockpuppet theater has been exposed. Standing ovation.',
   },
   {
     id: 'broken_record',
@@ -183,7 +197,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.SILVER,
     special: 'streak',
     imagePrompt: 'A calendar with fire emojis on 5 consecutive days, streak counter style',
-    roastTemplate: 'Five days straight! That kind of dedication usually goes to something productive.',
+    roastTemplate:
+      'Five days straight! That kind of dedication usually goes to something productive.',
   },
 
   // ===== MEME-SPECIFIC ACHIEVEMENTS =====
@@ -194,7 +209,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.BRONZE,
     special: 'echo_chamber_user',
     imagePrompt: 'A cave with "ECHO ECHO ECHO" bouncing off walls, cartoon style',
-    roastTemplate: 'Ah yes, the classic "echo chamber" complaint. How original. How unique. How... echoing.',
+    roastTemplate:
+      'Ah yes, the classic "echo chamber" complaint. How original. How unique. How... echoing.',
   },
   {
     id: 'transplant_tracker',
@@ -203,7 +219,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.BRONZE,
     special: 'transplant_blamer',
     imagePrompt: 'A plant being transplanted with an angry face, gardening gone wrong style',
-    roastTemplate: 'Blaming transplants - the timeless Seattle tradition older than the Space Needle.',
+    roastTemplate:
+      'Blaming transplants - the timeless Seattle tradition older than the Space Needle.',
   },
   {
     id: 'mod_critic',
@@ -221,7 +238,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.SILVER,
     special: 'meme_collector',
     imagePrompt: 'A trophy case filled with different complaint memes, collector edition style',
-    roastTemplate: 'Five different complaints! A true connoisseur of grievances. Your collection is impressive.',
+    roastTemplate:
+      'Five different complaints! A true connoisseur of grievances. Your collection is impressive.',
   },
   {
     id: 'meme_master',
@@ -230,7 +248,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.GOLD,
     special: 'meme_master',
     imagePrompt: 'A graduation cap made of Reddit memes, PhD in complaints style',
-    roastTemplate: 'TEN different talking points! You have achieved a PhD in Predictable Complaints.',
+    roastTemplate:
+      'TEN different talking points! You have achieved a PhD in Predictable Complaints.',
   },
 
   // ===== FAREWELL-SPECIFIC ACHIEVEMENTS =====
@@ -241,7 +260,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.BRONZE,
     special: 'dramatic_exit',
     imagePrompt: 'A person dramatically slamming a door with cape flowing, theatrical exit style',
-    roastTemplate: 'A dramatic exit! The stage is yours. The spotlight is on. The audience is... checking their phones.',
+    roastTemplate:
+      'A dramatic exit! The stage is yours. The spotlight is on. The audience is... checking their phones.',
   },
   {
     id: 'encore_performer',
@@ -249,8 +269,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Announced leaving twice',
     tier: AchievementTier.SILVER,
     special: 'repeat_announcer',
-    imagePrompt: 'A performer taking multiple bows while audience looks confused, awkward encore style',
-    roastTemplate: 'Back for another farewell? The first goodbye was so good you had to do it again.',
+    imagePrompt:
+      'A performer taking multiple bows while audience looks confused, awkward encore style',
+    roastTemplate:
+      'Back for another farewell? The first goodbye was so good you had to do it again.',
   },
   {
     id: 'farewell_trilogy',
@@ -306,7 +328,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     tier: AchievementTier.SILVER,
     special: 'high_troll_risk',
     imagePrompt: 'A troll under a bridge holding a smartphone, modern troll style',
-    roastTemplate: 'Our behavioral analysis suggests... you might be doing this on purpose. Shocking.',
+    roastTemplate:
+      'Our behavioral analysis suggests... you might be doing this on purpose. Shocking.',
   },
   {
     id: 'story_teller',
@@ -407,14 +430,15 @@ export async function checkAchievements(
   }
 
   // Calculate user's score and rank
-  const score = userEntry.adversarialCount +
-                (userEntry.hatefulCount * 3) +
-                (userEntry.modLogSpamCount * 2) +
-                ((userEntry.flaggedContentCount || 0) * 2);
+  const score =
+    userEntry.adversarialCount +
+    userEntry.hatefulCount * 3 +
+    userEntry.modLogSpamCount * 2 +
+    (userEntry.flaggedContentCount || 0) * 2;
 
-  const userRank = leaderboardData.topUsers.findIndex(
-    u => u.username.toLowerCase() === username.toLowerCase()
-  ) + 1; // 1-indexed, 0 means not in top 10
+  const userRank =
+    leaderboardData.topUsers.findIndex((u) => u.username.toLowerCase() === username.toLowerCase()) +
+    1; // 1-indexed, 0 means not in top 10
 
   const unlocks: AchievementUnlock[] = [];
 
@@ -453,16 +477,22 @@ export async function checkAchievements(
 
         // Meme-specific
         case 'echo_chamber_user':
-          meetsCondition = opts.repeatedMemes?.includes('echo_chamber') ||
-                          opts.uniqueMemesUsed?.includes('echo_chamber') || false;
+          meetsCondition =
+            opts.repeatedMemes?.includes('echo_chamber') ||
+            opts.uniqueMemesUsed?.includes('echo_chamber') ||
+            false;
           break;
         case 'transplant_blamer':
-          meetsCondition = opts.repeatedMemes?.includes('transplants') ||
-                          opts.uniqueMemesUsed?.includes('transplants') || false;
+          meetsCondition =
+            opts.repeatedMemes?.includes('transplants') ||
+            opts.uniqueMemesUsed?.includes('transplants') ||
+            false;
           break;
         case 'mod_accuser':
-          meetsCondition = opts.repeatedMemes?.includes('mod_abuse') ||
-                          opts.uniqueMemesUsed?.includes('mod_abuse') || false;
+          meetsCondition =
+            opts.repeatedMemes?.includes('mod_abuse') ||
+            opts.uniqueMemesUsed?.includes('mod_abuse') ||
+            false;
           break;
         case 'meme_collector':
           meetsCondition = (opts.uniqueMemesUsed?.length || 0) >= 5;
@@ -496,12 +526,14 @@ export async function checkAchievements(
           meetsCondition = (opts.deletedContentCount || userEntry.flaggedContentCount || 0) >= 5;
           break;
         case 'high_troll_risk':
-          meetsCondition = opts.trollingRisk === 'high' ||
-                          userEntry.behavioralProfile?.moderationRisk?.trollingLikelihood === 'high';
+          meetsCondition =
+            opts.trollingRisk === 'high' ||
+            userEntry.behavioralProfile?.moderationRisk?.trollingLikelihood === 'high';
           break;
         case 'deception_detected':
-          meetsCondition = (opts.deceptionIndicators || 0) >= 2 ||
-                          (userEntry.behavioralProfile?.moderationRisk?.deceptionIndicators || 0) >= 2;
+          meetsCondition =
+            (opts.deceptionIndicators || 0) >= 2 ||
+            (userEntry.behavioralProfile?.moderationRisk?.deceptionIndicators || 0) >= 2;
           break;
       }
     }
@@ -512,8 +544,7 @@ export async function checkAchievements(
       // Check cooldown for notifications
       const now = Date.now();
       const cooldownMs = cooldownHours * 60 * 60 * 1000;
-      const canNotify = !alreadyNotified ||
-                        (now - userAchievements.lastNotificationAt > cooldownMs);
+      const canNotify = !alreadyNotified || now - userAchievements.lastNotificationAt > cooldownMs;
 
       unlocks.push({
         achievement,
@@ -537,7 +568,7 @@ export async function checkAchievements(
   }
 
   // Save if any changes
-  if (unlocks.some(u => u.isNew)) {
+  if (unlocks.some((u) => u.isNew)) {
     await saveUserAchievements(context, userAchievements);
   }
 
@@ -567,14 +598,14 @@ export async function markAchievementNotified(
  * Get achievement by ID
  */
 export function getAchievementById(id: string): Achievement | undefined {
-  return ACHIEVEMENTS.find(a => a.id === id);
+  return ACHIEVEMENTS.find((a) => a.id === id);
 }
 
 /**
  * Get all achievements for a tier
  */
 export function getAchievementsByTier(tier: AchievementTier): Achievement[] {
-  return ACHIEVEMENTS.filter(a => a.tier === tier);
+  return ACHIEVEMENTS.filter((a) => a.tier === tier);
 }
 
 /**
@@ -627,7 +658,7 @@ ${roastText}
   // Add wiki links if provided
   if (wikiLinks && wikiLinks.length > 0) {
     comment += `\n**For your reference:**\n`;
-    wikiLinks.forEach(link => {
+    wikiLinks.forEach((link) => {
       comment += `- [${link.text}](${link.url})\n`;
     });
   }
@@ -642,13 +673,11 @@ ${roastText}
  * (To avoid spamming with multiple achievements at once)
  */
 export function getHighestNewAchievement(unlocks: AchievementUnlock[]): AchievementUnlock | null {
-  const notifiable = unlocks.filter(u => u.shouldNotify);
+  const notifiable = unlocks.filter((u) => u.shouldNotify);
   if (notifiable.length === 0) return null;
 
   // Sort by tier rank (highest first)
-  notifiable.sort((a, b) =>
-    getTierRank(b.achievement.tier) - getTierRank(a.achievement.tier)
-  );
+  notifiable.sort((a, b) => getTierRank(b.achievement.tier) - getTierRank(a.achievement.tier));
 
   return notifiable[0];
 }

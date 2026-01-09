@@ -14,7 +14,7 @@ export async function getWeatherForecast(gridPoint: string): Promise<WeatherFore
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
-        'Accept': 'application/geo+json',
+        Accept: 'application/geo+json',
       },
     });
 

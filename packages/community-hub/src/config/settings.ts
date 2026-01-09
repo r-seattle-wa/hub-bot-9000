@@ -61,7 +61,8 @@ export const appSettings: SettingsFormField[] = [
         type: 'string',
         name: 'weatherGridPoint',
         label: 'NWS Grid Point',
-        helpText: 'Find yours at weather.gov - Format: OFFICE/X,Y (e.g., SEW/123,68 for Seattle, LOX/154,44 for LA)',
+        helpText:
+          'Find yours at weather.gov - Format: OFFICE/X,Y (e.g., SEW/123,68 for Seattle, LOX/154,44 for LA)',
         defaultValue: '',
       },
       {
@@ -84,9 +85,11 @@ export const appSettings: SettingsFormField[] = [
         name: 'eventSources',
         label: 'Event Sources (JSON)',
         helpText: 'JSON array: [{"name": "Local Events", "url": "https://...", "icon": "📅"}]',
-        defaultValue: JSON.stringify([
-          { name: 'Example Events', url: 'https://www.eventbrite.com/', icon: '📅' },
-        ], null, 2),
+        defaultValue: JSON.stringify(
+          [{ name: 'Example Events', url: 'https://www.eventbrite.com/', icon: '📅' }],
+          null,
+          2
+        ),
       },
       {
         type: 'boolean',
@@ -121,7 +124,8 @@ export const appSettings: SettingsFormField[] = [
         type: 'paragraph',
         name: 'communityLinks',
         label: 'Community Links (JSON)',
-        helpText: 'JSON array: [{"name": "Wiki", "url": "...", "icon": "📚", "description": "..."}]. Wiki/Rules auto-added.',
+        helpText:
+          'JSON array: [{"name": "Wiki", "url": "...", "icon": "📚", "description": "..."}]. Wiki/Rules auto-added.',
         defaultValue: '[]',
       },
     ],

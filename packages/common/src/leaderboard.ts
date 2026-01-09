@@ -42,8 +42,8 @@ export interface UserHaterEntry {
   hostileLinks: number;
   adversarialCount: number;
   hatefulCount: number;
-  modLogSpamCount: number;  // Times found in mod log for spam/removals
-  tributeRequestCount: number;  // Tribute commands used (+0.5 points each)
+  modLogSpamCount: number; // Times found in mod log for spam/removals
+  tributeRequestCount: number; // Tribute commands used (+0.5 points each)
   lastSeen: number;
   worstTitle?: string;
   homeSubreddits: string[]; // Where they post from
@@ -51,9 +51,9 @@ export interface UserHaterEntry {
   isAltOf?: string;
 
   // Achievement tracking
-  unlockedAchievements?: Record<string, number>;  // Achievement ID -> unlock timestamp
-  achievementXP?: number;                         // Bonus XP from achievements
-  highestAchievementTier?: string;                // Highest tier earned
+  unlockedAchievements?: Record<string, number>; // Achievement ID -> unlock timestamp
+  achievementXP?: number; // Bonus XP from achievements
+  highestAchievementTier?: string; // Highest tier earned
 
   // Featured quote (most upvoted hateful comment)
   featuredQuote?: string;
@@ -90,62 +90,71 @@ export interface LeaderboardData {
  * Check mod log for spam/removal actions against a user
  * Returns count of spam-related mod actions in the last 30 days
  */
-export async function checkModLogForUser(
-  context: AppContext,
-  username: string
-): Promise<number> {
+export async function checkModLogForUser(context: AppContext, username: string): Promise<number> {
   try {
     const subredditName = await context.reddit.getCurrentSubredditName();
 
     // Query mod log for spam-related actions against this user
     // We check multiple action types separately since 'all' isn't valid
     let spamCount = 0;
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
     // Check for removecomment actions
     try {
-      const removeCommentLogs = await context.reddit.getModerationLog({
-        subredditName,
-        type: 'removecomment',
-        limit: 50,
-      }).all();
+      const removeCommentLogs = await context.reddit
+        .getModerationLog({
+          subredditName,
+          type: 'removecomment',
+          limit: 50,
+        })
+        .all();
 
       for (const entry of removeCommentLogs) {
         if (entry.target?.author?.toLowerCase() !== username.toLowerCase()) continue;
         if (entry.createdAt.getTime() < thirtyDaysAgo) continue;
         spamCount++;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     // Check for removelink actions
     try {
-      const removeLinkLogs = await context.reddit.getModerationLog({
-        subredditName,
-        type: 'removelink',
-        limit: 50,
-      }).all();
+      const removeLinkLogs = await context.reddit
+        .getModerationLog({
+          subredditName,
+          type: 'removelink',
+          limit: 50,
+        })
+        .all();
 
       for (const entry of removeLinkLogs) {
         if (entry.target?.author?.toLowerCase() !== username.toLowerCase()) continue;
         if (entry.createdAt.getTime() < thirtyDaysAgo) continue;
         spamCount++;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     // Check for banuser actions
     try {
-      const banLogs = await context.reddit.getModerationLog({
-        subredditName,
-        type: 'banuser',
-        limit: 50,
-      }).all();
+      const banLogs = await context.reddit
+        .getModerationLog({
+          subredditName,
+          type: 'banuser',
+          limit: 50,
+        })
+        .all();
 
       for (const entry of banLogs) {
         if (entry.target?.author?.toLowerCase() !== username.toLowerCase()) continue;
         if (entry.createdAt.getTime() < thirtyDaysAgo) continue;
         spamCount += 3; // Ban is more severe, counts as 3
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     return spamCount;
   } catch {
@@ -165,8 +174,10 @@ export async function recordHater(
   postTitle: string
 ): Promise<void> {
   // Only track adversarial and hateful
-  if (classification !== SourceClassification.ADVERSARIAL &&
-      classification !== SourceClassification.HATEFUL) {
+  if (
+    classification !== SourceClassification.ADVERSARIAL &&
+    classification !== SourceClassification.HATEFUL
+  ) {
     return;
   }
 
@@ -192,9 +203,10 @@ export async function recordHater(
   const mainSubKey = data.subredditAltMappings[subKey] || subKey;
   const subIsAlt = mainSubKey !== subKey;
 
-  const mainSubName = subIsAlt && data.subreddits[mainSubKey]
-    ? data.subreddits[mainSubKey].subreddit
-    : sourceSubreddit;
+  const mainSubName =
+    subIsAlt && data.subreddits[mainSubKey]
+      ? data.subreddits[mainSubKey].subreddit
+      : sourceSubreddit;
 
   const subEntry: SubredditHaterEntry = data.subreddits[mainSubKey] || {
     subreddit: mainSubName,
@@ -219,9 +231,8 @@ export async function recordHater(
   const mainUserKey = data.userAltMappings[userKey] || userKey;
   const userIsAlt = mainUserKey !== userKey;
 
-  const mainUserName = userIsAlt && data.users[mainUserKey]
-    ? data.users[mainUserKey].username
-    : sourceUsername;
+  const mainUserName =
+    userIsAlt && data.users[mainUserKey] ? data.users[mainUserKey].username : sourceUsername;
 
   const userEntry: UserHaterEntry = data.users[mainUserKey] || {
     username: mainUserName,
@@ -259,10 +270,10 @@ export async function recordHater(
 
   // Top subreddits
   data.topSubreddits = Object.values(data.subreddits)
-    .filter(e => !e.isAltOf)
-    .map(e => ({
+    .filter((e) => !e.isAltOf)
+    .map((e) => ({
       subreddit: e.subreddit,
-      score: e.adversarialCount + (e.hatefulCount * 3),
+      score: e.adversarialCount + e.hatefulCount * 3,
       alts: e.knownAlts?.length || 0,
     }))
     .sort((a, b) => b.score - a.score)
@@ -270,10 +281,14 @@ export async function recordHater(
 
   // Top users (score includes mod log spam: +2 per spam action, +0.5 per tribute)
   data.topUsers = Object.values(data.users)
-    .filter(e => !e.isAltOf)
-    .map(e => ({
+    .filter((e) => !e.isAltOf)
+    .map((e) => ({
       username: e.username,
-      score: e.adversarialCount + (e.hatefulCount * 3) + (e.modLogSpamCount * 2) + ((e.tributeRequestCount || 0) * 0.5),
+      score:
+        e.adversarialCount +
+        e.hatefulCount * 3 +
+        e.modLogSpamCount * 2 +
+        (e.tributeRequestCount || 0) * 0.5,
       alts: e.knownAlts?.length || 0,
     }))
     .sort((a, b) => b.score - a.score)
@@ -286,10 +301,7 @@ export async function recordHater(
  * Record a tribute request for a user (+0.5 hater points)
  * Used for playful leaderboard engagement
  */
-export async function recordTributeRequest(
-  context: AppContext,
-  username: string
-): Promise<void> {
+export async function recordTributeRequest(context: AppContext, username: string): Promise<void> {
   let data = await getLeaderboard(context);
 
   if (!data) {
@@ -308,9 +320,10 @@ export async function recordTributeRequest(
   const userKey = username.toLowerCase();
   const mainUserKey = data.userAltMappings[userKey] || userKey;
 
-  const mainUserName = mainUserKey !== userKey && data.users[mainUserKey]
-    ? data.users[mainUserKey].username
-    : username;
+  const mainUserName =
+    mainUserKey !== userKey && data.users[mainUserKey]
+      ? data.users[mainUserKey].username
+      : username;
 
   const userEntry: UserHaterEntry = data.users[mainUserKey] || {
     username: mainUserName,
@@ -329,10 +342,14 @@ export async function recordTributeRequest(
 
   // Update top users list
   data.topUsers = Object.values(data.users)
-    .filter(e => !e.isAltOf)
-    .map(e => ({
+    .filter((e) => !e.isAltOf)
+    .map((e) => ({
       username: e.username,
-      score: e.adversarialCount + (e.hatefulCount * 3) + (e.modLogSpamCount * 2) + ((e.tributeRequestCount || 0) * 0.5),
+      score:
+        e.adversarialCount +
+        e.hatefulCount * 3 +
+        e.modLogSpamCount * 2 +
+        (e.tributeRequestCount || 0) * 0.5,
       alts: e.knownAlts?.length || 0,
     }))
     .sort((a, b) => b.score - a.score)
@@ -366,7 +383,11 @@ export async function registerSubredditAlt(
   data.subredditAltMappings[altKey] = mainKey;
 
   const mainEntry: SubredditHaterEntry = data.subreddits[mainKey] || {
-    subreddit: mainSubreddit, hostileLinks: 0, adversarialCount: 0, hatefulCount: 0, lastSeen: Date.now(),
+    subreddit: mainSubreddit,
+    hostileLinks: 0,
+    adversarialCount: 0,
+    hatefulCount: 0,
+    lastSeen: Date.now(),
   };
   mainEntry.knownAlts = mainEntry.knownAlts || [];
   if (!mainEntry.knownAlts.includes(altSubreddit)) mainEntry.knownAlts.push(altSubreddit);
@@ -404,7 +425,14 @@ export async function registerUserAlt(
   data.userAltMappings[altKey] = mainKey;
 
   const mainEntry: UserHaterEntry = data.users[mainKey] || {
-    username: mainUsername, hostileLinks: 0, adversarialCount: 0, hatefulCount: 0, modLogSpamCount: 0, tributeRequestCount: 0, lastSeen: Date.now(), homeSubreddits: [],
+    username: mainUsername,
+    hostileLinks: 0,
+    adversarialCount: 0,
+    hatefulCount: 0,
+    modLogSpamCount: 0,
+    tributeRequestCount: 0,
+    lastSeen: Date.now(),
+    homeSubreddits: [],
   };
   mainEntry.knownAlts = mainEntry.knownAlts || [];
   if (!mainEntry.knownAlts.includes(altUsername)) mainEntry.knownAlts.push(altUsername);
@@ -434,9 +462,7 @@ function createEmptyLeaderboard(): LeaderboardData {
 /**
  * Get the current leaderboard
  */
-export async function getLeaderboard(
-  context: AppContext
-): Promise<LeaderboardData | null> {
+export async function getLeaderboard(context: AppContext): Promise<LeaderboardData | null> {
   try {
     const subredditName = await context.reddit.getCurrentSubredditName();
     const wikiPage = await context.reddit.getWikiPage(subredditName, WIKI_PAGE);
@@ -451,10 +477,7 @@ export async function getLeaderboard(
 /**
  * Save leaderboard to wiki
  */
-async function saveLeaderboard(
-  context: AppContext,
-  data: LeaderboardData
-): Promise<void> {
+async function saveLeaderboard(context: AppContext, data: LeaderboardData): Promise<void> {
   const subredditName = await context.reddit.getCurrentSubredditName();
   const content = JSON.stringify(data, null, 2);
 
@@ -530,27 +553,27 @@ export function formatLeaderboardMarkdown(data: LeaderboardData): string {
   md += `\n*Score = adversarial + (hateful × 3) + (mod log spam × 2) + (deleted content flags × 2). 🎭 = known alts. 🗑️ = mod log spam/removals.*`;
 
   // Show known alts
-  const subAlts = Object.values(data.subreddits).filter(e => e.isAltOf);
-  const userAlts = Object.values(data.users).filter(e => e.isAltOf);
+  const subAlts = Object.values(data.subreddits).filter((e) => e.isAltOf);
+  const userAlts = Object.values(data.users).filter((e) => e.isAltOf);
 
   if (subAlts.length > 0 || userAlts.length > 0) {
     md += `\n\n---\n\n### 🎭 Known Alts\n`;
     if (subAlts.length > 0) {
       md += `\n**Subreddits:**\n`;
-      subAlts.forEach(alt => md += `- r/${alt.subreddit} → r/${alt.isAltOf}\n`);
+      subAlts.forEach((alt) => (md += `- r/${alt.subreddit} → r/${alt.isAltOf}\n`));
     }
     if (userAlts.length > 0) {
       md += `\n**Users:**\n`;
-      userAlts.forEach(alt => md += `- u/${alt.username} → u/${alt.isAltOf}\n`);
+      userAlts.forEach((alt) => (md += `- u/${alt.username} → u/${alt.isAltOf}\n`));
     }
   }
 
   // Show featured quotes for top haters
   const usersWithQuotes = data.topUsers
     .slice(0, 5)
-    .map(u => data.users[u.username.toLowerCase()])
-    .filter(u => u?.featuredQuote);
-  
+    .map((u) => data.users[u.username.toLowerCase()])
+    .filter((u) => u?.featuredQuote);
+
   if (usersWithQuotes.length > 0) {
     md += `
 
@@ -558,7 +581,7 @@ export function formatLeaderboardMarkdown(data: LeaderboardData): string {
 
 ### 💬 Featured Quotes
 `;
-    usersWithQuotes.forEach(user => {
+    usersWithQuotes.forEach((user) => {
       const quote = user.featuredQuote!;
       md += `
 **u/${user.username}** (+${user.featuredQuoteScore || 0})
@@ -573,10 +596,12 @@ export function formatLeaderboardMarkdown(data: LeaderboardData): string {
   }
 
   // Show OSINT insights for enriched users (The-Profiler + Deleted Content)
-  const enrichedUsers = Object.values(data.users).filter(e => e.deletedContentSummary || e.behavioralProfile);
+  const enrichedUsers = Object.values(data.users).filter(
+    (e) => e.deletedContentSummary || e.behavioralProfile
+  );
   if (enrichedUsers.length > 0) {
     md += `\n\n---\n\n### 🔍 OSINT Insights (The-Profiler Analysis)\n`;
-    enrichedUsers.slice(0, 5).forEach(user => {
+    enrichedUsers.slice(0, 5).forEach((user) => {
       md += `\n**u/${user.username}**`;
       if (user.flaggedContentCount) {
         md += ` (${user.flaggedContentCount} flagged items)`;
@@ -638,10 +663,10 @@ export async function enrichTopHatersWithOSINT(
   if (!data) return { enriched: 0, errors: 0 };
 
   // Get top N haters that haven't been enriched recently (7 days)
-  const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
   const hatersToEnrich = data.topUsers
-    .filter(u => {
+    .filter((u) => {
       const userData = data.users[u.username.toLowerCase()];
       return !userData?.osintEnrichedAt || userData.osintEnrichedAt < oneWeekAgo;
     })
@@ -657,7 +682,7 @@ export async function enrichTopHatersWithOSINT(
       const fullAnalysis = await analyzeUser(context, hater.username, {
         geminiApiKey,
         includeRecentPosts: true,
-        deepBehavioralAnalysis: true,  // The-Profiler OCEAN + communication style
+        deepBehavioralAnalysis: true, // The-Profiler OCEAN + communication style
       });
 
       // Store behavioral profile
@@ -689,14 +714,15 @@ export async function enrichTopHatersWithOSINT(
 
   // Update score calculation to include flagged content and tributes
   data.topUsers = Object.values(data.users)
-    .filter(e => !e.isAltOf)
-    .map(e => ({
+    .filter((e) => !e.isAltOf)
+    .map((e) => ({
       username: e.username,
-      score: e.adversarialCount +
-             (e.hatefulCount * 3) +
-             (e.modLogSpamCount * 2) +
-             ((e.flaggedContentCount || 0) * 2) +  // Deleted bad content adds points
-             ((e.tributeRequestCount || 0) * 0.5),  // Tributes add small points
+      score:
+        e.adversarialCount +
+        e.hatefulCount * 3 +
+        e.modLogSpamCount * 2 +
+        (e.flaggedContentCount || 0) * 2 + // Deleted bad content adds points
+        (e.tributeRequestCount || 0) * 0.5, // Tributes add small points
       alts: e.knownAlts?.length || 0,
     }))
     .sort((a, b) => b.score - a.score)
@@ -717,7 +743,10 @@ export async function getHaterOSINTReport(
   geminiApiKey: string
 ): Promise<{
   basicInfo: UserHaterEntry | null;
-  deletedAnalysis: { flaggedContent: Array<{ text: string; reason: string; severity: string }>; summary: string } | null;
+  deletedAnalysis: {
+    flaggedContent: Array<{ text: string; reason: string; severity: string }>;
+    summary: string;
+  } | null;
   behavioralProfile: Awaited<ReturnType<typeof analyzeUser>>['behavioralProfile'];
 }> {
   const data = await getLeaderboard(context);
@@ -774,8 +803,11 @@ const TIER_DISPLAY: Record<string, { icon: string; title: string }> = {
  */
 export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string): string {
   const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { 
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+  const dateStr = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
   let md = `# 🏛️ The Hall of Shame
@@ -803,7 +835,7 @@ export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string
       const entry = data.topUsers[i];
       const userData = data.users[entry.username.toLowerCase()];
       const rankTitle = RANK_TITLES[i] || `${i + 1}th Place`;
-      
+
       // Get highest achievement
       let achievementBadge = '';
       if (userData?.highestAchievementTier) {
@@ -812,24 +844,28 @@ export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string
           achievementBadge = ` ${tier.icon}`;
         }
       }
-      
+
       md += `### ${rankTitle}${achievementBadge}
 
 **u/${entry.username}** — ${entry.score} points
 
 `;
-      
+
       // Add home subreddits
       if (userData?.homeSubreddits?.length) {
-        const homeSubs = userData.homeSubreddits.slice(0, 3).map(s => `r/${s}`).join(', ');
+        const homeSubs = userData.homeSubreddits
+          .slice(0, 3)
+          .map((s) => `r/${s}`)
+          .join(', ');
         md += `📍 *Operates from: ${homeSubs}*\n\n`;
       }
-      
+
       // Add featured quote
       if (userData?.featuredQuote) {
-        const quote = userData.featuredQuote.length > 300 
-          ? userData.featuredQuote.slice(0, 300) + '...' 
-          : userData.featuredQuote;
+        const quote =
+          userData.featuredQuote.length > 300
+            ? userData.featuredQuote.slice(0, 300) + '...'
+            : userData.featuredQuote;
         md += `> "${quote}"\n`;
         if (userData.featuredQuoteScore) {
           md += `> — *+${userData.featuredQuoteScore} upvotes*`;
@@ -840,7 +876,7 @@ export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string
         }
         md += `\n`;
       }
-      
+
       // Add achievements with actual names
       if (userData?.unlockedAchievements) {
         const achievementIds = Object.keys(userData.unlockedAchievements);
@@ -849,7 +885,7 @@ export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string
 `;
           // Sort by tier (highest first), then show top 5
           const sortedAchievements = achievementIds
-            .map(id => ACHIEVEMENTS.find(a => a.id === id))
+            .map((id) => ACHIEVEMENTS.find((a) => a.id === id))
             .filter(Boolean)
             .sort((a, b) => {
               const tierOrder = ['diamond', 'platinum', 'gold', 'silver', 'bronze'];
@@ -870,7 +906,7 @@ export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string
 `;
         }
       }
-      
+
       md += `---\n\n`;
     }
   }
@@ -907,14 +943,16 @@ export function generateHallOfShame(data: LeaderboardData, homeSubreddit: string
       totalAchievements += Object.keys(user.unlockedAchievements).length;
     }
     if (user.highestAchievementTier) {
-      const tierRank = ['bronze', 'silver', 'gold', 'platinum', 'diamond'].indexOf(user.highestAchievementTier);
+      const tierRank = ['bronze', 'silver', 'gold', 'platinum', 'diamond'].indexOf(
+        user.highestAchievementTier
+      );
       const highestRank = ['bronze', 'silver', 'gold', 'platinum', 'diamond'].indexOf(highestTier);
       if (tierRank > highestRank) {
         highestTier = user.highestAchievementTier;
       }
     }
   }
-  
+
   if (totalAchievements > 0) {
     md += `- **Total Achievements Unlocked:** ${totalAchievements}\n`;
   }

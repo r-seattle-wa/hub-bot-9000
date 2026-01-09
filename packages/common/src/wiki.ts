@@ -8,19 +8,19 @@ import { TriggerContext } from '@devvit/public-api';
  */
 export const HUB_BOT_WIKI = {
   // Cross-app shared storage
-  eventsFeed: 'hub-bot-9000/events-feed',      // Bot activity feed (brigade alerts, haikus, etc.)
-  optOut: 'hub-bot-9000/opt-out',              // User opt-out list
+  eventsFeed: 'hub-bot-9000/events-feed', // Bot activity feed (brigade alerts, haikus, etc.)
+  optOut: 'hub-bot-9000/opt-out', // User opt-out list
 
   // Brigade Sentinel
-  haterLeaderboard: 'hub-bot-9000/hater-leaderboard',  // Hater tracking scores
-  userAchievements: 'hub-bot-9000/user-achievements',  // Achievement unlock tracking
-  pendingAlts: 'hub-bot-9000/pending-alts',           // Alt reports awaiting mod approval
+  haterLeaderboard: 'hub-bot-9000/hater-leaderboard', // Hater tracking scores
+  userAchievements: 'hub-bot-9000/user-achievements', // Achievement unlock tracking
+  pendingAlts: 'hub-bot-9000/pending-alts', // Alt reports awaiting mod approval
 
   // Community Hub
-  communityEvents: 'hub-bot-9000/community-events',   // User-submitted + scraped events
+  communityEvents: 'hub-bot-9000/community-events', // User-submitted + scraped events
 
   // External integrations (read-only)
-  subStatsSummary: 'sub-stats-bot',                   // sub-stats-bot data
+  subStatsSummary: 'sub-stats-bot', // sub-stats-bot data
   subStatsYear: (year: number) => `sub-stats-bot/${year}`,
 };
 
@@ -53,10 +53,7 @@ export function isUsernameInTopList(wikiContent: string, username: string): bool
  */
 export function extractSubscriberCount(wikiContent: string): number | null {
   // Look for "Subscribers are now X" or "X subscribers"
-  const patterns = [
-    /Subscribers are now ([\d,]+)/i,
-    /(\d[\d,]*)\s+subscribers/i,
-  ];
+  const patterns = [/Subscribers are now ([\d,]+)/i, /(\d[\d,]*)\s+subscribers/i];
 
   for (const pattern of patterns) {
     const match = wikiContent.match(pattern);
@@ -82,10 +79,7 @@ export async function checkNotableContributor(
   // Check last 3 years of wiki pages
   for (let year = currentYear; year >= currentYear - 2; year--) {
     try {
-      const wikiPage = await context.reddit.getWikiPage(
-        subredditName,
-        WIKI_PATHS.year(year)
-      );
+      const wikiPage = await context.reddit.getWikiPage(subredditName, WIKI_PATHS.year(year));
 
       if (wikiPage && wikiPage.content && isUsernameInTopList(wikiPage.content, username)) {
         notableYears.push(year);

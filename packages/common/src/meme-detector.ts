@@ -10,21 +10,25 @@ type AppContext = TriggerContext | JobContext;
 export interface TalkingPoint {
   id: string;
   name: string;
-  patterns: RegExp[];           // Patterns to match (case-insensitive)
-  keywords: string[];           // Simple keyword matches
-  wikiPage?: string;            // Wiki debunk page (relative to subreddit)
-  debunkSummary: string;        // Brief counter-point
+  patterns: RegExp[]; // Patterns to match (case-insensitive)
+  keywords: string[]; // Simple keyword matches
+  wikiPage?: string; // Wiki debunk page (relative to subreddit)
+  debunkSummary: string; // Brief counter-point
   category: 'political' | 'demographic' | 'meta' | 'generic';
 }
 
 // User's talking point usage
 export interface UserTalkingPoints {
   username: string;
-  detections: Record<string, {  // keyed by talking point ID
-    count: number;
-    lastDetected: number;
-    examples: string[];         // Up to 3 example quotes
-  }>;
+  detections: Record<
+    string,
+    {
+      // keyed by talking point ID
+      count: number;
+      lastDetected: number;
+      examples: string[]; // Up to 3 example quotes
+    }
+  >;
   totalDetections: number;
   lastUpdated: number;
 }
@@ -33,9 +37,9 @@ export interface UserTalkingPoints {
 export interface TalkingPointDetection {
   talkingPoint: TalkingPoint;
   matchedText: string;
-  isRepeat: boolean;            // User has used this before
+  isRepeat: boolean; // User has used this before
   repeatCount: number;
-  wikiLink?: string;            // Full wiki URL if available
+  wikiLink?: string; // Full wiki URL if available
 }
 
 // Define common talking points
@@ -45,11 +49,7 @@ export const TALKING_POINTS: TalkingPoint[] = [
   {
     id: 'echo_chamber',
     name: 'Echo Chamber',
-    patterns: [
-      /echo\s*chamber/i,
-      /circle\s*jerk/i,
-      /hive\s*mind/i,
-    ],
+    patterns: [/echo\s*chamber/i, /circle\s*jerk/i, /hive\s*mind/i],
     keywords: ['echochamber', 'circlejerk', 'hivemind'],
     wikiPage: 'demographics',
     debunkSummary: 'Our surveys show diverse political views. See the data.',
@@ -125,7 +125,13 @@ export const TALKING_POINTS: TalkingPoint[] = [
       /mods?\s+silence/i,
       /corrupt\s+mods?/i,
     ],
-    keywords: ['mod abuse', 'powertripping mods', 'corrupt mods', 'mods are corrupt', 'power tripping mod'],
+    keywords: [
+      'mod abuse',
+      'powertripping mods',
+      'corrupt mods',
+      'mods are corrupt',
+      'power tripping mod',
+    ],
     wikiPage: 'moderation-policy',
     debunkSummary: 'Mod actions are logged and reviewable. Appeal via modmail.',
     category: 'meta',
@@ -161,11 +167,7 @@ export const TALKING_POINTS: TalkingPoint[] = [
   {
     id: 'npc',
     name: 'NPC Insult',
-    patterns: [
-      /\bnpcs?\b/i,
-      /non\s*player\s*characters?/i,
-      /you('?re|\s+are)\s+(all\s+)?npcs?/i,
-    ],
+    patterns: [/\bnpcs?\b/i, /non\s*player\s*characters?/i, /you('?re|\s+are)\s+(all\s+)?npcs?/i],
     keywords: ['npc', 'npcs'],
     debunkSummary: 'Dehumanizing insults rarely lead to productive discussion.',
     category: 'generic',
@@ -173,12 +175,7 @@ export const TALKING_POINTS: TalkingPoint[] = [
   {
     id: 'cope',
     name: 'Cope/Seethe',
-    patterns: [
-      /\bcope\b/i,
-      /\bseethe\b/i,
-      /cope\s+and\s+seethe/i,
-      /stay\s+mad/i,
-    ],
+    patterns: [/\bcope\b/i, /\bseethe\b/i, /cope\s+and\s+seethe/i, /stay\s+mad/i],
     keywords: ['cope', 'seethe', 'stay mad'],
     debunkSummary: 'Telling people to "cope" is not an argument.',
     category: 'generic',
@@ -186,12 +183,7 @@ export const TALKING_POINTS: TalkingPoint[] = [
   {
     id: 'touch_grass',
     name: 'Touch Grass',
-    patterns: [
-      /touch\s+grass/i,
-      /go\s+outside/i,
-      /get\s+a\s+life/i,
-      /basement\s+dweller/i,
-    ],
+    patterns: [/touch\s+grass/i, /go\s+outside/i, /get\s+a\s+life/i, /basement\s+dweller/i],
     keywords: ['touch grass', 'get a life'],
     debunkSummary: 'Ad hominem detected. The post is still there.',
     category: 'generic',
@@ -317,24 +309,20 @@ export async function getTopRepeatedTalkingPoints(
   const results: Array<{ talkingPoint: TalkingPoint; count: number }> = [];
 
   for (const [tpId, data] of Object.entries(userTps.detections)) {
-    const tp = TALKING_POINTS.find(t => t.id === tpId);
-    if (tp && data.count > 1) { // Only include repeats
+    const tp = TALKING_POINTS.find((t) => t.id === tpId);
+    if (tp && data.count > 1) {
+      // Only include repeats
       results.push({ talkingPoint: tp, count: data.count });
     }
   }
 
-  return results
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
+  return results.sort((a, b) => b.count - a.count).slice(0, limit);
 }
 
 /**
  * Format wiki link for a subreddit
  */
-export function formatWikiLink(
-  subredditName: string,
-  wikiPage: string
-): string {
+export function formatWikiLink(subredditName: string, wikiPage: string): string {
   return `/r/${subredditName}/wiki/${wikiPage}`;
 }
 
@@ -346,8 +334,8 @@ export function getDebunkLinks(
   talkingPoints: TalkingPoint[]
 ): Array<{ text: string; url: string; summary: string }> {
   return talkingPoints
-    .filter(tp => tp.wikiPage)
-    .map(tp => ({
+    .filter((tp) => tp.wikiPage)
+    .map((tp) => ({
       text: tp.name,
       url: formatWikiLink(subredditName, tp.wikiPage!),
       summary: tp.debunkSummary,
@@ -368,7 +356,7 @@ export async function checkBrokenRecordStatus(
 
   for (const [tpId, data] of Object.entries(userTps.detections)) {
     if (data.count >= 3) {
-      const tp = TALKING_POINTS.find(t => t.id === tpId);
+      const tp = TALKING_POINTS.find((t) => t.id === tpId);
       if (tp) repeatedMemes.push(tp.name);
     }
   }

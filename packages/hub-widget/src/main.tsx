@@ -1,4 +1,4 @@
-import { Devvit, useState, useInterval } from "@devvit/public-api";
+import { Devvit, useState, useInterval } from '@devvit/public-api';
 import {
   HubBotEvent,
   HubBotEventType,
@@ -11,7 +11,7 @@ import {
   SystemEvent,
   SourceClassification,
   EVENT_FEED_WIKI_PAGE,
-} from "@hub-bot/common";
+} from '@hub-bot/common';
 
 Devvit.configure({
   redditAPI: true,
@@ -19,31 +19,31 @@ Devvit.configure({
 });
 
 const EVENT_COLORS: Record<string, string> = {
-  brigade_alert: "#FF6B6B",
-  haiku_detection: "#4ECDC4",
-  farewell_announcement: "#FFE66D",
-  court_docket: "#95E1D3",
-  traffic_spike: "#FF9F43",
-  community_event: "#9B59B6",
-  system: "#A8E6CF",
+  brigade_alert: '#FF6B6B',
+  haiku_detection: '#4ECDC4',
+  farewell_announcement: '#FFE66D',
+  court_docket: '#95E1D3',
+  traffic_spike: '#FF9F43',
+  community_event: '#9B59B6',
+  system: '#A8E6CF',
 };
 
 const EVENT_ICONS: Record<string, string> = {
-  brigade_alert: "!",
-  haiku_detection: "*",
-  farewell_announcement: "~",
-  court_docket: "#",
-  traffic_spike: "^",
-  community_event: "@",
-  system: "i",
+  brigade_alert: '!',
+  haiku_detection: '*',
+  farewell_announcement: '~',
+  court_docket: '#',
+  traffic_spike: '^',
+  community_event: '@',
+  system: 'i',
 };
 
 function formatTimeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  if (seconds < 60) return "just now";
-  if (seconds < 3600) return Math.floor(seconds / 60) + "m ago";
-  if (seconds < 86400) return Math.floor(seconds / 3600) + "h ago";
-  return Math.floor(seconds / 86400) + "d ago";
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+  if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+  return Math.floor(seconds / 86400) + 'd ago';
 }
 
 interface SimpleEvent {
@@ -55,58 +55,63 @@ interface SimpleEvent {
 }
 
 function toSimpleEvent(event: HubBotEvent): SimpleEvent {
-  let summary = "";
-  let detail = "";
-  
+  let summary = '';
+  let detail = '';
+
   switch (event.type) {
     case HubBotEventType.BRIGADE_ALERT: {
       const e = event as BrigadeAlertEvent;
-      summary = "Link from r/" + e.sourceSubreddit;
-      detail = e.classification === SourceClassification.HATEFUL ? "HOSTILE" :
-               e.classification === SourceClassification.ADVERSARIAL ? "ADVERSE" :
-               e.classification === SourceClassification.FRIENDLY ? "FRIENDLY" : "NEUTRAL";
+      summary = 'Link from r/' + e.sourceSubreddit;
+      detail =
+        e.classification === SourceClassification.HATEFUL
+          ? 'HOSTILE'
+          : e.classification === SourceClassification.ADVERSARIAL
+            ? 'ADVERSE'
+            : e.classification === SourceClassification.FRIENDLY
+              ? 'FRIENDLY'
+              : 'NEUTRAL';
       break;
     }
     case HubBotEventType.HAIKU_DETECTION: {
       const e = event as HaikuDetectionEvent;
-      summary = "Haiku by u/" + e.username;
-      detail = (e.haiku.split("\n")[0] || "").substring(0, 30);
+      summary = 'Haiku by u/' + e.username;
+      detail = (e.haiku.split('\n')[0] || '').substring(0, 30);
       break;
     }
     case HubBotEventType.FAREWELL_ANNOUNCEMENT: {
       const e = event as FarewellAnnouncementEvent;
-      summary = "Farewell u/" + e.username + " (" + e.totalPosts + "p/" + e.totalComments + "c)";
-      detail = e.isPowerUser ? "Power User" : e.sarcasmUsed;
+      summary = 'Farewell u/' + e.username + ' (' + e.totalPosts + 'p/' + e.totalComments + 'c)';
+      detail = e.isPowerUser ? 'Power User' : e.sarcasmUsed;
       break;
     }
     case HubBotEventType.COURT_DOCKET: {
       const e = event as CourtDocketEvent;
-      summary = "Case: " + e.defendant;
+      summary = 'Case: ' + e.defendant;
       detail = e.charge.substring(0, 25);
       break;
     }
     case HubBotEventType.TRAFFIC_SPIKE: {
       const e = event as TrafficSpikeEvent;
-      summary = "SPIKE: " + e.commentsInWindow + " comments/" + e.windowMinutes + "min";
+      summary = 'SPIKE: ' + e.commentsInWindow + ' comments/' + e.windowMinutes + 'min';
       detail = e.postTitle ? e.postTitle.substring(0, 25) : e.postId;
       break;
     }
     case HubBotEventType.COMMUNITY_EVENT: {
       const e = event as CommunityEventEvent;
       summary = e.title.substring(0, 35);
-      detail = e.eventDate + (e.location ? " @ " + e.location.substring(0, 15) : "");
+      detail = e.eventDate + (e.location ? ' @ ' + e.location.substring(0, 15) : '');
       break;
     }
     case HubBotEventType.SYSTEM: {
       const e = event as SystemEvent;
       summary = e.message.substring(0, 40);
-      detail = "";
+      detail = '';
       break;
     }
     default:
-      summary = "Event";
+      summary = 'Event';
   }
-  
+
   return {
     id: event.id,
     type: event.type,
@@ -117,14 +122,14 @@ function toSimpleEvent(event: HubBotEvent): SimpleEvent {
 }
 
 Devvit.addCustomPostType({
-  name: "Hub Bot Events",
-  description: "Live feed of hub-bot activity across all bots",
-  height: "tall",
+  name: 'Hub Bot Events',
+  description: 'Live feed of hub-bot activity across all bots',
+  height: 'tall',
   render: (context) => {
     // Store events as JSON string to work with Devvit state
-    const [eventsJson, setEventsJson] = useState<string>("[]");
+    const [eventsJson, setEventsJson] = useState<string>('[]');
     const [loading, setLoading] = useState<boolean>(true);
-    const [errorMsg, setErrorMsg] = useState<string>("");
+    const [errorMsg, setErrorMsg] = useState<string>('');
 
     const events: SimpleEvent[] = JSON.parse(eventsJson);
 
@@ -139,15 +144,15 @@ Devvit.addCustomPostType({
           const simple = valid.map(toSimpleEvent);
           setEventsJson(JSON.stringify(simple));
         } else {
-          setEventsJson("[]");
+          setEventsJson('[]');
         }
-        setErrorMsg("");
+        setErrorMsg('');
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (!msg.includes("WIKI_DISABLED") && !msg.includes("PAGE_NOT_FOUND")) {
+        if (!msg.includes('WIKI_DISABLED') && !msg.includes('PAGE_NOT_FOUND')) {
           setErrorMsg(msg);
         }
-        setEventsJson("[]");
+        setEventsJson('[]');
       } finally {
         setLoading(false);
       }
@@ -164,7 +169,9 @@ Devvit.addCustomPostType({
     if (loading && events.length === 0) {
       return (
         <vstack padding="medium" alignment="center middle" grow>
-          <text weight="bold" size="large">Hub Bot Events</text>
+          <text weight="bold" size="large">
+            Hub Bot Events
+          </text>
           <spacer size="medium" />
           <text color="neutral-content-weak">Loading events...</text>
         </vstack>
@@ -174,10 +181,14 @@ Devvit.addCustomPostType({
     if (errorMsg) {
       return (
         <vstack padding="medium" alignment="center middle" grow>
-          <text weight="bold" size="large">Hub Bot Events</text>
+          <text weight="bold" size="large">
+            Hub Bot Events
+          </text>
           <spacer size="medium" />
           <text color="neutral-content-weak">Could not load events</text>
-          <text size="small" color="neutral-content-weak">{errorMsg}</text>
+          <text size="small" color="neutral-content-weak">
+            {errorMsg}
+          </text>
         </vstack>
       );
     }
@@ -185,10 +196,14 @@ Devvit.addCustomPostType({
     if (events.length === 0) {
       return (
         <vstack padding="medium" alignment="center middle" grow>
-          <text weight="bold" size="large">Hub Bot Events</text>
+          <text weight="bold" size="large">
+            Hub Bot Events
+          </text>
           <spacer size="medium" />
           <text color="neutral-content-weak">No recent events</text>
-          <text size="small" color="neutral-content-weak">Events appear when bots take action</text>
+          <text size="small" color="neutral-content-weak">
+            Events appear when bots take action
+          </text>
         </vstack>
       );
     }
@@ -196,9 +211,13 @@ Devvit.addCustomPostType({
     return (
       <vstack padding="small" gap="small" grow>
         <hstack alignment="center" gap="small">
-          <text weight="bold" size="large">Hub Bot Events</text>
+          <text weight="bold" size="large">
+            Hub Bot Events
+          </text>
           <spacer grow />
-          <text size="small" color="neutral-content-weak">{events.length} events</text>
+          <text size="small" color="neutral-content-weak">
+            {events.length} events
+          </text>
         </hstack>
         <vstack gap="small" grow>
           {events.slice(0, 8).map((event) => (
@@ -210,19 +229,31 @@ Devvit.addCustomPostType({
               gap="small"
               alignment="middle"
             >
-              <text size="xlarge" weight="bold" color={EVENT_COLORS[event.type] || "neutral-content"}>
-                {EVENT_ICONS[event.type] || "?"}
+              <text
+                size="xlarge"
+                weight="bold"
+                color={EVENT_COLORS[event.type] || 'neutral-content'}
+              >
+                {EVENT_ICONS[event.type] || '?'}
               </text>
               <vstack grow>
-                <text size="small" weight="bold">{event.summary}</text>
-                <text size="xsmall" color="neutral-content-weak">{event.detail}</text>
+                <text size="small" weight="bold">
+                  {event.summary}
+                </text>
+                <text size="xsmall" color="neutral-content-weak">
+                  {event.detail}
+                </text>
               </vstack>
-              <text size="xsmall" color="neutral-content-weak">{formatTimeAgo(event.createdAt)}</text>
+              <text size="xsmall" color="neutral-content-weak">
+                {formatTimeAgo(event.createdAt)}
+              </text>
             </hstack>
           ))}
         </vstack>
         <hstack alignment="center">
-          <text size="xsmall" color="neutral-content-weak">Auto-refreshes every 60s</text>
+          <text size="xsmall" color="neutral-content-weak">
+            Auto-refreshes every 60s
+          </text>
         </hstack>
       </vstack>
     );
@@ -230,21 +261,23 @@ Devvit.addCustomPostType({
 });
 
 Devvit.addMenuItem({
-  label: "Create Hub Bot Events Widget",
-  location: "subreddit",
+  label: 'Create Hub Bot Events Widget',
+  location: 'subreddit',
   onPress: async (_event, context) => {
     const subreddit = await context.reddit.getCurrentSubreddit();
     await context.reddit.submitPost({
       subredditName: subreddit.name,
-      title: "Hub Bot Events Feed",
+      title: 'Hub Bot Events Feed',
       preview: (
         <vstack padding="medium" alignment="center middle" grow>
-          <text weight="bold" size="large">Hub Bot Events</text>
+          <text weight="bold" size="large">
+            Hub Bot Events
+          </text>
           <text color="neutral-content-weak">Loading...</text>
         </vstack>
       ),
     });
-    context.ui.showToast("Hub Bot Events widget created!");
+    context.ui.showToast('Hub Bot Events widget created!');
   },
 });
 

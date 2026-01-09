@@ -32,7 +32,8 @@ interface GenerateTributeOptions {
  * Generate a satirical tribute using the configured AI provider
  */
 export async function generateTribute(options: GenerateTributeOptions): Promise<string> {
-  const { context, targetName, targetType, sarcasmLevel, aiProvider, groqApiKey, geminiApiKey } = options;
+  const { context, targetName, targetType, sarcasmLevel, aiProvider, groqApiKey, geminiApiKey } =
+    options;
 
   const systemPrompt = getSystemPrompt(targetName, targetType, sarcasmLevel);
   const userPrompt = getUserPrompt(context, targetName, targetType);
@@ -93,7 +94,11 @@ const TONE_GUIDES: Record<SarcasmLevel, string> = {
   [SarcasmLevel.FREAKOUT]: `TONE: MAXIMUM DRAMATIC ENERGY. ALL CAPS acceptable.`,
 };
 
-function getUserPrompt(context: string, targetName: string, targetType: 'subreddit' | 'user'): string {
+function getUserPrompt(
+  context: string,
+  targetName: string,
+  targetType: 'subreddit' | 'user'
+): string {
   const prefix = targetType === 'subreddit' ? 'r/' : 'u/';
   return `Recent content from ${prefix}${targetName}:
 
@@ -102,12 +107,16 @@ ${context.slice(0, 4000)}
 Generate a short satirical tribute (2-4 sentences). Reply ONLY with the tribute text.`;
 }
 
-async function generateWithGroq(systemPrompt: string, userPrompt: string, apiKey: string): Promise<string> {
+async function generateWithGroq(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string
+): Promise<string> {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
@@ -124,7 +133,7 @@ async function generateWithGroq(systemPrompt: string, userPrompt: string, apiKey
     throw new Error(`Groq API error: ${response.status}`);
   }
 
-  const data = await response.json() as GroqResponse;
+  const data = (await response.json()) as GroqResponse;
   const content = data.choices?.[0]?.message?.content?.trim();
 
   if (!content) {
@@ -134,7 +143,11 @@ async function generateWithGroq(systemPrompt: string, userPrompt: string, apiKey
   return content;
 }
 
-async function generateWithGemini(systemPrompt: string, userPrompt: string, apiKey: string): Promise<string> {
+async function generateWithGemini(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string
+): Promise<string> {
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
   const response = await fetch(
@@ -156,7 +169,7 @@ async function generateWithGemini(systemPrompt: string, userPrompt: string, apiK
     throw new Error(`Gemini API error: ${response.status}`);
   }
 
-  const data = await response.json() as GeminiResponse;
+  const data = (await response.json()) as GeminiResponse;
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
   if (!content) {
@@ -166,7 +179,11 @@ async function generateWithGemini(systemPrompt: string, userPrompt: string, apiK
   return content;
 }
 
-function generateFallbackTribute(targetName: string, targetType: 'subreddit' | 'user', sarcasmLevel: SarcasmLevel): string {
+function generateFallbackTribute(
+  targetName: string,
+  targetType: 'subreddit' | 'user',
+  sarcasmLevel: SarcasmLevel
+): string {
   const prefix = targetType === 'subreddit' ? 'r/' : 'u/';
 
   const templates: Record<SarcasmLevel, string[]> = {
@@ -182,9 +199,7 @@ function generateFallbackTribute(targetName: string, targetType: 'subreddit' | '
     [SarcasmLevel.ROAST]: [
       `${prefix}${targetName} - proof that the internet was a mistake, but a hilarious one.`,
     ],
-    [SarcasmLevel.FREAKOUT]: [
-      `BEHOLD ${prefix}${targetName}!!! THE LEGENDS WERE TRUE!!!`,
-    ],
+    [SarcasmLevel.FREAKOUT]: [`BEHOLD ${prefix}${targetName}!!! THE LEGENDS WERE TRUE!!!`],
   };
 
   const options = templates[sarcasmLevel];
@@ -207,7 +222,9 @@ export function formatTributeResponse(
     [SarcasmLevel.NEUTRAL]: [`*Channeling the essence of ${prefix}${targetName}:*`],
     [SarcasmLevel.SNARKY]: [`*Behold! A tribute to ${prefix}${targetName}:*`],
     [SarcasmLevel.ROAST]: [`*Peak ${prefix}${targetName} energy:*`],
-    [SarcasmLevel.FREAKOUT]: [`*THE SPIRIT OF ${prefix}${targetName.toUpperCase()} HAS POSSESSED ME:*`],
+    [SarcasmLevel.FREAKOUT]: [
+      `*THE SPIRIT OF ${prefix}${targetName.toUpperCase()} HAS POSSESSED ME:*`,
+    ],
   };
 
   const header = headers[sarcasmLevel][0];
@@ -257,7 +274,9 @@ export function parseTributeCommand(text: string): TributeCommand {
   }
 
   // Pattern 3: Bot mention with target
-  const mentionMatch = text.match(/(?:u\/farewell-hero|@farewell-hero)[,:]?\s+(?:what\s+would\s+)?(u\/[\w-]+|r\/[\w-]+)/i);
+  const mentionMatch = text.match(
+    /(?:u\/farewell-hero|@farewell-hero)[,:]?\s+(?:what\s+would\s+)?(u\/[\w-]+|r\/[\w-]+)/i
+  );
   if (mentionMatch) {
     const target = mentionMatch[1];
     if (target.toLowerCase().startsWith('u/')) {

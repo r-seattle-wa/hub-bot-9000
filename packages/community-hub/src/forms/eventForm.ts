@@ -1,6 +1,11 @@
 import { Devvit } from '@devvit/public-api';
 import { EventService } from '../services/eventService.js';
-import { isValidUrl, isLinkAllowed, parseAllowedDomains, sanitizeUrl } from '../utils/linkValidator.js';
+import {
+  isValidUrl,
+  isLinkAllowed,
+  parseAllowedDomains,
+  sanitizeUrl,
+} from '../utils/linkValidator.js';
 
 /**
  * Validate event form data with domain checking
@@ -40,7 +45,8 @@ function validateEventForm(
   if (allowedDomains && !isLinkAllowed(data.url, allowedDomains)) {
     return {
       valid: false,
-      error: 'URL domain not allowed. Use: eventbrite.com, meetup.com, facebook.com, or government sites'
+      error:
+        'URL domain not allowed. Use: eventbrite.com, meetup.com, facebook.com, or government sites',
     };
   }
 
@@ -87,7 +93,7 @@ export const submitEventForm = Devvit.createForm(
 
     // Get allowed domains from settings
     const settings = await context.settings.getAll();
-    const allowedDomainsStr = settings.allowedDomains as string || '';
+    const allowedDomainsStr = (settings.allowedDomains as string) || '';
     const allowedDomains = parseAllowedDomains(allowedDomainsStr);
 
     const validation = validateEventForm(
@@ -101,7 +107,10 @@ export const submitEventForm = Devvit.createForm(
     );
 
     if (!validation.valid) {
-      context.ui.showToast({ text: validation.error || 'Invalid form data', appearance: 'neutral' });
+      context.ui.showToast({
+        text: validation.error || 'Invalid form data',
+        appearance: 'neutral',
+      });
       return;
     }
 
@@ -111,7 +120,7 @@ export const submitEventForm = Devvit.createForm(
         {
           title: data.title as string,
           description: (data.description as string) || '',
-          url: validation.sanitizedUrl || data.url as string,
+          url: validation.sanitizedUrl || (data.url as string),
           dateStart: data.dateStart as string,
           dateEnd: data.dateStart as string,
           submittedBy: currentUser?.username || 'anonymous',
@@ -123,7 +132,10 @@ export const submitEventForm = Devvit.createForm(
       if (result.success) {
         context.ui.showToast({ text: 'Event submitted for mod review!', appearance: 'success' });
       } else {
-        context.ui.showToast({ text: result.error || 'Failed to submit event', appearance: 'neutral' });
+        context.ui.showToast({
+          text: result.error || 'Failed to submit event',
+          appearance: 'neutral',
+        });
       }
     } catch (error) {
       console.error('Error submitting event:', error);

@@ -22,7 +22,7 @@ export class EventScraperService {
       try {
         const events = await this.fetchFromSource(source);
         // Filter to next 3 days
-        const filtered = events.filter(e => {
+        const filtered = events.filter((e) => {
           const eventDate = new Date(e.dateStart);
           return eventDate >= now && eventDate <= threeDaysFromNow;
         });
@@ -64,7 +64,7 @@ export class EventScraperService {
   private static async parseEverOut(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
+        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' },
       });
       const html = await response.text();
 
@@ -107,7 +107,7 @@ export class EventScraperService {
   private static async parseMoPOP(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
+        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' },
       });
       const html = await response.text();
 
@@ -147,7 +147,7 @@ export class EventScraperService {
   private static async parseSeattleMet(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
+        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' },
       });
       const html = await response.text();
 
@@ -160,7 +160,12 @@ export class EventScraperService {
       while ((match = titlePattern.exec(html)) !== null && events.length < 5) {
         const title = match[1].trim();
         // Filter out navigation/generic titles
-        if (title && !title.includes('Menu') && !title.includes('Search') && !title.includes('Subscribe')) {
+        if (
+          title &&
+          !title.includes('Menu') &&
+          !title.includes('Search') &&
+          !title.includes('Subscribe')
+        ) {
           events.push({
             id: `seattlemet-${events.length}`,
             title: title,
@@ -188,7 +193,7 @@ export class EventScraperService {
   private static async parseSeattleGov(url: string, source: EventSource): Promise<UserEvent[]> {
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' }
+        headers: { 'User-Agent': 'HubBot9000/1.0 (Reddit Community Bot)' },
       });
       const html = await response.text();
 

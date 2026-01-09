@@ -135,12 +135,11 @@ export interface CommunityEventEvent extends HubBotEventBase {
   type: HubBotEventType.COMMUNITY_EVENT;
   title: string;
   description?: string;
-  eventDate: string;      // YYYY-MM-DD
+  eventDate: string; // YYYY-MM-DD
   location?: string;
   url?: string;
-  source: string;         // e.g., 'eventbrite', 'ticketmaster', 'gemini'
+  source: string; // e.g., 'eventbrite', 'ticketmaster', 'gemini'
 }
-
 
 // Tribute event - satirical content generated for subreddit/user
 export interface TributeEvent extends HubBotEventBase {

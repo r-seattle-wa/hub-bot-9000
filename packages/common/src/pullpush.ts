@@ -37,13 +37,13 @@ interface PullPushResponse<T> {
  * Search for comments by various criteria
  */
 export async function searchComments(params: {
-  linkId?: string;       // Post ID (without t3_ prefix)
-  author?: string;       // Username
-  subreddit?: string;    // Subreddit name
-  q?: string;            // Search query
-  after?: number;        // Unix timestamp
-  before?: number;       // Unix timestamp
-  limit?: number;        // Max results (default 100)
+  linkId?: string; // Post ID (without t3_ prefix)
+  author?: string; // Username
+  subreddit?: string; // Subreddit name
+  q?: string; // Search query
+  after?: number; // Unix timestamp
+  before?: number; // Unix timestamp
+  limit?: number; // Max results (default 100)
 }): Promise<PullPushComment[]> {
   const searchParams = new URLSearchParams();
 
@@ -65,12 +65,12 @@ export async function searchComments(params: {
  * Search for submissions (posts) by various criteria
  */
 export async function searchSubmissions(params: {
-  subreddit?: string;    // Subreddit name
-  author?: string;       // Username
-  q?: string;            // Search query (searches title, selftext, url)
-  after?: number;        // Unix timestamp
-  before?: number;       // Unix timestamp
-  limit?: number;        // Max results (default 50)
+  subreddit?: string; // Subreddit name
+  author?: string; // Username
+  q?: string; // Search query (searches title, selftext, url)
+  after?: number; // Unix timestamp
+  before?: number; // Unix timestamp
+  limit?: number; // Max results (default 50)
 }): Promise<PullPushSubmission[]> {
   const searchParams = new URLSearchParams();
 
@@ -108,15 +108,17 @@ export async function getDeletedComments(
 export async function findCrosslinks(
   targetSubreddit: string,
   options?: { limit?: number; after?: number }
-): Promise<Array<{
-  id: string;
-  subreddit: string;
-  title: string;
-  url: string;
-  permalink: string;
-  created_utc: number;
-  author: string;
-}>> {
+): Promise<
+  Array<{
+    id: string;
+    subreddit: string;
+    title: string;
+    url: string;
+    permalink: string;
+    created_utc: number;
+    author: string;
+  }>
+> {
   // Search for posts that mention the target subreddit in URL
   const posts = await searchSubmissions({
     q: `reddit.com/r/${targetSubreddit}`,
@@ -124,7 +126,7 @@ export async function findCrosslinks(
     after: options?.after,
   });
 
-  return posts.map(post => ({
+  return posts.map((post) => ({
     id: post.id,
     subreddit: post.subreddit,
     title: post.title,
@@ -179,12 +181,9 @@ export async function findDeletedInThread(
 
   // Filter to only comments that are no longer present (deleted/removed)
   return archivedComments.filter(
-    c => !currentCommentIds.has(c.id) &&
-        c.body !== '[deleted]' &&
-        c.body !== '[removed]'
+    (c) => !currentCommentIds.has(c.id) && c.body !== '[deleted]' && c.body !== '[removed]'
   );
 }
-
 
 // ============================================
 // Scraper Service Fallback Configuration
@@ -207,10 +206,7 @@ let scraperConfig: ScraperFallbackConfig = {
  * Configure the scraper fallback service
  * Call this at app startup to enable fallback when PullPush is unavailable
  */
-export function configureScraperFallback(config: {
-  baseUrl: string;
-  apiKey?: string;
-}): void {
+export function configureScraperFallback(config: { baseUrl: string; apiKey?: string }): void {
   scraperConfig = {
     baseUrl: config.baseUrl.replace(/\/$/, ''), // Remove trailing slash
     apiKey: config.apiKey,
@@ -223,17 +219,20 @@ export function configureScraperFallback(config: {
  * Search for submissions with fallback to scraper service
  * Tries PullPush first, falls back to scraper if configured and PullPush returns empty
  */
-export async function searchSubmissionsWithFallback(params: {
-  subreddit?: string;
-  author?: string;
-  q?: string;
-  after?: number;
-  before?: number;
-  limit?: number;
-}, useScraperFallback?: boolean): Promise<PullPushSubmission[]> {
+export async function searchSubmissionsWithFallback(
+  params: {
+    subreddit?: string;
+    author?: string;
+    q?: string;
+    after?: number;
+    before?: number;
+    limit?: number;
+  },
+  useScraperFallback?: boolean
+): Promise<PullPushSubmission[]> {
   // Try PullPush first
   const pullpushResults = await searchSubmissions(params);
-  
+
   if (pullpushResults.length > 0) {
     return pullpushResults;
   }
@@ -244,7 +243,7 @@ export async function searchSubmissionsWithFallback(params: {
   }
 
   console.log('[pullpush] PullPush returned empty, trying scraper fallback');
-  
+
   try {
     const scraperParams = new URLSearchParams();
     if (params.subreddit) scraperParams.set('subreddit', params.subreddit);
@@ -271,7 +270,7 @@ export async function searchSubmissionsWithFallback(params: {
       return [];
     }
 
-    const data = await response.json() as { data: PullPushSubmission[] };
+    const data = (await response.json()) as { data: PullPushSubmission[] };
     return data.data || [];
   } catch (error) {
     console.error('[pullpush] Scraper fallback failed:', error);
@@ -285,15 +284,17 @@ export async function searchSubmissionsWithFallback(params: {
 export async function findCrosslinksWithFallback(
   targetSubreddit: string,
   options?: { limit?: number; after?: number; useScraperFallback?: boolean }
-): Promise<Array<{
-  id: string;
-  subreddit: string;
-  title: string;
-  url: string;
-  permalink: string;
-  created_utc: number;
-  author: string;
-}>> {
+): Promise<
+  Array<{
+    id: string;
+    subreddit: string;
+    title: string;
+    url: string;
+    permalink: string;
+    created_utc: number;
+    author: string;
+  }>
+> {
   // Try standard findCrosslinks first
   const posts = await searchSubmissionsWithFallback(
     {
@@ -304,7 +305,7 @@ export async function findCrosslinksWithFallback(
     options?.useScraperFallback
   );
 
-  return posts.map(post => ({
+  return posts.map((post) => ({
     id: post.id,
     subreddit: post.subreddit,
     title: post.title,
@@ -314,8 +315,6 @@ export async function findCrosslinksWithFallback(
     author: post.author,
   }));
 }
-
-
 
 // ============================================
 // Combined Crosslink Detection
@@ -335,22 +334,24 @@ export async function findCrosslinksWithAllFallbacks(
     after?: number;
     geminiApiKey?: string;
   }
-): Promise<Array<{
-  id: string;
-  subreddit: string;
-  title: string;
-  url: string;
-  permalink: string;
-  author: string;
-  source: 'pullpush' | 'gemini';
-}>> {
+): Promise<
+  Array<{
+    id: string;
+    subreddit: string;
+    title: string;
+    url: string;
+    permalink: string;
+    author: string;
+    source: 'pullpush' | 'gemini';
+  }>
+> {
   const limit = options?.limit || 25;
-  
+
   // 1. Try PullPush first (best data quality)
   const pullpushResults = await findCrosslinks(targetSubreddit, { limit, after: options?.after });
   if (pullpushResults.length > 0) {
     console.log(`[crosslinks] Using PullPush: ${pullpushResults.length} results`);
-    return pullpushResults.map(r => ({
+    return pullpushResults.map((r) => ({
       ...r,
       source: 'pullpush' as const,
     }));
@@ -362,7 +363,7 @@ export async function findCrosslinksWithAllFallbacks(
     const geminiResults = await geminiCrosslinkSearch(targetSubreddit, options.geminiApiKey);
     if (geminiResults.length > 0) {
       console.log(`[crosslinks] Using Gemini: ${geminiResults.length} results`);
-      return geminiResults.map(r => ({
+      return geminiResults.map((r) => ({
         id: `gemini_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         subreddit: r.subreddit,
         title: r.title,
@@ -384,43 +385,43 @@ export async function findCrosslinksWithAllFallbacks(
  */
 export async function searchRedditNative(params: {
   query: string;
-  subreddit?: string;  // Limit to specific subreddit
+  subreddit?: string; // Limit to specific subreddit
   sort?: 'relevance' | 'new' | 'hot' | 'top';
   time?: 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
   limit?: number;
 }): Promise<PullPushSubmission[]> {
   const { query, subreddit, sort = 'new', time = 'week', limit = 25 } = params;
-  
+
   // Build search query - add subreddit restriction if specified
   let searchQuery = query;
   if (subreddit) {
     searchQuery = `${query} subreddit:${subreddit}`;
   }
-  
+
   const searchParams = new URLSearchParams({
     q: searchQuery,
     sort,
     t: time,
     limit: String(limit),
   });
-  
+
   const url = `https://www.reddit.com/search.json?${searchParams.toString()}`;
-  
+
   const result = await rateLimitedFetch<string>(url, {
     headers: {
       'User-Agent': 'HubBot9000/1.0 (by /r/SeattleWA)',
     },
   });
-  
+
   if (!result.ok || !result.data) {
     console.log('[reddit-search] Failed:', result.status);
     return [];
   }
-  
+
   try {
     const response = JSON.parse(result.data);
     const posts = response?.data?.children || [];
-    
+
     return posts.map((p: { data: Record<string, unknown> }) => ({
       id: p.data.id as string,
       author: p.data.author as string,
@@ -444,7 +445,7 @@ export async function searchRedditNative(params: {
  */
 export const DRAMA_SUBREDDITS = [
   'SubredditDrama',
-  'Drama', 
+  'Drama',
   'circlejerk',
   'OutOfTheLoop',
   'bestof',
@@ -465,10 +466,10 @@ export async function findCrosslinksRedditNative(
   }
 ): Promise<PullPushSubmission[]> {
   const { limit = 25, time = 'week', dramaSubredditsOnly = false } = options || {};
-  
+
   const allResults: PullPushSubmission[] = [];
   const seenIds = new Set<string>();
-  
+
   if (dramaSubredditsOnly) {
     // Search each drama subreddit individually
     for (const dramaSub of DRAMA_SUBREDDITS) {
@@ -477,18 +478,18 @@ export async function findCrosslinksRedditNative(
         subreddit: dramaSub,
         sort: 'new',
         time,
-        limit: Math.min(10, limit),  // Limit per sub to avoid rate limits
+        limit: Math.min(10, limit), // Limit per sub to avoid rate limits
       });
-      
+
       for (const post of results) {
         if (!seenIds.has(post.id)) {
           seenIds.add(post.id);
           allResults.push(post);
         }
       }
-      
+
       // Polite delay between requests
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   } else {
     // Global search for the subreddit name
@@ -498,7 +499,7 @@ export async function findCrosslinksRedditNative(
       time,
       limit,
     });
-    
+
     // Filter out self-references
     for (const post of results) {
       if (post.subreddit.toLowerCase() !== targetSubreddit.toLowerCase() && !seenIds.has(post.id)) {
@@ -507,9 +508,9 @@ export async function findCrosslinksRedditNative(
       }
     }
   }
-  
+
   // Sort by creation date descending
   allResults.sort((a, b) => b.created_utc - a.created_utc);
-  
+
   return allResults.slice(0, limit);
 }

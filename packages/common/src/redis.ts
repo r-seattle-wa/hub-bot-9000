@@ -5,10 +5,7 @@ import { Devvit } from '@devvit/public-api';
 /**
  * Get JSON value from Redis with type safety
  */
-export async function getJson<T>(
-  redis: Devvit.Context['redis'],
-  key: string
-): Promise<T | null> {
+export async function getJson<T>(redis: Devvit.Context['redis'], key: string): Promise<T | null> {
   const value = await redis.get(key);
   if (!value) return null;
   try {
@@ -54,10 +51,7 @@ export async function incrementCounter(
 /**
  * Check if a key exists
  */
-export async function exists(
-  redis: Devvit.Context['redis'],
-  key: string
-): Promise<boolean> {
+export async function exists(redis: Devvit.Context['redis'], key: string): Promise<boolean> {
   const value = await redis.get(key);
   return value !== null && value !== undefined;
 }

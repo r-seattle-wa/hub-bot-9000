@@ -29,7 +29,10 @@ export function parseAllowedDomains(domainsString: string): string[] {
 /**
  * Check if a URL is from an allowed domain
  */
-export function isLinkAllowed(url: string, allowedDomains: string[] = DEFAULT_ALLOWED_DOMAINS): boolean {
+export function isLinkAllowed(
+  url: string,
+  allowedDomains: string[] = DEFAULT_ALLOWED_DOMAINS
+): boolean {
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
@@ -71,7 +74,15 @@ export function sanitizeUrl(url: string): string {
     const parsed = new URL(url);
 
     // Remove common tracking parameters
-    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid'];
+    const trackingParams = [
+      'utm_source',
+      'utm_medium',
+      'utm_campaign',
+      'utm_term',
+      'utm_content',
+      'fbclid',
+      'gclid',
+    ];
     trackingParams.forEach((param) => parsed.searchParams.delete(param));
 
     return parsed.toString();

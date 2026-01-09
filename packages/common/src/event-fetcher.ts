@@ -22,12 +22,12 @@ export interface CommunityEvent {
   id: string;
   title: string;
   description?: string;
-  dateStart: string;      // YYYY-MM-DD
+  dateStart: string; // YYYY-MM-DD
   dateEnd?: string;
   location?: string;
   url?: string;
-  source: string;         // 'gemini', 'eventbrite', 'ticketmaster', etc.
-  category?: string;      // 'music', 'sports', 'community', etc.
+  source: string; // 'gemini', 'eventbrite', 'ticketmaster', etc.
+  category?: string; // 'music', 'sports', 'community', etc.
 }
 
 /**
@@ -80,11 +80,13 @@ If no events found, return: []`;
             temperature: 0.1,
             maxOutputTokens: 2048,
           },
-          tools: [{
-            google_search_retrieval: {
-              dynamic_retrieval_config: { mode: 'MODE_DYNAMIC' }
-            }
-          }],
+          tools: [
+            {
+              google_search_retrieval: {
+                dynamic_retrieval_config: { mode: 'MODE_DYNAMIC' },
+              },
+            },
+          ],
         }),
       }
     );
@@ -94,7 +96,7 @@ If no events found, return: []`;
       return [];
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     // Clean markdown code blocks
@@ -154,7 +156,7 @@ export async function fetchEventsFromScraper(
     url.searchParams.set('days', String(days));
 
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
+      Accept: 'application/json',
     };
     if (apiKey) {
       headers['X-API-Key'] = apiKey;
@@ -167,7 +169,7 @@ export async function fetchEventsFromScraper(
       return [];
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       events: Array<{
         id: string;
         title: string;
@@ -179,7 +181,7 @@ export async function fetchEventsFromScraper(
       }>;
     };
 
-    return data.events.map(e => ({
+    return data.events.map((e) => ({
       id: e.id,
       title: e.title,
       description: e.description,
@@ -219,7 +221,9 @@ Up to ${maxResults} events. Real events only. JSON only, no markdown.`;
 
   try {
     // Check if Devvit AI is available
-    const contextAny = context as { ai?: { generateText?: (opts: { prompt: string }) => Promise<string> } };
+    const contextAny = context as {
+      ai?: { generateText?: (opts: { prompt: string }) => Promise<string> };
+    };
     if (contextAny.ai?.generateText) {
       const response = await contextAny.ai.generateText({ prompt });
       if (!response) return [];
@@ -277,7 +281,15 @@ export async function fetchCommunityEvents(
     useRedditAI?: boolean;
   }
 ): Promise<CommunityEvent[]> {
-  const { location, state, days = 7, geminiApiKey, scraperUrl, scraperApiKey, useRedditAI = true } = options;
+  const {
+    location,
+    state,
+    days = 7,
+    geminiApiKey,
+    scraperUrl,
+    scraperApiKey,
+    useRedditAI = true,
+  } = options;
 
   // Try Reddit AI first (free, no API key needed)
   if (useRedditAI) {

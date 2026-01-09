@@ -5,7 +5,11 @@ import {
   detectPoliticalComplaint,
 } from './detector.js';
 import { getUserStats } from './stats.js';
-import { generateFarewellResponse, determineSarcasmLevel, generatePoliticalComplaintResponse } from './responses.js';
+import {
+  generateFarewellResponse,
+  determineSarcasmLevel,
+  generatePoliticalComplaintResponse,
+} from './responses.js';
 import {
   checkRateLimit,
   consumeRateLimit,
@@ -168,15 +172,19 @@ Devvit.addSettings([
   },
 ]);
 
-
 function getSarcasmLevelFromSetting(value: string[] | string | undefined): SarcasmLevel {
   const levelStr = Array.isArray(value) ? value[0] : value;
   switch (levelStr) {
-    case 'polite': return SarcasmLevel.POLITE;
-    case 'snarky': return SarcasmLevel.SNARKY;
-    case 'roast': return SarcasmLevel.ROAST;
-    case 'freakout': return SarcasmLevel.FREAKOUT;
-    default: return SarcasmLevel.NEUTRAL;
+    case 'polite':
+      return SarcasmLevel.POLITE;
+    case 'snarky':
+      return SarcasmLevel.SNARKY;
+    case 'roast':
+      return SarcasmLevel.ROAST;
+    case 'freakout':
+      return SarcasmLevel.FREAKOUT;
+    default:
+      return SarcasmLevel.NEUTRAL;
   }
 }
 
@@ -237,7 +245,7 @@ async function analyzeFarewellForHaterTracking(
       // Use subreddit name as "source" since they're posting FROM here while complaining
       await recordHater(
         context,
-        subredditName,  // They're already in this sub, complaining about it
+        subredditName, // They're already in this sub, complaining about it
         username,
         classification,
         `Farewell: ${text.slice(0, 80)}...`
@@ -252,22 +260,18 @@ async function analyzeFarewellForHaterTracking(
           const userEntry = leaderboard.users[userKey];
 
           if (userEntry) {
-            const unlocks = await checkAchievements(
-              context,
-              username,
-              userEntry,
-              leaderboard,
-              { repeatedMemes: result.detectedMemes.map(m => m.id) }
-            );
+            const unlocks = await checkAchievements(context, username, userEntry, leaderboard, {
+              repeatedMemes: result.detectedMemes.map((m) => m.id),
+            });
 
             const highest = getHighestNewAchievement(unlocks);
             if (highest && highest.shouldNotify) {
-              const score = userEntry.adversarialCount +
-                           (userEntry.hatefulCount * 3) +
-                           (userEntry.modLogSpamCount * 2);
-              const position = leaderboard.topUsers.findIndex(
-                u => u.username.toLowerCase() === userKey
-              ) + 1;
+              const score =
+                userEntry.adversarialCount +
+                userEntry.hatefulCount * 3 +
+                userEntry.modLogSpamCount * 2;
+              const position =
+                leaderboard.topUsers.findIndex((u) => u.username.toLowerCase() === userKey) + 1;
 
               result.achievementText = formatAchievementComment(
                 highest.achievement,
@@ -338,15 +342,18 @@ Devvit.addTrigger({
 
     // Detect unsubscribe announcement
     const detection = detectUnsubscribePost(textToCheck);
-    
+
     // Check for political/echo chamber complaints (separate from leaving)
     const politicalComplaint = detectPoliticalComplaint(textToCheck);
-    
+
     // If neither detected, return
     if (!detection.isUnsubscribePost && !politicalComplaint.isPoliticalComplaint) return;
-    
+
     // For unsubscribe posts, check confidence threshold
-    if (detection.isUnsubscribePost && detection.confidence < ((settings.minConfidence as number) || 0.6)) {
+    if (
+      detection.isUnsubscribePost &&
+      detection.confidence < ((settings.minConfidence as number) || 0.6)
+    ) {
       // Still might respond to political complaint
       if (!politicalComplaint.isPoliticalComplaint) return;
     }
@@ -377,9 +384,16 @@ Devvit.addTrigger({
     if (stats.isLurker && !settings.includeLurkerRoasts) return;
 
     // Classify user tone and determine sarcasm level
-    const toneResult = await classifyUnsubscribeTone(textToCheck, settings.geminiApiKey as string | undefined);
+    const toneResult = await classifyUnsubscribeTone(
+      textToCheck,
+      settings.geminiApiKey as string | undefined
+    );
     const defaultLevel = getSarcasmLevelFromSetting(settings.sarcasmLevel as string[]);
-    let sarcasmLevel = determineSarcasmLevel(toneResult.tone, defaultLevel, settings.matchToneToUser as boolean || true);
+    let sarcasmLevel = determineSarcasmLevel(
+      toneResult.tone,
+      defaultLevel,
+      (settings.matchToneToUser as boolean) || true
+    );
     if (stats.isPowerUser && settings.respectPowerUsers) sarcasmLevel = SarcasmLevel.POLITE;
 
     // Track repeat announcements
@@ -406,7 +420,11 @@ Devvit.addTrigger({
 
     // If political complaint detected, append survey reference
     if (politicalComplaint.isPoliticalComplaint) {
-      const politicalResponse = generatePoliticalComplaintResponse(subreddit.name, politicalComplaint, sarcasmLevel);
+      const politicalResponse = generatePoliticalComplaintResponse(
+        subreddit.name,
+        politicalComplaint,
+        sarcasmLevel
+      );
       response += '\n\n---\n\n' + politicalResponse;
     }
 
@@ -459,7 +477,12 @@ Devvit.addTrigger({
     const comment = event.comment;
     const authorName = comment.author;
 
-    if (!authorName || authorName === '[deleted]' || authorName === 'AutoModerator' || comment.deleted) {
+    if (
+      !authorName ||
+      authorName === '[deleted]' ||
+      authorName === 'AutoModerator' ||
+      comment.deleted
+    ) {
       return;
     }
 
@@ -471,13 +494,13 @@ Devvit.addTrigger({
 
     // Detect unsubscribe announcement
     const detection = detectUnsubscribePost(comment.body);
-    
+
     // Check for political/echo chamber complaints
     const politicalComplaint = detectPoliticalComplaint(comment.body);
-    
+
     // If neither detected, return
     if (!detection.isUnsubscribePost && !politicalComplaint.isPoliticalComplaint) return;
-    
+
     // Require higher confidence for comments (less context)
     const minConfidence = Math.min(((settings.minConfidence as number) || 0.6) + 0.1, 0.9);
     if (detection.isUnsubscribePost && detection.confidence < minConfidence) {
@@ -504,9 +527,16 @@ Devvit.addTrigger({
     if (stats.isLurker && !settings.includeLurkerRoasts) return;
 
     // Classify user tone and determine sarcasm level
-    const toneResult = await classifyUnsubscribeTone(comment.body, settings.geminiApiKey as string | undefined);
+    const toneResult = await classifyUnsubscribeTone(
+      comment.body,
+      settings.geminiApiKey as string | undefined
+    );
     const defaultLevel = getSarcasmLevelFromSetting(settings.sarcasmLevel as string[]);
-    let sarcasmLevel = determineSarcasmLevel(toneResult.tone, defaultLevel, settings.matchToneToUser as boolean || true);
+    let sarcasmLevel = determineSarcasmLevel(
+      toneResult.tone,
+      defaultLevel,
+      (settings.matchToneToUser as boolean) || true
+    );
     if (stats.isPowerUser && settings.respectPowerUsers) sarcasmLevel = SarcasmLevel.POLITE;
 
     // Track repeat announcements
@@ -533,7 +563,11 @@ Devvit.addTrigger({
 
     // If political complaint detected, append survey reference
     if (politicalComplaint.isPoliticalComplaint) {
-      const politicalResponse = generatePoliticalComplaintResponse(subreddit.name, politicalComplaint, sarcasmLevel);
+      const politicalResponse = generatePoliticalComplaintResponse(
+        subreddit.name,
+        politicalComplaint,
+        sarcasmLevel
+      );
       response += '\n\n---\n\n' + politicalResponse;
     }
 
@@ -573,7 +607,6 @@ Devvit.addTrigger({
     });
   },
 });
-
 
 // Reply to users who respond to the bot (one reply only)
 Devvit.addTrigger({
@@ -618,7 +651,8 @@ Devvit.addTrigger({
       // Generate AI reply
       const reply = await generateBotReply(context, {
         botName: 'farewell-hero',
-        botPersonality: 'A witty farewell statistics bot. Matches energy with departing users. Appreciates dramatic exits.',
+        botPersonality:
+          'A witty farewell statistics bot. Matches energy with departing users. Appreciates dramatic exits.',
         originalBotComment: parentComment.body,
         userReply: comment.body,
         userUsername: authorName,
@@ -637,8 +671,6 @@ Devvit.addTrigger({
     }
   },
 });
-
-
 
 // ============================================
 // TRIBUTE FEATURE - Satirical user/subreddit tributes
@@ -684,7 +716,12 @@ Devvit.addTrigger({
     const comment = event.comment;
     const authorName = comment.author;
 
-    if (!authorName || authorName === '[deleted]' || authorName === 'AutoModerator' || comment.deleted) {
+    if (
+      !authorName ||
+      authorName === '[deleted]' ||
+      authorName === 'AutoModerator' ||
+      comment.deleted
+    ) {
       return;
     }
 
@@ -710,7 +747,7 @@ Devvit.addTrigger({
     }
 
     // Check if target user has opted out
-    if (targetType === 'user' && await isUserOptedOut(context, targetName)) {
+    if (targetType === 'user' && (await isUserOptedOut(context, targetName))) {
       await context.reddit.submitComment({
         id: comment.id,
         text: `u/${targetName} has opted out of tributes. Their legacy remains unwritten.

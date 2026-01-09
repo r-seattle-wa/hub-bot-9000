@@ -60,11 +60,13 @@ Visitors: welcome! Please check the sidebar rules.`;
 /**
  * Get modmail notification for mods
  */
-export function getModmailBody(params: TemplateParams & {
-  postTitle: string;
-  postUrl: string;
-  deletedCount?: number;
-}): string {
+export function getModmailBody(
+  params: TemplateParams & {
+    postTitle: string;
+    postUrl: string;
+    deletedCount?: number;
+  }
+): string {
   const {
     sourceSubreddit,
     sourceUrl,

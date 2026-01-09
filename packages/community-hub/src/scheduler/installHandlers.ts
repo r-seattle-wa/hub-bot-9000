@@ -16,7 +16,7 @@ export async function handleInstallUpgrade(_: unknown, context: TriggerContext):
   try {
     // Cancel any existing jobs to avoid duplicates
     const existingJobs = await context.scheduler.listJobs();
-    await Promise.all(existingJobs.map(job => context.scheduler.cancelJob(job.id)));
+    await Promise.all(existingJobs.map((job) => context.scheduler.cancelJob(job.id)));
     console.log(`Cancelled ${existingJobs.length} existing jobs.`);
 
     // Get settings
@@ -24,8 +24,8 @@ export async function handleInstallUpgrade(_: unknown, context: TriggerContext):
 
     // Schedule weekly post
     if (settings.enableWeeklyPost) {
-      const weeklyTime = settings.weeklyPostTime as string || '15:00';
-      const weeklyDay = settings.weeklyPostDay as string[] || ['1'];
+      const weeklyTime = (settings.weeklyPostTime as string) || '15:00';
+      const weeklyDay = (settings.weeklyPostDay as string[]) || ['1'];
       const dayOfWeek = weeklyDay[0] || '1'; // Default to Monday
       const { hours, minutes } = parseTime(weeklyTime);
 
@@ -54,7 +54,6 @@ export async function handleInstallUpgrade(_: unknown, context: TriggerContext):
 
     // Send welcome modmail on first install
     await sendWelcomeMessage(context);
-
   } catch (error) {
     console.error('Failed to schedule jobs:', error);
   }
@@ -65,7 +64,7 @@ export async function handleInstallUpgrade(_: unknown, context: TriggerContext):
  */
 async function sendWelcomeMessage(context: TriggerContext): Promise<void> {
   try {
-    const subredditName = context.subredditName ?? await context.reddit.getCurrentSubredditName();
+    const subredditName = context.subredditName ?? (await context.reddit.getCurrentSubredditName());
 
     // Check if we've already sent a welcome message
     const welcomeSent = await context.redis.get('welcome_sent');
@@ -117,7 +116,6 @@ Happy community building! 🚀`;
     // Mark welcome as sent
     await context.redis.set('welcome_sent', 'true');
     console.log('Welcome message sent to modmail.');
-
   } catch (error) {
     console.error('Failed to send welcome message:', error);
   }

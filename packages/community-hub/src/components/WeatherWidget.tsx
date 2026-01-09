@@ -10,16 +10,24 @@ interface WeatherWidgetProps {
   showMoon?: boolean;
 }
 
-export const WeatherWidget = ({ forecast, location, showMoon = true }: WeatherWidgetProps): JSX.Element => {
+export const WeatherWidget = ({
+  forecast,
+  location,
+  showMoon = true,
+}: WeatherWidgetProps): JSX.Element => {
   if (!forecast || forecast.periods.length === 0) {
     return (
       <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium">
         <hstack gap="small" alignment="middle">
           <text size="large">🌤️</text>
-          <text size="medium" weight="bold" color="white">Weather - {location}</text>
+          <text size="medium" weight="bold" color="white">
+            Weather - {location}
+          </text>
         </hstack>
         <spacer size="small" />
-        <text size="small" color="#999999">Weather data temporarily unavailable</text>
+        <text size="small" color="#999999">
+          Weather data temporarily unavailable
+        </text>
       </vstack>
     );
   }
@@ -28,7 +36,9 @@ export const WeatherWidget = ({ forecast, location, showMoon = true }: WeatherWi
     <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
       <hstack gap="small" alignment="middle">
         <text size="large">🌤️</text>
-        <text size="medium" weight="bold" color="white">Weather - {location}</text>
+        <text size="medium" weight="bold" color="white">
+          Weather - {location}
+        </text>
       </hstack>
 
       <spacer size="small" />
@@ -39,7 +49,9 @@ export const WeatherWidget = ({ forecast, location, showMoon = true }: WeatherWi
           <hstack gap="small" alignment="middle">
             <text size="medium">{emoji}</text>
             <vstack grow>
-              <text size="small" weight="bold" color="white">{period.name}</text>
+              <text size="small" weight="bold" color="white">
+                {period.name}
+              </text>
               <text size="small" color="#cccccc">
                 {period.shortForecast}, {period.temperature}°{period.temperatureUnit}
               </text>
@@ -52,7 +64,9 @@ export const WeatherWidget = ({ forecast, location, showMoon = true }: WeatherWi
         <vstack>
           <spacer size="small" />
           <hstack gap="small" alignment="middle">
-            <text size="small" color="#888888">{formatMoonPhase()}</text>
+            <text size="small" color="#888888">
+              {formatMoonPhase()}
+            </text>
           </hstack>
         </vstack>
       ) : null}

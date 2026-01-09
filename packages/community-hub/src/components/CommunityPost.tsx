@@ -3,7 +3,12 @@ import { WeatherWidget } from './WeatherWidget.js';
 import { EventService } from '../services/eventService.js';
 import { getWeatherForecast } from '../services/weatherService.js';
 import { UserEvent, EventSource, CommunityLink, WeatherForecast } from '../types/index.js';
-import { isValidUrl, isLinkAllowed, parseAllowedDomains, sanitizeUrl } from '../utils/linkValidator.js';
+import {
+  isValidUrl,
+  isLinkAllowed,
+  parseAllowedDomains,
+  sanitizeUrl,
+} from '../utils/linkValidator.js';
 
 /**
  * Main Community Hub Post Component
@@ -23,16 +28,19 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
   const settings = settingsData ? JSON.parse(settingsData) : null;
 
   // Load weather data
-  const { data: weatherData } = useAsync(async () => {
-    if (!settings?.weatherGridPoint) return null;
-    try {
-      const weather = await getWeatherForecast(settings.weatherGridPoint as string);
-      return JSON.stringify(weather);
-    } catch (error) {
-      console.error('Failed to fetch weather:', error);
-      return null;
-    }
-  }, { depends: [settingsData] });
+  const { data: weatherData } = useAsync(
+    async () => {
+      if (!settings?.weatherGridPoint) return null;
+      try {
+        const weather = await getWeatherForecast(settings.weatherGridPoint as string);
+        return JSON.stringify(weather);
+      } catch (error) {
+        console.error('Failed to fetch weather:', error);
+        return null;
+      }
+    },
+    { depends: [settingsData] }
+  );
 
   const weather: WeatherForecast | null = weatherData ? JSON.parse(weatherData) : null;
 
@@ -42,44 +50,47 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
     : [];
 
   // Load events from wiki/Redis (scraped + user-submitted)
-  const { data: eventsData, loading: eventsLoading } = useAsync(async () => {
-    try {
-      if (eventSource === 'community') {
-        // Only user-submitted events
-        const userEvents = await EventService.getUpcomingEvents(context, 15);
-        // Filter by time period
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const endDate = new Date(now.getTime() + timePeriod * 24 * 60 * 60 * 1000);
-        const filtered = userEvents.filter(e => {
-          const eventDate = new Date(e.dateStart);
-          return eventDate >= now && eventDate <= endDate;
-        });
-        return JSON.stringify(filtered);
-      } else {
-        // All events: scraped + user-submitted
-        const [scrapedEvents, userEvents] = await Promise.all([
-          EventService.getScrapedEvents(context, timePeriod),
-          EventService.getUpcomingEvents(context, 10)
-        ]);
-        // Filter user events by time period too
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const endDate = new Date(now.getTime() + timePeriod * 24 * 60 * 60 * 1000);
-        const filteredUserEvents = userEvents.filter(e => {
-          const eventDate = new Date(e.dateStart);
-          return eventDate >= now && eventDate <= endDate;
-        });
-        const allEvents = [...scrapedEvents, ...filteredUserEvents]
-          .sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime())
-          .slice(0, 20);
-        return JSON.stringify(allEvents);
+  const { data: eventsData, loading: eventsLoading } = useAsync(
+    async () => {
+      try {
+        if (eventSource === 'community') {
+          // Only user-submitted events
+          const userEvents = await EventService.getUpcomingEvents(context, 15);
+          // Filter by time period
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const endDate = new Date(now.getTime() + timePeriod * 24 * 60 * 60 * 1000);
+          const filtered = userEvents.filter((e) => {
+            const eventDate = new Date(e.dateStart);
+            return eventDate >= now && eventDate <= endDate;
+          });
+          return JSON.stringify(filtered);
+        } else {
+          // All events: scraped + user-submitted
+          const [scrapedEvents, userEvents] = await Promise.all([
+            EventService.getScrapedEvents(context, timePeriod),
+            EventService.getUpcomingEvents(context, 10),
+          ]);
+          // Filter user events by time period too
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const endDate = new Date(now.getTime() + timePeriod * 24 * 60 * 60 * 1000);
+          const filteredUserEvents = userEvents.filter((e) => {
+            const eventDate = new Date(e.dateStart);
+            return eventDate >= now && eventDate <= endDate;
+          });
+          const allEvents = [...scrapedEvents, ...filteredUserEvents]
+            .sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime())
+            .slice(0, 20);
+          return JSON.stringify(allEvents);
+        }
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+        return '[]';
       }
-    } catch (error) {
-      console.error('Failed to fetch events:', error);
-      return '[]';
-    }
-  }, { depends: [refreshKey, timePeriod, eventSource] });
+    },
+    { depends: [refreshKey, timePeriod, eventSource] }
+  );
 
   const events: UserEvent[] = eventsData ? JSON.parse(eventsData) : [];
 
@@ -153,14 +164,17 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
       // Validate URL
       const url = data.url as string;
       if (!isValidUrl(url)) {
-        context.ui.showToast({ text: 'Please enter a valid URL (https://)', appearance: 'neutral' });
+        context.ui.showToast({
+          text: 'Please enter a valid URL (https://)',
+          appearance: 'neutral',
+        });
         return;
       }
 
       if (!isLinkAllowed(url, allowedDomains)) {
         context.ui.showToast({
           text: 'URL domain not allowed. Use: eventbrite.com, meetup.com, facebook.com, or .gov sites',
-          appearance: 'neutral'
+          appearance: 'neutral',
         });
         return;
       }
@@ -182,9 +196,12 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
 
         if (result.success) {
           context.ui.showToast({ text: 'Event submitted for mod review!', appearance: 'success' });
-          setRefreshKey(prev => prev + 1);
+          setRefreshKey((prev) => prev + 1);
         } else {
-          context.ui.showToast({ text: result.error || 'Failed to submit event', appearance: 'neutral' });
+          context.ui.showToast({
+            text: result.error || 'Failed to submit event',
+            appearance: 'neutral',
+          });
         }
       } catch (error) {
         console.error('Error submitting event:', error);
@@ -197,7 +214,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
   if (settingsLoading) {
     return (
       <vstack padding="large" alignment="center middle" grow>
-        <text size="medium" color="#888888">Loading Community Hub...</text>
+        <text size="medium" color="#888888">
+          Loading Community Hub...
+        </text>
       </vstack>
     );
   }
@@ -208,16 +227,32 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
       <hstack padding="medium" backgroundColor="#1a1a2e" alignment="center middle">
         <text size="xlarge">{headerEmoji}</text>
         <spacer size="small" />
-        <text size="xlarge" weight="bold" color="white">{headerTitle}</text>
+        <text size="xlarge" weight="bold" color="white">
+          {headerTitle}
+        </text>
         <spacer size="small" />
-        <text size="medium" color="#4da6ff">{location}</text>
+        <text size="medium" color="#4da6ff">
+          {location}
+        </text>
       </hstack>
 
       {/* Tab Navigation */}
       <hstack padding="small" backgroundColor="#151528" gap="small" alignment="center">
-        <TabButton label="Events" active={activeTab === 'events'} onPress={() => setActiveTab('events')} />
-        <TabButton label="Weather" active={activeTab === 'weather'} onPress={() => setActiveTab('weather')} />
-        <TabButton label="Links" active={activeTab === 'links'} onPress={() => setActiveTab('links')} />
+        <TabButton
+          label="Events"
+          active={activeTab === 'events'}
+          onPress={() => setActiveTab('events')}
+        />
+        <TabButton
+          label="Weather"
+          active={activeTab === 'weather'}
+          onPress={() => setActiveTab('weather')}
+        />
+        <TabButton
+          label="Links"
+          active={activeTab === 'links'}
+          onPress={() => setActiveTab('links')}
+        />
       </hstack>
 
       {/* Content Area */}
@@ -226,14 +261,18 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
           <vstack gap="small" grow>
             {/* Time Period Selector */}
             <hstack gap="small" alignment="center">
-              <text size="xsmall" color="#666666">Show:</text>
+              <text size="xsmall" color="#666666">
+                Show:
+              </text>
               <hstack
                 padding="xsmall"
                 backgroundColor={timePeriod === 1 ? '#4da6ff' : '#252540'}
                 cornerRadius="small"
                 onPress={() => setTimePeriod(1)}
               >
-                <text size="xsmall" color={timePeriod === 1 ? '#0e0e1a' : '#cccccc'}>Today</text>
+                <text size="xsmall" color={timePeriod === 1 ? '#0e0e1a' : '#cccccc'}>
+                  Today
+                </text>
               </hstack>
               <hstack
                 padding="xsmall"
@@ -241,7 +280,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
                 cornerRadius="small"
                 onPress={() => setTimePeriod(3)}
               >
-                <text size="xsmall" color={timePeriod === 3 ? '#0e0e1a' : '#cccccc'}>3 Days</text>
+                <text size="xsmall" color={timePeriod === 3 ? '#0e0e1a' : '#cccccc'}>
+                  3 Days
+                </text>
               </hstack>
               <hstack
                 padding="xsmall"
@@ -249,7 +290,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
                 cornerRadius="small"
                 onPress={() => setTimePeriod(7)}
               >
-                <text size="xsmall" color={timePeriod === 7 ? '#0e0e1a' : '#cccccc'}>Week</text>
+                <text size="xsmall" color={timePeriod === 7 ? '#0e0e1a' : '#cccccc'}>
+                  Week
+                </text>
               </hstack>
               <spacer grow />
               <hstack
@@ -266,7 +309,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
 
             {eventsLoading ? (
               <vstack padding="medium" alignment="center middle">
-                <text size="small" color="#888888">Loading events...</text>
+                <text size="small" color="#888888">
+                  Loading events...
+                </text>
               </vstack>
             ) : events.length > 0 ? (
               <vstack gap="small">
@@ -280,20 +325,30 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
                     padding="small"
                     backgroundColor="#1a1a2e"
                     cornerRadius="small"
-                    onPress={() => { if (event.url) context.ui.navigateTo(event.url); }}
+                    onPress={() => {
+                      if (event.url) context.ui.navigateTo(event.url);
+                    }}
                   >
                     <vstack alignment="center middle" minWidth="45px">
                       <text size="xsmall" color="#4da6ff">
-                        {new Date(event.dateStart).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                        {new Date(event.dateStart)
+                          .toLocaleDateString('en-US', { month: 'short' })
+                          .toUpperCase()}
                       </text>
                       <text size="large" weight="bold" color="white">
                         {new Date(event.dateStart).getDate()}
                       </text>
                     </vstack>
                     <vstack grow>
-                      <text size="small" weight="bold" color="white">{event.title}</text>
+                      <text size="small" weight="bold" color="white">
+                        {event.title}
+                      </text>
                       <text size="xsmall" color="#666666">
-                        {event.location ? `@ ${event.location}` : event.description ? event.description : `via ${event.submittedBy}`}
+                        {event.location
+                          ? `@ ${event.location}`
+                          : event.description
+                            ? event.description
+                            : `via ${event.submittedBy}`}
                       </text>
                     </vstack>
                     <text color="#4da6ff">→</text>
@@ -301,9 +356,18 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
                 ))}
               </vstack>
             ) : (
-              <vstack padding="medium" alignment="center middle" backgroundColor="#1a1a2e" cornerRadius="medium">
-                <text size="small" color="#888888">No upcoming events</text>
-                <text size="xsmall" color="#666666">Be the first to submit one!</text>
+              <vstack
+                padding="medium"
+                alignment="center middle"
+                backgroundColor="#1a1a2e"
+                cornerRadius="medium"
+              >
+                <text size="small" color="#888888">
+                  No upcoming events
+                </text>
+                <text size="xsmall" color="#666666">
+                  Be the first to submit one!
+                </text>
               </vstack>
             )}
 
@@ -315,7 +379,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
               alignment="center middle"
               onPress={() => context.ui.showForm(submitEventForm)}
             >
-              <text size="medium" weight="bold" color="#0e0e1a">+ Submit Your Event</text>
+              <text size="medium" weight="bold" color="#0e0e1a">
+                + Submit Your Event
+              </text>
             </hstack>
           </vstack>
         ) : null}
@@ -329,7 +395,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
             {/* Event Calendars */}
             {eventSources.length > 0 ? (
               <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
-                <text size="small" weight="bold" color="#888888">EVENT CALENDARS</text>
+                <text size="small" weight="bold" color="#888888">
+                  EVENT CALENDARS
+                </text>
                 {eventSources.map((source, idx) => (
                   <hstack
                     key={idx.toString()}
@@ -340,7 +408,9 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
                     onPress={() => context.ui.navigateTo(source.url)}
                   >
                     <text size="medium">{source.icon}</text>
-                    <text size="small" color="#4da6ff" grow>{source.name}</text>
+                    <text size="small" color="#4da6ff" grow>
+                      {source.name}
+                    </text>
                     <text color="#666666">→</text>
                   </hstack>
                 ))}
@@ -348,14 +418,20 @@ export const CommunityPost = (context: Devvit.Context): JSX.Element => {
             ) : null}
 
             {/* Community Links */}
-            <CommunityLinksSection context={context} links={communityLinks} subredditName={subredditName || 'SeattleWA'} />
+            <CommunityLinksSection
+              context={context}
+              links={communityLinks}
+              subredditName={subredditName || 'SeattleWA'}
+            />
           </vstack>
         ) : null}
       </vstack>
 
       {/* Footer */}
       <hstack padding="small" backgroundColor="#151528" alignment="center middle">
-        <text size="xsmall" color="#666666">Hub Bot 9000</text>
+        <text size="xsmall" color="#666666">
+          Hub Bot 9000
+        </text>
       </hstack>
     </vstack>
   );
@@ -378,7 +454,11 @@ const TabButton = ({ label, active, onPress }: TabButtonProps): JSX.Element => {
       cornerRadius="medium"
       onPress={onPress}
     >
-      <text size="small" weight={active ? 'bold' : 'regular'} color={active ? '#0e0e1a' : '#cccccc'}>
+      <text
+        size="small"
+        weight={active ? 'bold' : 'regular'}
+        color={active ? '#0e0e1a' : '#cccccc'}
+      >
         {label}
       </text>
     </hstack>
@@ -394,13 +474,19 @@ interface CommunityLinksSectionProps {
   subredditName: string;
 }
 
-const CommunityLinksSection = ({ context, links, subredditName }: CommunityLinksSectionProps): JSX.Element => {
+const CommunityLinksSection = ({
+  context,
+  links,
+  subredditName,
+}: CommunityLinksSectionProps): JSX.Element => {
   const wikiUrl = `https://www.reddit.com/r/${subredditName}/wiki/index`;
   const rulesUrl = `https://www.reddit.com/r/${subredditName}/about/rules`;
 
   return (
     <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
-      <text size="small" weight="bold" color="#888888">COMMUNITY LINKS</text>
+      <text size="small" weight="bold" color="#888888">
+        COMMUNITY LINKS
+      </text>
 
       {/* User-configured links */}
       {links.map((link, idx) => (
@@ -414,9 +500,13 @@ const CommunityLinksSection = ({ context, links, subredditName }: CommunityLinks
         >
           <text size="medium">{link.icon}</text>
           <vstack grow>
-            <text size="small" color="#4da6ff">{link.name}</text>
+            <text size="small" color="#4da6ff">
+              {link.name}
+            </text>
             {link.description ? (
-              <text size="xsmall" color="#666666">{link.description}</text>
+              <text size="xsmall" color="#666666">
+                {link.description}
+              </text>
             ) : null}
           </vstack>
           <text color="#666666">→</text>
@@ -432,7 +522,9 @@ const CommunityLinksSection = ({ context, links, subredditName }: CommunityLinks
         onPress={() => context.ui.navigateTo(wikiUrl)}
       >
         <text size="medium">📚</text>
-        <text size="small" color="#4da6ff" grow>Subreddit Wiki</text>
+        <text size="small" color="#4da6ff" grow>
+          Subreddit Wiki
+        </text>
         <text color="#666666">→</text>
       </hstack>
       <hstack
@@ -443,7 +535,9 @@ const CommunityLinksSection = ({ context, links, subredditName }: CommunityLinks
         onPress={() => context.ui.navigateTo(rulesUrl)}
       >
         <text size="medium">📋</text>
-        <text size="small" color="#4da6ff" grow>Community Rules</text>
+        <text size="small" color="#4da6ff" grow>
+          Community Rules
+        </text>
         <text color="#666666">→</text>
       </hstack>
     </vstack>
@@ -458,14 +552,18 @@ function parseEventSources(sourcesText: string): EventSource[] {
   try {
     const parsed = JSON.parse(sourcesText);
     if (Array.isArray(parsed)) {
-      return parsed.filter(s => s.url);
+      return parsed.filter((s) => s.url);
     }
     return [];
   } catch {
-    return sourcesText.split('\n').filter(line => line.trim()).map(line => {
-      const parts = line.split('|').map(p => p.trim());
-      return { name: parts[0] || 'Event Source', url: parts[1] || '', icon: parts[2] || '📅' };
-    }).filter(source => source.url);
+    return sourcesText
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => {
+        const parts = line.split('|').map((p) => p.trim());
+        return { name: parts[0] || 'Event Source', url: parts[1] || '', icon: parts[2] || '📅' };
+      })
+      .filter((source) => source.url);
   }
 }
 
@@ -477,13 +575,22 @@ function parseCommunityLinks(linksText: string): CommunityLink[] {
   try {
     const parsed = JSON.parse(linksText);
     if (Array.isArray(parsed)) {
-      return parsed.filter(l => l.url);
+      return parsed.filter((l) => l.url);
     }
     return [];
   } catch {
-    return linksText.split('\n').filter(line => line.trim()).map(line => {
-      const parts = line.split('|').map(p => p.trim());
-      return { name: parts[0] || 'Link', url: parts[1] || '', icon: parts[2] || '🔗', description: parts[3] };
-    }).filter(link => link.url);
+    return linksText
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => {
+        const parts = line.split('|').map((p) => p.trim());
+        return {
+          name: parts[0] || 'Link',
+          url: parts[1] || '',
+          icon: parts[2] || '🔗',
+          description: parts[3],
+        };
+      })
+      .filter((link) => link.url);
   }
 }

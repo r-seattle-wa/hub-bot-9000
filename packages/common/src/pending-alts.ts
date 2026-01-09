@@ -47,10 +47,18 @@ export async function submitPendingAltReport(
   const data = await getLeaderboard(context);
   if (data) {
     if (report.type === 'user' && data.userAltMappings[report.mainName.toLowerCase()]) {
-      return { success: false, reportId: '', message: `u/${report.mainName} is already registered as an alt` };
+      return {
+        success: false,
+        reportId: '',
+        message: `u/${report.mainName} is already registered as an alt`,
+      };
     }
     if (report.type === 'subreddit' && data.subredditAltMappings[report.mainName.toLowerCase()]) {
-      return { success: false, reportId: '', message: `r/${report.mainName} is already registered as an alt` };
+      return {
+        success: false,
+        reportId: '',
+        message: `r/${report.mainName} is already registered as an alt`,
+      };
     }
   }
 
@@ -65,22 +73,20 @@ export async function submitPendingAltReport(
   return {
     success: true,
     reportId,
-    message: 'Report submitted for mod review'
+    message: 'Report submitted for mod review',
   };
 }
 
 /**
  * Get all pending alt reports
  */
-export async function getPendingAltReports(
-  context: AppContext
-): Promise<PendingAltReport[]> {
+export async function getPendingAltReports(context: AppContext): Promise<PendingAltReport[]> {
   try {
     const data = await context.redis.get(PENDING_ALTS_KEY);
     if (!data) return [];
     const reports = JSON.parse(data) as PendingAltReport[];
     // Only return pending ones
-    return reports.filter(r => r.status === 'pending');
+    return reports.filter((r) => r.status === 'pending');
   } catch {
     return [];
   }
@@ -94,7 +100,7 @@ export async function approveAltReport(
   reportId: string
 ): Promise<{ success: boolean; message: string }> {
   const allReports = await getAllAltReports(context);
-  const reportIndex = allReports.findIndex(r => r.id === reportId);
+  const reportIndex = allReports.findIndex((r) => r.id === reportId);
 
   if (reportIndex === -1) {
     return { success: false, message: 'Report not found' };
@@ -131,7 +137,7 @@ export async function rejectAltReport(
   reportId: string
 ): Promise<{ success: boolean; message: string }> {
   const allReports = await getAllAltReports(context);
-  const reportIndex = allReports.findIndex(r => r.id === reportId);
+  const reportIndex = allReports.findIndex((r) => r.id === reportId);
 
   if (reportIndex === -1) {
     return { success: false, message: 'Report not found' };
@@ -157,7 +163,7 @@ export async function getAltReportById(
   reportId: string
 ): Promise<PendingAltReport | null> {
   const allReports = await getAllAltReports(context);
-  return allReports.find(r => r.id === reportId) || null;
+  return allReports.find((r) => r.id === reportId) || null;
 }
 
 /**

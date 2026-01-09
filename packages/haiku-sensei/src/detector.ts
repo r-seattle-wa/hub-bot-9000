@@ -20,7 +20,7 @@ export function detectHaiku(text: string): HaikuResult {
   }
 
   // Try to find a valid 5-7-5 split
-  const wordSyllables = words.map(w => countSyllables(w));
+  const wordSyllables = words.map((w) => countSyllables(w));
   const totalSyllables = wordSyllables.reduce((a, b) => a + b, 0);
 
   // Quick check: total should be 17

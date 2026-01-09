@@ -15,7 +15,7 @@ interface RateLimitConfig {
 
 const DEFAULT_RATE_LIMITS: Record<string, RateLimitConfig> = {
   'api.pullpush.io': { requestsPerMinute: 30, retryDelayMs: 2000, maxRetries: 3 },
-  'default': { requestsPerMinute: 60, retryDelayMs: 1000, maxRetries: 2 },
+  default: { requestsPerMinute: 60, retryDelayMs: 1000, maxRetries: 2 },
 };
 
 /**
@@ -50,7 +50,7 @@ function canMakeRequest(domain: string): boolean {
  * Sleep for a given number of milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -99,7 +99,7 @@ export async function rateLimitedFetch<T>(
 
   const headers: Record<string, string> = {
     'User-Agent': USER_AGENT,
-    'Accept': 'application/json',
+    Accept: 'application/json',
     ...options.headers,
   };
 
@@ -114,14 +114,14 @@ export async function rateLimitedFetch<T>(
       });
 
       if (response.ok) {
-        const data = await response.json() as T;
+        const data = (await response.json()) as T;
         return { ok: true, status: response.status, data };
       }
 
       // Handle rate limiting from server
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
-        const delay = retryAfter ? parseInt(retryAfter, 10) * 1000 : (config.retryDelayMs || 2000);
+        const delay = retryAfter ? parseInt(retryAfter, 10) * 1000 : config.retryDelayMs || 2000;
         await sleep(delay);
         continue;
       }
@@ -150,7 +150,7 @@ export async function simpleFetch<T>(url: string): Promise<T | null> {
     });
 
     if (!response.ok) return null;
-    return await response.json() as T;
+    return (await response.json()) as T;
   } catch {
     return null;
   }

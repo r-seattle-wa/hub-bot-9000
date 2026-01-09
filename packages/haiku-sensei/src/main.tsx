@@ -108,7 +108,12 @@ Devvit.addTrigger({
     const authorName = comment.author;
 
     // Skip if author is a bot or deleted
-    if (!authorName || authorName === '[deleted]' || authorName === 'AutoModerator' || comment.deleted) {
+    if (
+      !authorName ||
+      authorName === '[deleted]' ||
+      authorName === 'AutoModerator' ||
+      comment.deleted
+    ) {
       return;
     }
 
@@ -130,7 +135,7 @@ Devvit.addTrigger({
     try {
       const author = await context.reddit.getUserByUsername(authorName);
       const totalKarma = author ? (author.linkKarma || 0) + (author.commentKarma || 0) : 0;
-      if (totalKarma < (settings.minKarma as number || 10)) {
+      if (totalKarma < ((settings.minKarma as number) || 10)) {
         return;
       }
     } catch {
@@ -143,8 +148,8 @@ Devvit.addTrigger({
       const post = await context.reddit.getPostById(comment.postId);
       const excludeFlairs = ((settings.excludeFlairs as string) || '')
         .split(',')
-        .map(f => f.trim().toLowerCase())
-        .filter(f => f.length > 0);
+        .map((f) => f.trim().toLowerCase())
+        .filter((f) => f.length > 0);
 
       if (post?.flair?.text && excludeFlairs.includes(post.flair.text.toLowerCase())) {
         return;
@@ -219,8 +224,8 @@ Devvit.addTrigger({
     // Check flair exclusions
     const excludeFlairs = ((settings.excludeFlairs as string) || '')
       .split(',')
-      .map(f => f.trim().toLowerCase())
-      .filter(f => f.length > 0);
+      .map((f) => f.trim().toLowerCase())
+      .filter((f) => f.length > 0);
 
     if (post.linkFlair?.text && excludeFlairs.includes(post.linkFlair.text.toLowerCase())) {
       return;
@@ -251,7 +256,6 @@ Devvit.addTrigger({
     });
   },
 });
-
 
 // Reply to users who respond to the bot (one reply only)
 Devvit.addTrigger({
@@ -296,7 +300,8 @@ Devvit.addTrigger({
       // Generate AI reply
       const reply = await generateBotReply(context, {
         botName: 'haiku-sensei',
-        botPersonality: 'A zen haiku detection bot. Peaceful but witty. Appreciates poetry and wordplay.',
+        botPersonality:
+          'A zen haiku detection bot. Peaceful but witty. Appreciates poetry and wordplay.',
         originalBotComment: parentComment.body,
         userReply: comment.body,
         userUsername: authorName,

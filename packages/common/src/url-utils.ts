@@ -18,7 +18,8 @@ export function extractRedditLinks(text: string): RedditLink[] {
 
   // Pattern 1: Full Reddit URLs
   // Matches: https://reddit.com/r/subreddit, www.reddit.com/r/subreddit, old.reddit.com/r/subreddit
-  const fullUrlPattern = /(?:https?:\/\/)?(?:www\.|old\.|new\.)?reddit\.com\/r\/(\w+)(?:\/comments\/(\w+))?(?:\/[^\/]*\/(\w+))?/gi;
+  const fullUrlPattern =
+    /(?:https?:\/\/)?(?:www\.|old\.|new\.)?reddit\.com\/r\/(\w+)(?:\/comments\/(\w+))?(?:\/[^\/]*\/(\w+))?/gi;
   let match: RegExpExecArray | null;
 
   while ((match = fullUrlPattern.exec(text)) !== null) {
@@ -63,18 +64,13 @@ export function containsRedditLinks(text: string): boolean {
  * Get unique subreddits mentioned in text
  */
 export function getLinkedSubreddits(text: string): string[] {
-  return extractRedditLinks(text).map(link => link.subreddit);
+  return extractRedditLinks(text).map((link) => link.subreddit);
 }
 
 /**
  * Filter out same-subreddit links (self-references)
  */
-export function getExternalSubredditLinks(
-  text: string,
-  currentSubreddit: string
-): RedditLink[] {
+export function getExternalSubredditLinks(text: string, currentSubreddit: string): RedditLink[] {
   const normalizedCurrent = currentSubreddit.toLowerCase();
-  return extractRedditLinks(text).filter(
-    link => link.subreddit !== normalizedCurrent
-  );
+  return extractRedditLinks(text).filter((link) => link.subreddit !== normalizedCurrent);
 }

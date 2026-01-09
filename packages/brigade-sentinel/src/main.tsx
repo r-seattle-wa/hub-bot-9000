@@ -250,12 +250,12 @@ Devvit.addSchedulerJob({
     try {
       // Strategy: Reddit native search (reliable) -> PullPush (fallback) -> Gemini (AI fallback)
       // Then use PullPush for deleted content analysis on found threads
-      
+
       // 1. Try Reddit native search first (most reliable for finding new posts)
       let posts = await findCrosslinksRedditNative(subredditName, {
         limit: 50,
         time: 'week',
-        dramaSubredditsOnly: true,  // Focus on known drama subreddits
+        dramaSubredditsOnly: true, // Focus on known drama subreddits
       });
       console.log(`Reddit native search for r/${subredditName}: ${posts.length} results`);
 
@@ -276,7 +276,7 @@ Devvit.addSchedulerJob({
           subredditName,
           settings.geminiApiKey as string
         );
-        posts = geminiResults.map(r => ({
+        posts = geminiResults.map((r) => ({
           id: `gem_${Date.now()}_${r.subreddit}`,
           subreddit: r.subreddit,
           title: r.title,
@@ -347,7 +347,9 @@ Devvit.addSchedulerJob({
             includeDeleted: true,
           });
           brigadeEvent.brigadeEvidence = evidence;
-          console.log(`[brigade] Target analysis: ${evidence.firstTimePosters}/${evidence.uniqueCommenters} first-time posters`);
+          console.log(
+            `[brigade] Target analysis: ${evidence.firstTimePosters}/${evidence.uniqueCommenters} first-time posters`
+          );
         } catch (error) {
           console.error('[brigade] Target post analysis failed:', error);
         }
@@ -404,9 +406,13 @@ Devvit.addSchedulerJob({
                       targetPostId: brigadeEvent.targetPostId,
                       sourceSubreddit: post.subreddit,
                     },
-                    runAt: new Date(Date.now() + ((settings.minimumLinkAge as number) || 5) * 60 * 1000 + 30000), // 30s after brigade notification
+                    runAt: new Date(
+                      Date.now() + ((settings.minimumLinkAge as number) || 5) * 60 * 1000 + 30000
+                    ), // 30s after brigade notification
                   });
-                  console.log('[ACHIEVEMENT] Queued ' + bestUnlock.achievement.name + ' for u/' + post.author);
+                  console.log(
+                    '[ACHIEVEMENT] Queued ' + bestUnlock.achievement.name + ' for u/' + post.author
+                  );
                 }
               }
             }
@@ -476,11 +482,14 @@ Devvit.addSchedulerJob({
       // Post public comment if enabled (for crosslink alerts - this is the main feature)
       if (settings.publicComment) {
         let commentBody: string;
-        
+
         // Use brigade evidence from TARGET post analysis (who's brigading THIS post)
         const evidence = brigadeEvent.brigadeEvidence;
-        
-        if (evidence && (evidence.firstTimePosters >= 3 || evidence.firstTimePosterPercentage >= 20)) {
+
+        if (
+          evidence &&
+          (evidence.firstTimePosters >= 3 || evidence.firstTimePosterPercentage >= 20)
+        ) {
           // Rich sticky with brigade evidence from this post
           commentBody = formatBrigadeStickyComment(
             evidence,
@@ -527,7 +536,10 @@ Devvit.addSchedulerJob({
           subreddit: subreddit.name,
           postTitle: targetPost.title,
           postUrl: `https://reddit.com${targetPost.permalink}`,
-          deletedCount: deletedCount >= (settings.deletedContentThreshold as number || 3) ? deletedCount : undefined,
+          deletedCount:
+            deletedCount >= ((settings.deletedContentThreshold as number) || 3)
+              ? deletedCount
+              : undefined,
         });
 
         await context.reddit.sendPrivateMessage({
@@ -583,10 +595,11 @@ Devvit.addTrigger({
     const body = comment.body.toLowerCase();
 
     // Check if bot is mentioned
-    const botMentioned = body.includes('u/hub-bot-9000') ||
-                         body.includes('/u/hub-bot-9000') ||
-                         body.includes('u/brigade-sentinel') ||
-                         body.includes('/u/brigade-sentinel');
+    const botMentioned =
+      body.includes('u/hub-bot-9000') ||
+      body.includes('/u/hub-bot-9000') ||
+      body.includes('u/brigade-sentinel') ||
+      body.includes('/u/brigade-sentinel');
 
     if (!botMentioned) return;
 
@@ -658,7 +671,9 @@ Devvit.addTrigger({
         text: modmailBody,
       });
 
-      console.log(`Alt report submitted: ${prefix}/${altName} -> ${prefix}/${mainName} (${result.reportId})`);
+      console.log(
+        `Alt report submitted: ${prefix}/${altName} -> ${prefix}/${mainName} (${result.reportId})`
+      );
       await consumeRateLimit(context.redis, 'altReport', author);
     } catch (error) {
       console.error('Alt report submission failed:', error);
@@ -737,14 +752,15 @@ Devvit.addTrigger({
         await context.reddit.sendPrivateMessage({
           to: `/r/${subreddit.name}`,
           subject: `Alt Report ${action.charAt(0).toUpperCase() + action.slice(1)}: ${prefix}/${report.altName}`,
-          text: `The alt report has been **${action}**.\n\n` +
-                `- **Alt:** ${prefix}/${report.altName}\n` +
-                `- **Main:** ${prefix}/${report.mainName}\n` +
-                `- **Reported by:** u/${report.reportedBy}\n` +
-                `- **Action by:** u/${authorName}\n\n` +
-                (action === 'approved'
-                  ? `Scores for ${prefix}/${report.altName} will now be combined with ${prefix}/${report.mainName} on the leaderboard.`
-                  : `No changes were made to the leaderboard.`),
+          text:
+            `The alt report has been **${action}**.\n\n` +
+            `- **Alt:** ${prefix}/${report.altName}\n` +
+            `- **Main:** ${prefix}/${report.mainName}\n` +
+            `- **Reported by:** u/${report.reportedBy}\n` +
+            `- **Action by:** u/${authorName}\n\n` +
+            (action === 'approved'
+              ? `Scores for ${prefix}/${report.altName} will now be combined with ${prefix}/${report.mainName} on the leaderboard.`
+              : `No changes were made to the leaderboard.`),
         });
       } else {
         await context.reddit.sendPrivateMessage({
@@ -773,11 +789,9 @@ Devvit.addSchedulerJob({
     if (!settings.enabled || !settings.geminiApiKey) return;
 
     try {
-      const result = await enrichTopHatersWithOSINT(
-        context,
-        settings.geminiApiKey as string,
-        { topN: 5 }
-      );
+      const result = await enrichTopHatersWithOSINT(context, settings.geminiApiKey as string, {
+        topN: 5,
+      });
       console.log(`OSINT enrichment: ${result.enriched} enriched, ${result.errors} errors`);
     } catch (error) {
       console.error('OSINT enrichment failed:', error);
@@ -799,7 +813,7 @@ Devvit.addSchedulerJob({
     try {
       const installedSub = await context.reddit.getCurrentSubredditName();
       const homeSubreddit = (settings.homeSubreddit as string)?.trim() || installedSub;
-      
+
       const result = await updateHallOfShame(context, homeSubreddit);
       console.log(`[hall-of-shame] Update result: ${result.message}`);
     } catch (error) {
@@ -830,12 +844,12 @@ Devvit.addSchedulerJob({
     try {
       const events = await fetchCommunityEvents(context, {
         location,
-        state: settings.eventState as string || undefined,
+        state: (settings.eventState as string) || undefined,
         days: 7,
-        geminiApiKey: settings.geminiApiKey as string || undefined,
-        scraperUrl: settings.scraperServiceUrl as string || undefined,
-        scraperApiKey: settings.scraperApiKey as string || undefined,
-        useRedditAI: settings.useRedditAI as boolean ?? true,
+        geminiApiKey: (settings.geminiApiKey as string) || undefined,
+        scraperUrl: (settings.scraperServiceUrl as string) || undefined,
+        scraperApiKey: (settings.scraperApiKey as string) || undefined,
+        useRedditAI: (settings.useRedditAI as boolean) ?? true,
       });
 
       console.log('[events] Fetched ' + events.length + ' community events for ' + location);
@@ -856,7 +870,6 @@ Devvit.addSchedulerJob({
     }
   },
 });
-
 
 // =============================================================================
 // ACHIEVEMENT COMMENT JOB
@@ -896,18 +909,19 @@ Devvit.addSchedulerJob({
     if (!userEntry) return;
 
     // Calculate score
-    const totalScore = userEntry.adversarialCount +
-                       (userEntry.hatefulCount * 3) +
-                       (userEntry.modLogSpamCount * 2) +
-                       ((userEntry.flaggedContentCount || 0) * 2);
+    const totalScore =
+      userEntry.adversarialCount +
+      userEntry.hatefulCount * 3 +
+      userEntry.modLogSpamCount * 2 +
+      (userEntry.flaggedContentCount || 0) * 2;
 
-    const userRank = leaderboard.topUsers.findIndex(
-      u => u.username.toLowerCase() === username.toLowerCase()
-    ) + 1;
+    const userRank =
+      leaderboard.topUsers.findIndex((u) => u.username.toLowerCase() === username.toLowerCase()) +
+      1;
 
     // Get talking point data for context
     const repeatedMemes = await getTopRepeatedTalkingPoints(context, username, 3);
-    const memeNames = repeatedMemes.map(r => r.talkingPoint.name);
+    const memeNames = repeatedMemes.map((r) => r.talkingPoint.name);
 
     // Generate AI roast
     const roastResult = await generateAchievementRoast(context, {
@@ -922,14 +936,14 @@ Devvit.addSchedulerJob({
       repeatedMemes: memeNames,
       homeSubreddits: userEntry.homeSubreddits,
       worstTitle: userEntry.worstTitle,
-      geminiApiKey: settings.geminiApiKey as string || '',
+      geminiApiKey: (settings.geminiApiKey as string) || '',
     });
 
     // Get subreddit for wiki links
     const subreddit = await context.reddit.getCurrentSubreddit();
 
     // Build wiki links from detected memes
-    const talkingPoints = repeatedMemes.map(r => r.talkingPoint);
+    const talkingPoints = repeatedMemes.map((r) => r.talkingPoint);
     const wikiLinks = getDebunkLinks(subreddit.name, talkingPoints);
 
     // Format the comment
@@ -940,7 +954,7 @@ Devvit.addSchedulerJob({
       totalScore,
       roastResult.roastText,
       undefined, // imageUrl - TODO: integrate image generation
-      wikiLinks.length > 0 ? wikiLinks.map(l => ({ text: l.text, url: l.url })) : undefined
+      wikiLinks.length > 0 ? wikiLinks.map((l) => ({ text: l.text, url: l.url })) : undefined
     );
 
     try {
@@ -1006,14 +1020,10 @@ registerMenuActions();
 // Helper functions
 function extractTargetPostId(url: string, targetSubreddit: string): string | null {
   // Match reddit.com/r/subreddit/comments/postid/...
-  const regex = new RegExp(
-    `reddit\.com/r/${targetSubreddit}/comments/([a-z0-9]+)`,
-    'i'
-  );
+  const regex = new RegExp(`reddit\.com/r/${targetSubreddit}/comments/([a-z0-9]+)`, 'i');
   const match = url.match(regex);
   return match ? `t3_${match[1]}` : null;
 }
-
 
 // Reply to users who respond to the bot (one reply only)
 Devvit.addTrigger({
@@ -1058,7 +1068,8 @@ Devvit.addTrigger({
       // Generate AI reply
       const reply = await generateBotReply(context, {
         botName: 'brigade-sentinel',
-        botPersonality: 'A vigilant crosslink detection bot. Serious about community protection but not humorless.',
+        botPersonality:
+          'A vigilant crosslink detection bot. Serious about community protection but not humorless.',
         originalBotComment: parentComment.body,
         userReply: comment.body,
         userUsername: authorName,
@@ -1077,8 +1088,6 @@ Devvit.addTrigger({
     }
   },
 });
-
-
 
 // =============================================================================
 // TALKING POINT DETECTION ON ALL COMMENTS
@@ -1128,16 +1137,10 @@ Devvit.addTrigger({
 
         // If they have a leaderboard entry, check for achievements
         if (userEntry) {
-          const unlocks = await checkAchievements(
-            context,
-            authorName,
-            userEntry,
-            leaderboard,
-            {
-              repeatedMemes: brokenRecord.repeatedMemes,
-              cooldownHours: (settings.achievementCooldownHours as number) || 24,
-            }
-          );
+          const unlocks = await checkAchievements(context, authorName, userEntry, leaderboard, {
+            repeatedMemes: brokenRecord.repeatedMemes,
+            cooldownHours: (settings.achievementCooldownHours as number) || 24,
+          });
 
           const bestUnlock = getHighestNewAchievement(unlocks);
           if (bestUnlock && bestUnlock.shouldNotify) {
@@ -1152,7 +1155,13 @@ Devvit.addTrigger({
               },
               runAt: new Date(Date.now() + 60000), // 1 minute delay
             });
-            console.log('[MEME] Queued ' + bestUnlock.achievement.name + ' for u/' + authorName + ' (broken record)');
+            console.log(
+              '[MEME] Queued ' +
+                bestUnlock.achievement.name +
+                ' for u/' +
+                authorName +
+                ' (broken record)'
+            );
           }
         }
       }
@@ -1180,16 +1189,16 @@ Devvit.addTrigger({
 
     // Get recent comment timestamps for this post
     const velocityKey = `${REDIS_PREFIX.brigade}velocity:${postId}`;
-    const recentComments = await getJson<number[]>(context.redis, velocityKey) || [];
+    const recentComments = (await getJson<number[]>(context.redis, velocityKey)) || [];
 
     // Add current timestamp, keep last hour
     const hourAgo = now - 60 * 60 * 1000;
-    const filtered = [...recentComments.filter(t => t > hourAgo), now];
+    const filtered = [...recentComments.filter((t) => t > hourAgo), now];
     await setJson(context.redis, velocityKey, filtered, 2 * 60 * 60); // 2 hour TTL
 
     // Calculate velocity (comments in last 5 minutes)
     const fiveMinAgo = now - 5 * 60 * 1000;
-    const recentCount = filtered.filter(t => t > fiveMinAgo).length;
+    const recentCount = filtered.filter((t) => t > fiveMinAgo).length;
 
     // Check if spike detected (default: 10+ comments in 5 min)
     const threshold = (settings.velocityThreshold as number) || 10;
@@ -1216,11 +1225,12 @@ Devvit.addTrigger({
       await context.reddit.sendPrivateMessage({
         to: `/r/${subreddit.name}`,
         subject: `[TRAFFIC SPIKE] Unusual comment velocity detected`,
-        text: `**Neural net pattern detected: Comment velocity anomaly**\n\n` +
-              `Post: ${postTitle || postId}\n` +
-              `Comments in last 5 min: **${recentCount}** (threshold: ${threshold})\n\n` +
-              `Possible brigade in progress. Recommend visual inspection.\n\n` +
-              `---\n*brigade-sentinel v2.0 | traffic_spike_detection*`,
+        text:
+          `**Neural net pattern detected: Comment velocity anomaly**\n\n` +
+          `Post: ${postTitle || postId}\n` +
+          `Comments in last 5 min: **${recentCount}** (threshold: ${threshold})\n\n` +
+          `Possible brigade in progress. Recommend visual inspection.\n\n` +
+          `---\n*brigade-sentinel v2.0 | traffic_spike_detection*`,
       });
 
       // Emit to hub-widget events feed

@@ -24,10 +24,10 @@ export interface AchievementRoastParams {
   baseRoastTemplate: string;
   leaderboardPosition: number;
   totalScore: number;
-  behaviorSummary?: string;       // From OSINT analysis
-  repeatedMemes?: string[];       // Detected talking points
-  homeSubreddits?: string[];      // Where they post from
-  worstTitle?: string;            // Their most hostile post title
+  behaviorSummary?: string; // From OSINT analysis
+  repeatedMemes?: string[]; // Detected talking points
+  homeSubreddits?: string[]; // Where they post from
+  worstTitle?: string; // Their most hostile post title
   geminiApiKey: string;
 }
 
@@ -35,7 +35,7 @@ export interface AchievementRoastResult {
   roastText: string;
   imagePrompt: string;
   wikiLinks: Array<{ text: string; url: string }>;
-  flavorText: string;             // Short tagline for the achievement
+  flavorText: string; // Short tagline for the achievement
 }
 
 /**
@@ -72,8 +72,12 @@ export async function generateAchievementRoast(
 
   try {
     const behaviorLine = behaviorSummary ? `- Behavior Summary: ${behaviorSummary}` : '';
-    const memesLine = repeatedMemes?.length ? `- Favorite Talking Points: ${repeatedMemes.join(', ')}` : '';
-    const subsLine = homeSubreddits?.length ? `- Posts From: ${homeSubreddits.slice(0, 3).join(', ')}` : '';
+    const memesLine = repeatedMemes?.length
+      ? `- Favorite Talking Points: ${repeatedMemes.join(', ')}`
+      : '';
+    const subsLine = homeSubreddits?.length
+      ? `- Posts From: ${homeSubreddits.slice(0, 3).join(', ')}`
+      : '';
     const worstLine = worstTitle ? `- Most Hostile Post: "${worstTitle}"` : '';
 
     const prompt = `You are a sarcastic but not mean-spirited bot that awards "achievements" to dedicated haters on a subreddit. Your style is like Xbox achievement unlocks meets comedy roast.
@@ -121,7 +125,7 @@ Be witty, reference gaming/internet culture, but avoid being actually hurtful. T
       return generateTemplateRoast(params);
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     // Clean markdown code blocks

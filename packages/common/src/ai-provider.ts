@@ -1,7 +1,13 @@
 // AI Provider abstraction - BYOK (Bring Your Own Key)
 
 import { TriggerContext, JobContext } from '@devvit/public-api';
-import { AIProvider, SourceClassification, ClassificationResult, UserTone, ToneClassificationResult } from './types.js';
+import {
+  AIProvider,
+  SourceClassification,
+  ClassificationResult,
+  UserTone,
+  ToneClassificationResult,
+} from './types.js';
 import { getJson, setJson, REDIS_PREFIX } from './redis.js';
 import { checkRateLimit, consumeRateLimit } from './rate-limiter.js';
 
@@ -38,13 +44,13 @@ export async function classifySubreddit(
   const subredditLower = subreddit.toLowerCase();
 
   // 1. Check manual lists first (always free, always wins)
-  if (settings.friendlySubreddits?.map(s => s.toLowerCase()).includes(subredditLower)) {
+  if (settings.friendlySubreddits?.map((s) => s.toLowerCase()).includes(subredditLower)) {
     return { classification: SourceClassification.FRIENDLY, method: 'mod_list' };
   }
-  if (settings.hatefulSubreddits?.map(s => s.toLowerCase()).includes(subredditLower)) {
+  if (settings.hatefulSubreddits?.map((s) => s.toLowerCase()).includes(subredditLower)) {
     return { classification: SourceClassification.HATEFUL, method: 'mod_list' };
   }
-  if (settings.adversarialSubreddits?.map(s => s.toLowerCase()).includes(subredditLower)) {
+  if (settings.adversarialSubreddits?.map((s) => s.toLowerCase()).includes(subredditLower)) {
     return { classification: SourceClassification.ADVERSARIAL, method: 'mod_list' };
   }
 
@@ -70,11 +76,7 @@ export async function classifySubreddit(
 
   // 5. Call Gemini (mod pays)
   try {
-    const result = await callGeminiClassification(
-      context,
-      subreddit,
-      settings.geminiApiKey
-    );
+    const result = await callGeminiClassification(context, subreddit, settings.geminiApiKey);
 
     // Cache the result
     await setJson(context.redis, cacheKey, result, CACHE_TTL_SECONDS);
@@ -106,11 +108,13 @@ async function callGeminiClassification(
     description = subInfo?.description || '';
 
     // Get recent posts for context
-    const posts = await context.reddit.getHotPosts({
-      subredditName: subreddit,
-      limit: 10,
-    }).all();
-    recentTitles = posts.map(p => p.title).slice(0, 5);
+    const posts = await context.reddit
+      .getHotPosts({
+        subredditName: subreddit,
+        limit: 10,
+      })
+      .all();
+    recentTitles = posts.map((p) => p.title).slice(0, 5);
   } catch {
     // Subreddit might be private or banned
   }
@@ -143,7 +147,7 @@ Classification:`;
     throw new Error(`Gemini API error: ${response.status}`);
   }
 
-  const data = await response.json() as GeminiResponse;
+  const data = (await response.json()) as GeminiResponse;
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() || '';
 
   // Parse response
@@ -213,11 +217,13 @@ Return ONLY valid JSON, no markdown code blocks or explanation.`;
             temperature,
             maxOutputTokens,
           },
-          tools: [{
-            google_search_retrieval: {
-              dynamic_retrieval_config: { mode: 'MODE_DYNAMIC' }
-            }
-          }],
+          tools: [
+            {
+              google_search_retrieval: {
+                dynamic_retrieval_config: { mode: 'MODE_DYNAMIC' },
+              },
+            },
+          ],
         }),
       }
     );
@@ -227,7 +233,7 @@ Return ONLY valid JSON, no markdown code blocks or explanation.`;
       return null;
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     // Clean up markdown code blocks
@@ -252,12 +258,14 @@ Return ONLY valid JSON, no markdown code blocks or explanation.`;
 export async function geminiCrosslinkSearch(
   targetSubreddit: string,
   geminiApiKey: string
-): Promise<Array<{
-  subreddit: string;
-  title: string;
-  url: string;
-  summary?: string;
-}>> {
+): Promise<
+  Array<{
+    subreddit: string;
+    title: string;
+    url: string;
+    summary?: string;
+  }>
+> {
   if (!geminiApiKey) return [];
 
   const parsePrompt = `Find recent Reddit posts from OTHER subreddits that link to or mention r/${targetSubreddit}.
@@ -274,16 +282,14 @@ Return a JSON array with this format:
 
 Only include posts from the last 7 days. Only include posts that directly link to or discuss r/${targetSubreddit}. If no posts found, return: []`;
 
-  const results = await geminiSearchFallback<Array<{
-    subreddit: string;
-    title: string;
-    url: string;
-    summary?: string;
-  }>>(
-    `reddit posts linking to r/${targetSubreddit} site:reddit.com`,
-    parsePrompt,
-    { geminiApiKey }
-  );
+  const results = await geminiSearchFallback<
+    Array<{
+      subreddit: string;
+      title: string;
+      url: string;
+      summary?: string;
+    }>
+  >(`reddit posts linking to r/${targetSubreddit} site:reddit.com`, parsePrompt, { geminiApiKey });
 
   return results || [];
 }
@@ -304,9 +310,11 @@ export async function classifyPostTone(
     return SourceClassification.NEUTRAL;
   }
 
-  const content = postBody ? `${postTitle}
+  const content = postBody
+    ? `${postTitle}
 
-${postBody}` : postTitle;
+${postBody}`
+    : postTitle;
 
   const prompt = `Analyze the tone of this Reddit post that links to another subreddit.
 Classify as ONE word: FRIENDLY, NEUTRAL, ADVERSARIAL, or HATEFUL.
@@ -342,7 +350,7 @@ Classification:`;
       return SourceClassification.NEUTRAL;
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() || '';
 
     if (text.includes('FRIENDLY')) return SourceClassification.FRIENDLY;
@@ -355,7 +363,6 @@ Classification:`;
   }
 }
 
-
 // ============================================
 // User Tone Classification for farewell-hero
 // ============================================
@@ -363,22 +370,75 @@ Classification:`;
 // Keyword patterns for fallback tone detection (no API key)
 const TONE_KEYWORDS = {
   hostile: [
-    'toxic', 'garbage', 'trash', 'hate', 'worst', 'terrible', 'awful', 'disgusting',
-    'pathetic', 'moron', 'idiot', 'dumb', 'stupid', 'suck', 'cancer', 'cesspool',
-    'echo chamber', 'circlejerk', 'hivemind', 'nazi', 'fascist', 'communist',
+    'toxic',
+    'garbage',
+    'trash',
+    'hate',
+    'worst',
+    'terrible',
+    'awful',
+    'disgusting',
+    'pathetic',
+    'moron',
+    'idiot',
+    'dumb',
+    'stupid',
+    'suck',
+    'cancer',
+    'cesspool',
+    'echo chamber',
+    'circlejerk',
+    'hivemind',
+    'nazi',
+    'fascist',
+    'communist',
   ],
   frustrated: [
-    'tired', 'sick of', 'fed up', 'enough', 'done with', 'over it', 'cant anymore',
-    'annoying', 'frustrating', 'pointless', 'waste of time', 'useless', 'ridiculous',
+    'tired',
+    'sick of',
+    'fed up',
+    'enough',
+    'done with',
+    'over it',
+    'cant anymore',
+    'annoying',
+    'frustrating',
+    'pointless',
+    'waste of time',
+    'useless',
+    'ridiculous',
   ],
   dramatic: [
-    'forever', 'never again', 'final', 'goodbye forever', 'rip', 'dead to me',
-    'worst decision', 'ruined', 'destroyed', 'devastated', 'heartbroken', 'betrayed',
-    'unforgivable', 'the end', 'farewell', 'adieu', 'sayonara',
+    'forever',
+    'never again',
+    'final',
+    'goodbye forever',
+    'rip',
+    'dead to me',
+    'worst decision',
+    'ruined',
+    'destroyed',
+    'devastated',
+    'heartbroken',
+    'betrayed',
+    'unforgivable',
+    'the end',
+    'farewell',
+    'adieu',
+    'sayonara',
   ],
   polite: [
-    'thank', 'appreciate', 'grateful', 'enjoyed', 'good luck', 'best wishes',
-    'loved', 'great community', 'wonderful', 'amazing people', 'helped me',
+    'thank',
+    'appreciate',
+    'grateful',
+    'enjoyed',
+    'good luck',
+    'best wishes',
+    'loved',
+    'great community',
+    'wonderful',
+    'amazing people',
+    'helped me',
   ],
 };
 
@@ -450,7 +510,7 @@ JSON:`;
       return null;
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     // Clean markdown code blocks
@@ -493,7 +553,7 @@ JSON:`;
  */
 function classifyUnsubscribeToneKeywords(text: string): ToneClassificationResult {
   const textLower = text.toLowerCase();
-  
+
   // Check each category
   const hostileMatches = findKeywordMatches(textLower, TONE_KEYWORDS.hostile);
   const frustratedMatches = findKeywordMatches(textLower, TONE_KEYWORDS.frustrated);
@@ -539,14 +599,17 @@ function classifyUnsubscribeToneKeywords(text: string): ToneClassificationResult
   triggerPhrase = matches[0];
 
   // Calculate confidence based on score strength
-  const totalMatches = hostileMatches.length + frustratedMatches.length + 
-                       dramaticMatches.length + politeMatches.length;
-  const confidence = totalMatches > 0 ? Math.min(0.4 + (maxScore / 10), 0.85) : 0.3;
+  const totalMatches =
+    hostileMatches.length +
+    frustratedMatches.length +
+    dramaticMatches.length +
+    politeMatches.length;
+  const confidence = totalMatches > 0 ? Math.min(0.4 + maxScore / 10, 0.85) : 0.3;
 
   return {
     tone: dominantTone,
     triggerPhrase,
-    reasoning: triggerPhrase 
+    reasoning: triggerPhrase
       ? `Keyword detected: "${triggerPhrase}"`
       : 'No strong indicators found',
     confidence,
@@ -557,7 +620,7 @@ function classifyUnsubscribeToneKeywords(text: string): ToneClassificationResult
  * Find matching keywords in text
  */
 function findKeywordMatches(text: string, keywords: string[]): string[] {
-  return keywords.filter(keyword => text.includes(keyword));
+  return keywords.filter((keyword) => text.includes(keyword));
 }
 
 /**
@@ -575,7 +638,8 @@ export async function generateBotReply(
     geminiApiKey?: string;
   }
 ): Promise<string | null> {
-  const { botName, botPersonality, originalBotComment, userReply, userUsername, geminiApiKey } = params;
+  const { botName, botPersonality, originalBotComment, userReply, userUsername, geminiApiKey } =
+    params;
 
   // Check rate limit
   const subreddit = await context.reddit.getCurrentSubreddit();
@@ -608,7 +672,8 @@ Generate a brief, conversational reply (1-3 sentences max). Stay in character. B
 Reply only with the response text, no quotes or explanation.`;
 
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + geminiApiKey,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' +
+        geminiApiKey,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -627,7 +692,7 @@ Reply only with the response text, no quotes or explanation.`;
       return generateCannedReply(botName, userReply);
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!replyText) {
@@ -657,13 +722,16 @@ function generateCannedReply(botName: string, userReply: string): string {
   if (replyLower.includes('thank')) {
     return "You're welcome!";
   }
-  if (replyLower.includes('bot') && (replyLower.includes('bad') || replyLower.includes('stupid') || replyLower.includes('dumb'))) {
+  if (
+    replyLower.includes('bot') &&
+    (replyLower.includes('bad') || replyLower.includes('stupid') || replyLower.includes('dumb'))
+  ) {
     return 'Beep boop. I do my best!';
   }
   if (replyLower.includes('good bot')) {
     return '*happy robot noises* Thanks!';
   }
-  
+
   // Default
   return "I'm just a bot, but thanks for the feedback!";
 }

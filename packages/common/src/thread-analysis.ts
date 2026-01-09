@@ -4,7 +4,12 @@
 import { TriggerContext, JobContext } from '@devvit/public-api';
 import { rateLimitedFetch } from './http.js';
 import { LeaderboardData, ACHIEVEMENT_XP } from './leaderboard.js';
-import { checkAchievements, getHighestNewAchievement, TIER_EMOJIS, Achievement } from './achievements.js';
+import {
+  checkAchievements,
+  getHighestNewAchievement,
+  TIER_EMOJIS,
+  Achievement,
+} from './achievements.js';
 import { detectTalkingPoints } from './meme-detector.js';
 
 type AppContext = TriggerContext | JobContext;
@@ -80,7 +85,10 @@ interface ThreadAnalysis {
 /**
  * Fetch and flatten all comments from a Reddit thread
  */
-async function fetchThreadComments(postId: string, subreddit: string): Promise<{
+async function fetchThreadComments(
+  postId: string,
+  subreddit: string
+): Promise<{
   post: { title: string; author: string; score: number };
   comments: RedditComment[];
 }> {
@@ -116,7 +124,11 @@ async function fetchThreadComments(postId: string, subreddit: string): Promise<{
   extractComments(commentsData);
 
   return {
-    post: { title: postData.title || '', author: postData.author || '', score: postData.score || 0 },
+    post: {
+      title: postData.title || '',
+      author: postData.author || '',
+      score: postData.score || 0,
+    },
     comments,
   };
 }
@@ -133,8 +145,10 @@ export async function analyzeThread(
   if (!post.title || comments.length === 0) return null;
 
   const targetLower = targetSubreddit.toLowerCase();
-  const targetMentions = comments.filter(c =>
-    c.body.toLowerCase().includes(targetLower) || c.body.toLowerCase().includes(`r/${targetLower}`)
+  const targetMentions = comments.filter(
+    (c) =>
+      c.body.toLowerCase().includes(targetLower) ||
+      c.body.toLowerCase().includes(`r/${targetLower}`)
   ).length;
 
   // Group by author, find best quote
@@ -148,21 +162,41 @@ export async function analyzeThread(
 
   const haters: HaterData[] = [];
   for (const [author, cmts] of authorComments) {
-    const targetCmts = cmts.filter(c => c.body.toLowerCase().includes(targetLower));
+    const targetCmts = cmts.filter((c) => c.body.toLowerCase().includes(targetLower));
     const best = (targetCmts.length > 0 ? targetCmts : cmts).sort((a, b) => b.score - a.score)[0];
     if (!best || best.score < 10) continue;
 
     let points = best.score >= 100 ? 3 : best.score >= 50 ? 2 : 1;
     if (author === post.author) points += 2;
 
-    let quote = best.body.split('\n').filter(l => !l.trim().startsWith('>')).join(' ').replace(/\s+/g, ' ').trim();
+    let quote = best.body
+      .split('\n')
+      .filter((l) => !l.trim().startsWith('>'))
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (quote.length > 400) quote = quote.slice(0, 400) + '...';
 
-    haters.push({ username: author, points, quote, quoteScore: best.score, quoteLink: best.permalink });
+    haters.push({
+      username: author,
+      points,
+      quote,
+      quoteScore: best.score,
+      quoteLink: best.permalink,
+    });
   }
 
   haters.sort((a, b) => b.points - a.points || b.quoteScore - a.quoteScore);
-  return { postId, postTitle: post.title, postAuthor: post.author, postScore: post.score, subreddit: sourceSubreddit, commentCount: comments.length, targetMentions, haters: haters.slice(0, 15) };
+  return {
+    postId,
+    postTitle: post.title,
+    postAuthor: post.author,
+    postScore: post.score,
+    subreddit: sourceSubreddit,
+    commentCount: comments.length,
+    targetMentions,
+    haters: haters.slice(0, 15),
+  };
 }
 
 /**
@@ -177,9 +211,14 @@ export async function recordAnalyzedHaters(
   let data = await getLeaderboard(context);
   if (!data) {
     data = {
-      updatedAt: Date.now(), totalHostileLinks: 0,
-      subreddits: {}, subredditAltMappings: {}, topSubreddits: [],
-      users: {}, userAltMappings: {}, topUsers: [],
+      updatedAt: Date.now(),
+      totalHostileLinks: 0,
+      subreddits: {},
+      subredditAltMappings: {},
+      topSubreddits: [],
+      users: {},
+      userAltMappings: {},
+      topUsers: [],
     };
   }
 
@@ -189,7 +228,13 @@ export async function recordAnalyzedHaters(
 
   // Update subreddit
   if (!data.subreddits[subKey]) {
-    data.subreddits[subKey] = { subreddit: analysis.subreddit, hostileLinks: 0, adversarialCount: 0, hatefulCount: 0, lastSeen: now };
+    data.subreddits[subKey] = {
+      subreddit: analysis.subreddit,
+      hostileLinks: 0,
+      adversarialCount: 0,
+      hatefulCount: 0,
+      lastSeen: now,
+    };
   }
   data.subreddits[subKey].hostileLinks++;
   data.subreddits[subKey].adversarialCount++;
@@ -203,8 +248,14 @@ export async function recordAnalyzedHaters(
 
     if (!data.users[userKey]) {
       data.users[userKey] = {
-        username: hater.username, hostileLinks: 0, adversarialCount: 0, hatefulCount: 0,
-        modLogSpamCount: 0, tributeRequestCount: 0, lastSeen: now, homeSubreddits: [],
+        username: hater.username,
+        hostileLinks: 0,
+        adversarialCount: 0,
+        hatefulCount: 0,
+        modLogSpamCount: 0,
+        tributeRequestCount: 0,
+        lastSeen: now,
+        homeSubreddits: [],
       };
     }
 
@@ -224,7 +275,7 @@ export async function recordAnalyzedHaters(
 
     // Detect talking points in quote for meme achievements
     const detectedMemes = detectTalkingPoints(hater.quote);
-    const memeIds = detectedMemes.map(m => m.id);
+    const memeIds = detectedMemes.map((m) => m.id);
 
     // Check achievements with meme context
     const unlocks = await checkAchievements(context, hater.username, entry, data, {
@@ -241,8 +292,10 @@ export async function recordAnalyzedHaters(
         const xp = ACHIEVEMENT_XP[unlock.achievement.tier] || 0;
         entry.achievementXP = (entry.achievementXP || 0) + xp;
         // Track highest tier
-        if (!entry.highestAchievementTier ||
-            getTierRank(unlock.achievement.tier) > getTierRank(entry.highestAchievementTier)) {
+        if (
+          !entry.highestAchievementTier ||
+          getTierRank(unlock.achievement.tier) > getTierRank(entry.highestAchievementTier)
+        ) {
           entry.highestAchievementTier = unlock.achievement.tier;
         }
       }
@@ -261,22 +314,40 @@ export async function recordAnalyzedHaters(
 
   // Recalculate rankings
   data.topSubreddits = Object.values(data.subreddits)
-    .filter(e => !e.isAltOf)
-    .map(e => ({ subreddit: e.subreddit, score: e.adversarialCount + e.hatefulCount * 3, alts: e.knownAlts?.length || 0 }))
-    .sort((a, b) => b.score - a.score).slice(0, 10);
+    .filter((e) => !e.isAltOf)
+    .map((e) => ({
+      subreddit: e.subreddit,
+      score: e.adversarialCount + e.hatefulCount * 3,
+      alts: e.knownAlts?.length || 0,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
 
   data.topUsers = Object.values(data.users)
-    .filter(e => !e.isAltOf)
-    .map(e => ({ username: e.username, score: e.adversarialCount + e.hatefulCount * 3 + e.modLogSpamCount * 2, alts: e.knownAlts?.length || 0 }))
-    .sort((a, b) => b.score - a.score).slice(0, 10);
+    .filter((e) => !e.isAltOf)
+    .map((e) => ({
+      username: e.username,
+      score: e.adversarialCount + e.hatefulCount * 3 + e.modLogSpamCount * 2,
+      alts: e.knownAlts?.length || 0,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
 
   // Save
   const subredditName = await context.reddit.getCurrentSubredditName();
   const content = JSON.stringify(data, null, 2);
   try {
-    await context.reddit.updateWikiPage({ subredditName, page: 'hub-bot-9000/hater-leaderboard', content });
+    await context.reddit.updateWikiPage({
+      subredditName,
+      page: 'hub-bot-9000/hater-leaderboard',
+      content,
+    });
   } catch {
-    await context.reddit.createWikiPage({ subredditName, page: 'hub-bot-9000/hater-leaderboard', content });
+    await context.reddit.createWikiPage({
+      subredditName,
+      page: 'hub-bot-9000/hater-leaderboard',
+      content,
+    });
   }
 
   return { added: analysis.haters.length, achievements };
@@ -343,7 +414,8 @@ export async function analyzeAndRecordThread(
 
   const analysis = await analyzeThread(postId, sourceSubreddit, targetSubreddit);
   if (!analysis) return { success: false, message: 'Could not fetch thread' };
-  if (analysis.haters.length === 0) return { success: true, message: 'No significant haters found', hatersAdded: 0, analysis };
+  if (analysis.haters.length === 0)
+    return { success: true, message: 'No significant haters found', hatersAdded: 0, analysis };
 
   const { added, achievements } = await recordAnalyzedHaters(context, analysis);
 
@@ -402,7 +474,7 @@ export async function saveAnalysisToWiki(
     commentCount: analysis.commentCount,
     targetMentions: analysis.targetMentions,
     hatersFound: analysis.haters.length,
-    haters: analysis.haters.map(h => ({
+    haters: analysis.haters.map((h) => ({
       username: h.username,
       points: h.points,
       quote: h.quote,
@@ -410,7 +482,7 @@ export async function saveAnalysisToWiki(
       quoteLink: h.quoteLink,
       achievement: h.newAchievement?.name,
     })),
-    achievements: achievements.map(a => ({
+    achievements: achievements.map((a) => ({
       user: a.user,
       achievementName: a.achievement.name,
       tier: a.achievement.tier,
@@ -476,7 +548,6 @@ export function formatAnalysisMarkdown(stored: StoredAnalysis): string {
 /**
  * Format summary markdown listing recent analyses
  */
-
 
 /**
  * Get tier rank for comparison

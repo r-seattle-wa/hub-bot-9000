@@ -5,9 +5,7 @@ import { isValidUrl } from '../utils/linkValidator.js';
  * Create the user event submission form
  * Note: This returns a form definition to be used with context.ui.showForm()
  */
-export function createUserEventForm(
-  onSubmit: (data: any) => Promise<void>
-) {
+export function createUserEventForm(onSubmit: (data: any) => Promise<void>) {
   return Devvit.createForm(
     {
       fields: [
@@ -86,7 +84,10 @@ export function validateEventForm(data: {
     return { valid: false, error: 'Event link is required' };
   }
   if (!isValidUrl(data.url)) {
-    return { valid: false, error: 'Please enter a valid URL (must start with http:// or https://)' };
+    return {
+      valid: false,
+      error: 'Please enter a valid URL (must start with http:// or https://)',
+    };
   }
 
   // Description validation
@@ -114,7 +115,9 @@ export const SubmitEventButton = ({ onPress }: SubmitEventButtonProps): JSX.Elem
       alignment="center middle"
       onPress={onPress}
     >
-      <text size="medium" weight="bold" color="#0e0e1a">+ Submit Event</text>
+      <text size="medium" weight="bold" color="#0e0e1a">
+        + Submit Event
+      </text>
     </hstack>
   );
 };

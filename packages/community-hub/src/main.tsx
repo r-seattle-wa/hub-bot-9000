@@ -72,9 +72,13 @@ Devvit.addMenuItem({
       subredditName: subredditName,
       preview: (
         <vstack padding="large" alignment="center middle" backgroundColor="#0e0e1a" height="100%">
-          <text size="xlarge" weight="bold" color="white">Loading Community Hub...</text>
+          <text size="xlarge" weight="bold" color="white">
+            Loading Community Hub...
+          </text>
           <spacer size="medium" />
-          <text size="medium" color="#888888">This may take a moment</text>
+          <text size="medium" color="#888888">
+            This may take a moment
+          </text>
         </vstack>
       ),
     });
@@ -96,7 +100,9 @@ Devvit.addMenuItem({
       title: 'Hub Bot Events Feed',
       preview: (
         <vstack padding="medium" alignment="center middle" grow>
-          <text weight="bold" size="large">Hub Bot Events</text>
+          <text weight="bold" size="large">
+            Hub Bot Events
+          </text>
           <text color="neutral-content-weak">Loading...</text>
         </vstack>
       ),
@@ -175,7 +181,10 @@ Devvit.addMenuItem({
         // Show remaining count
         const remaining = pendingEvents.length - 1;
         if (remaining > 0) {
-          context.ui.showToast({ text: `${remaining} more events pending review`, appearance: 'neutral' });
+          context.ui.showToast({
+            text: `${remaining} more events pending review`,
+            appearance: 'neutral',
+          });
         }
       }
     );

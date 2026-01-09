@@ -16,10 +16,12 @@ export async function fetchSubredditContext(
   limit: number = MAX_POSTS
 ): Promise<string> {
   try {
-    const posts = await context.reddit.getHotPosts({
-      subredditName,
-      limit,
-    }).all();
+    const posts = await context.reddit
+      .getHotPosts({
+        subredditName,
+        limit,
+      })
+      .all();
 
     const contextParts: string[] = [];
 
@@ -31,16 +33,18 @@ export async function fetchSubredditContext(
       }
 
       try {
-        const comments = await context.reddit.getComments({
-          postId: post.id,
-          limit: MAX_COMMENTS_PER_POST,
-          sort: 'top',
-        }).all();
+        const comments = await context.reddit
+          .getComments({
+            postId: post.id,
+            limit: MAX_COMMENTS_PER_POST,
+            sort: 'top',
+          })
+          .all();
 
         const topComments = comments
-          .filter(c => c.body && c.body.length < MAX_COMMENT_LENGTH && c.body !== '[deleted]')
+          .filter((c) => c.body && c.body.length < MAX_COMMENT_LENGTH && c.body !== '[deleted]')
           .slice(0, 2)
-          .map(c => c.body);
+          .map((c) => c.body);
 
         if (topComments.length > 0) {
           postText += `\nTop comments: ${topComments.join(' | ')}`;
@@ -75,11 +79,13 @@ export async function fetchUserContext(
   const contentParts: string[] = [];
 
   try {
-    const comments = await context.reddit.getCommentsByUser({
-      username,
-      limit: commentLimit,
-      sort: 'new',
-    }).all();
+    const comments = await context.reddit
+      .getCommentsByUser({
+        username,
+        limit: commentLimit,
+        sort: 'new',
+      })
+      .all();
 
     for (const comment of comments) {
       if (comment.body && comment.body.length > 0 && comment.body !== '[deleted]') {
@@ -92,11 +98,13 @@ export async function fetchUserContext(
   }
 
   try {
-    const posts = await context.reddit.getPostsByUser({
-      username,
-      limit: postLimit,
-      sort: 'new',
-    }).all();
+    const posts = await context.reddit
+      .getPostsByUser({
+        username,
+        limit: postLimit,
+        sort: 'new',
+      })
+      .all();
 
     for (const post of posts) {
       let text = `[r/${post.subredditName}] Title: ${post.title}`;

@@ -22,10 +22,12 @@ export async function fetchSubredditContext(
   limit: number = MAX_POSTS
 ): Promise<string> {
   try {
-    const posts = await context.reddit.getHotPosts({
-      subredditName,
-      limit,
-    }).all();
+    const posts = await context.reddit
+      .getHotPosts({
+        subredditName,
+        limit,
+      })
+      .all();
 
     const contextParts: string[] = [];
 
@@ -37,16 +39,18 @@ export async function fetchSubredditContext(
       }
 
       try {
-        const comments = await context.reddit.getComments({
-          postId: post.id,
-          limit: 3,
-          sort: 'top',
-        }).all();
+        const comments = await context.reddit
+          .getComments({
+            postId: post.id,
+            limit: 3,
+            sort: 'top',
+          })
+          .all();
 
         const topComments = comments
-          .filter(c => c.body && c.body.length < MAX_COMMENT_LENGTH && c.body !== '[deleted]')
+          .filter((c) => c.body && c.body.length < MAX_COMMENT_LENGTH && c.body !== '[deleted]')
           .slice(0, 2)
-          .map(c => c.body);
+          .map((c) => c.body);
 
         if (topComments.length > 0) {
           postText += `\nTop comments: ${topComments.join(' | ')}`;
@@ -81,11 +85,13 @@ export async function fetchUserContext(
   const contentParts: string[] = [];
 
   try {
-    const comments = await context.reddit.getCommentsByUser({
-      username,
-      limit: commentLimit,
-      sort: 'new',
-    }).all();
+    const comments = await context.reddit
+      .getCommentsByUser({
+        username,
+        limit: commentLimit,
+        sort: 'new',
+      })
+      .all();
 
     for (const comment of comments) {
       if (comment.body && comment.body.length > 0 && comment.body !== '[deleted]') {
@@ -97,11 +103,13 @@ export async function fetchUserContext(
   }
 
   try {
-    const posts = await context.reddit.getPostsByUser({
-      username,
-      limit: postLimit,
-      sort: 'new',
-    }).all();
+    const posts = await context.reddit
+      .getPostsByUser({
+        username,
+        limit: postLimit,
+        sort: 'new',
+      })
+      .all();
 
     for (const post of posts) {
       let text = `[r/${post.subredditName}] Title: ${post.title}`;
@@ -182,7 +190,11 @@ const TRIBUTE_TONE_GUIDES: Record<SarcasmLevel, string> = {
   [SarcasmLevel.FREAKOUT]: `TONE: MAXIMUM DRAMATIC ENERGY. ALL CAPS acceptable.`,
 };
 
-function getTributeSystemPrompt(targetName: string, targetType: 'subreddit' | 'user', sarcasmLevel: SarcasmLevel): string {
+function getTributeSystemPrompt(
+  targetName: string,
+  targetType: 'subreddit' | 'user',
+  sarcasmLevel: SarcasmLevel
+): string {
   const toneGuide = TRIBUTE_TONE_GUIDES[sarcasmLevel];
 
   if (targetType === 'subreddit') {
@@ -202,7 +214,11 @@ Generate 2-4 sentences. This is a LOVING tribute, not harassment.`;
   }
 }
 
-function getTributeUserPrompt(context: string, targetName: string, targetType: 'subreddit' | 'user'): string {
+function getTributeUserPrompt(
+  context: string,
+  targetName: string,
+  targetType: 'subreddit' | 'user'
+): string {
   const prefix = targetType === 'subreddit' ? 'r/' : 'u/';
   return `Recent content from ${prefix}${targetName}:
 
@@ -211,12 +227,16 @@ ${context.slice(0, 4000)}
 Generate a short satirical tribute (2-4 sentences). Reply ONLY with the tribute text.`;
 }
 
-async function generateWithGroq(systemPrompt: string, userPrompt: string, apiKey: string): Promise<string> {
+async function generateWithGroq(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string
+): Promise<string> {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
@@ -230,13 +250,17 @@ async function generateWithGroq(systemPrompt: string, userPrompt: string, apiKey
   });
 
   if (!response.ok) throw new Error(`Groq API error: ${response.status}`);
-  const data = await response.json() as GroqResponse;
+  const data = (await response.json()) as GroqResponse;
   const content = data.choices?.[0]?.message?.content?.trim();
   if (!content) throw new Error('Empty response from Groq');
   return content;
 }
 
-async function generateWithGemini(systemPrompt: string, userPrompt: string, apiKey: string): Promise<string> {
+async function generateWithGemini(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string
+): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
@@ -250,13 +274,17 @@ async function generateWithGemini(systemPrompt: string, userPrompt: string, apiK
   );
 
   if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-  const data = await response.json() as GeminiResponse;
+  const data = (await response.json()) as GeminiResponse;
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
   if (!content) throw new Error('Empty response from Gemini');
   return content;
 }
 
-function generateFallbackTribute(targetName: string, targetType: 'subreddit' | 'user', sarcasmLevel: SarcasmLevel): string {
+function generateFallbackTribute(
+  targetName: string,
+  targetType: 'subreddit' | 'user',
+  sarcasmLevel: SarcasmLevel
+): string {
   const prefix = targetType === 'subreddit' ? 'r/' : 'u/';
   const templates: Record<SarcasmLevel, string> = {
     [SarcasmLevel.POLITE]: `The wonderful ${prefix}${targetName} continues to inspire us all.`,
@@ -338,7 +366,10 @@ export function parseTributeCommand(text: string, botUsername?: string): Tribute
 
   // Pattern 3: Bot mention with target
   const botPattern = botUsername
-    ? new RegExp(`(?:u\\/${botUsername}|@${botUsername})[,:]?\\s+(?:what\\s+would\\s+)?(u\\/[\\w-]+|r\\/[\\w-]+)`, 'i')
+    ? new RegExp(
+        `(?:u\\/${botUsername}|@${botUsername})[,:]?\\s+(?:what\\s+would\\s+)?(u\\/[\\w-]+|r\\/[\\w-]+)`,
+        'i'
+      )
     : /(?:u\/farewell-hero|u\/brigade-sentinel|@farewell-hero|@brigade-sentinel)[,:]?\s+(?:what\s+would\s+)?(u\/[\w-]+|r\/[\w-]+)/i;
 
   const mentionMatch = text.match(botPattern);

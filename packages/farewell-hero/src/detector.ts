@@ -56,7 +56,6 @@ const NEGATIVE_PATTERNS: RegExp[] = [
   /\bwhy (did|are) (you|people) (leaving|unsubscribing)\b/i, // Asking why others left
 ];
 
-
 /**
  * Patterns that indicate political/echo chamber complaints (may or may not be leaving)
  */
@@ -84,13 +83,13 @@ export function detectPoliticalComplaint(text: string): PoliticalComplaintResult
     if (pattern.test(text)) {
       const lowerText = text.toLowerCase();
       let complaintType: 'right-leaning' | 'left-leaning' | 'general' = 'general';
-      
+
       if (/trump|maga|conservative|right.?wing|republican/i.test(lowerText)) {
         complaintType = 'right-leaning'; // They think the sub is right-leaning
       } else if (/leftist|liberal|progressive|democrat/i.test(lowerText)) {
         complaintType = 'left-leaning'; // They think the sub is left-leaning
       }
-      
+
       return {
         isPoliticalComplaint: true,
         complaintType,
@@ -98,7 +97,7 @@ export function detectPoliticalComplaint(text: string): PoliticalComplaintResult
       };
     }
   }
-  
+
   return { isPoliticalComplaint: false, complaintType: null, matchedPattern: null };
 }
 

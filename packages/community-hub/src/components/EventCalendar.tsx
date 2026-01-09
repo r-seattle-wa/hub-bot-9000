@@ -26,7 +26,9 @@ export const EventCalendar = ({
       {/* Event Sources - Compact List */}
       {showSources && eventSources.length > 0 ? (
         <vstack padding="small" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
-          <text size="small" weight="bold" color="#888888">FIND EVENTS</text>
+          <text size="small" weight="bold" color="#888888">
+            FIND EVENTS
+          </text>
           <vstack gap="small">
             {eventSources.map((source) => (
               <hstack
@@ -38,8 +40,12 @@ export const EventCalendar = ({
                 onPress={() => onSourceClick?.(source.url)}
               >
                 <text size="medium">{source.icon}</text>
-                <text size="xsmall" color="#4da6ff" grow>{source.name}</text>
-                <text size="xsmall" color="#666666">→</text>
+                <text size="xsmall" color="#4da6ff" grow>
+                  {source.name}
+                </text>
+                <text size="xsmall" color="#666666">
+                  →
+                </text>
               </hstack>
             ))}
           </vstack>
@@ -51,15 +57,14 @@ export const EventCalendar = ({
         <vstack padding="medium" backgroundColor="#1a1a2e" cornerRadius="medium" gap="small">
           <hstack gap="small" alignment="middle">
             <text size="large">📅</text>
-            <text size="medium" weight="bold" color="white">Community Events</text>
+            <text size="medium" weight="bold" color="white">
+              Community Events
+            </text>
           </hstack>
           <spacer size="small" />
 
           {displayEvents.map((event) => (
-            <EventItem
-              event={event}
-              onClick={onEventClick}
-            />
+            <EventItem event={event} onClick={onEventClick} />
           ))}
 
           {events.length > maxEvents ? (
@@ -73,7 +78,9 @@ export const EventCalendar = ({
       {/* Empty state */}
       {displayEvents.length === 0 && !showSources ? (
         <vstack padding="medium" alignment="center middle">
-          <text size="small" color="#888888">No upcoming events</text>
+          <text size="small" color="#888888">
+            No upcoming events
+          </text>
         </vstack>
       ) : null}
     </vstack>
@@ -118,7 +125,9 @@ const EventItem = ({ event, onClick }: EventItemProps): JSX.Element => {
         ) : null}
       </vstack>
 
-      <text size="small" color="#4da6ff">→</text>
+      <text size="small" color="#4da6ff">
+        →
+      </text>
     </hstack>
   );
 };

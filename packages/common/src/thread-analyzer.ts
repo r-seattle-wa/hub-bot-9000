@@ -112,11 +112,7 @@ export async function analyzeThreadForBrigade(
   postId: string,
   options: AnalyzeThreadOptions = {}
 ): Promise<BrigadeEvidence> {
-  const {
-    maxComments = 200,
-    historyDepth = 100,
-    includeDeleted = true,
-  } = options;
+  const { maxComments = 200, historyDepth = 100, includeDeleted = true } = options;
 
   // Get post details
   const post = await context.reddit.getPostById(postId);
@@ -138,12 +134,12 @@ export async function analyzeThreadForBrigade(
   if (includeDeleted) {
     try {
       const pullpushComments = await getDeletedComments(postId.replace('t3_', ''));
-      deletedComments = pullpushComments.filter(c =>
-        c.author !== '[deleted]' &&
-        c.body !== '[deleted]' &&
-        c.body !== '[removed]'
+      deletedComments = pullpushComments.filter(
+        (c) => c.author !== '[deleted]' && c.body !== '[deleted]' && c.body !== '[removed]'
       );
-      console.log(`[thread-analyzer] Found ${deletedComments.length} archived comments from PullPush`);
+      console.log(
+        `[thread-analyzer] Found ${deletedComments.length} archived comments from PullPush`
+      );
     } catch (e) {
       console.log(`[thread-analyzer] PullPush unavailable: ${e}`);
     }
@@ -260,11 +256,13 @@ async function analyzeCommenter(
 
   try {
     // Get recent comments
-    const userComments = await context.reddit.getCommentsByUser({
-      username,
-      limit: historyDepth,
-      sort: 'new',
-    }).all();
+    const userComments = await context.reddit
+      .getCommentsByUser({
+        username,
+        limit: historyDepth,
+        sort: 'new',
+      })
+      .all();
 
     for (const c of userComments) {
       const sub = c.subredditName;
@@ -279,11 +277,13 @@ async function analyzeCommenter(
     }
 
     // Get recent posts
-    const userPosts = await context.reddit.getPostsByUser({
-      username,
-      limit: 50,
-      sort: 'new',
-    }).all();
+    const userPosts = await context.reddit
+      .getPostsByUser({
+        username,
+        limit: 50,
+        sort: 'new',
+      })
+      .all();
 
     for (const p of userPosts) {
       const sub = p.subredditName;
@@ -322,9 +322,13 @@ async function analyzeCommenter(
     if (home.percentage > 30 && homeLower !== targetSubLower) {
       // Seattle-specific checks
       if (targetSubLower === 'seattlewa' && homeLower === 'seattle') {
-        suspicionReasons.push(`Primary activity in rival subreddit r/${home.subreddit} (${home.percentage}%)`);
+        suspicionReasons.push(
+          `Primary activity in rival subreddit r/${home.subreddit} (${home.percentage}%)`
+        );
       } else if (targetSubLower === 'seattle' && homeLower === 'seattlewa') {
-        suspicionReasons.push(`Primary activity in rival subreddit r/${home.subreddit} (${home.percentage}%)`);
+        suspicionReasons.push(
+          `Primary activity in rival subreddit r/${home.subreddit} (${home.percentage}%)`
+        );
       }
     }
   }
@@ -364,11 +368,13 @@ async function getThreadComments(
   const comments: Comment[] = [];
 
   try {
-    const listing = await context.reddit.getComments({
-      postId,
-      limit: maxComments,
-      sort: 'new',
-    }).all();
+    const listing = await context.reddit
+      .getComments({
+        postId,
+        limit: maxComments,
+        sort: 'new',
+      })
+      .all();
 
     comments.push(...listing);
   } catch (e) {
@@ -392,13 +398,12 @@ function aggregateEvidence(
   deletedCommentCount: number
 ): BrigadeEvidence {
   // Count first-time posters
-  const firstTimePosters = profiles.filter(p => p.isFirstTimeInSub);
-  const firstTimePosterPercentage = profiles.length > 0
-    ? Math.round((firstTimePosters.length / profiles.length) * 100)
-    : 0;
+  const firstTimePosters = profiles.filter((p) => p.isFirstTimeInSub);
+  const firstTimePosterPercentage =
+    profiles.length > 0 ? Math.round((firstTimePosters.length / profiles.length) * 100) : 0;
 
   // Count suspicious accounts
-  const suspiciousAccounts = profiles.filter(p => p.isSuspicious);
+  const suspiciousAccounts = profiles.filter((p) => p.isSuspicious);
 
   // Aggregate source subreddits (excluding target subreddit)
   const sourceSubCounts = new Map<string, number>();
@@ -406,10 +411,7 @@ function aggregateEvidence(
     if (profile.isFirstTimeInSub) {
       for (const home of profile.homeSubreddits) {
         if (home.subreddit.toLowerCase() !== subreddit.toLowerCase()) {
-          sourceSubCounts.set(
-            home.subreddit,
-            (sourceSubCounts.get(home.subreddit) || 0) + 1
-          );
+          sourceSubCounts.set(home.subreddit, (sourceSubCounts.get(home.subreddit) || 0) + 1);
         }
       }
     }
@@ -419,16 +421,15 @@ function aggregateEvidence(
     .map(([sub, count]) => ({
       subreddit: sub,
       count,
-      percentage: firstTimePosters.length > 0
-        ? Math.round((count / firstTimePosters.length) * 100)
-        : 0,
+      percentage:
+        firstTimePosters.length > 0 ? Math.round((count / firstTimePosters.length) * 100) : 0,
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
   // Temporal wave analysis
   const waves = detectTemporalWaves(profiles);
-  const hasCoordinatedWave = waves.some(w => w.outsiderCount >= 5 && w.intensity > 2);
+  const hasCoordinatedWave = waves.some((w) => w.outsiderCount >= 5 && w.intensity > 2);
 
   // Talking point aggregation
   const talkingPointCounts = new Map<string, number>();
@@ -485,7 +486,9 @@ function aggregateEvidence(
     summaryParts.push(`${firstTimePosterPercentage}% first-time posters`);
   }
   if (topSourceSubreddits.length > 0 && topSourceSubreddits[0].count >= 3) {
-    summaryParts.push(`${topSourceSubreddits[0].count} users from r/${topSourceSubreddits[0].subreddit}`);
+    summaryParts.push(
+      `${topSourceSubreddits[0].count} users from r/${topSourceSubreddits[0].subreddit}`
+    );
   }
   if (hasCoordinatedWave) {
     summaryParts.push('coordinated arrival pattern detected');
@@ -494,9 +497,10 @@ function aggregateEvidence(
     summaryParts.push(`${suspiciousAccounts.length} suspicious accounts`);
   }
 
-  const summary = summaryParts.length > 0
-    ? `Brigade indicators: ${summaryParts.join(', ')}`
-    : 'No significant brigade indicators detected';
+  const summary =
+    summaryParts.length > 0
+      ? `Brigade indicators: ${summaryParts.join(', ')}`
+      : 'No significant brigade indicators detected';
 
   return {
     confidence,
@@ -543,8 +547,9 @@ function detectTemporalWaves(profiles: CommenterProfile[]): TemporalWave[] {
     if (profile.commentTime - windowStart > windowMs) {
       // Process current window if significant
       if (windowProfiles.length >= 3) {
-        const outsiders = windowProfiles.filter(p => p.isFirstTimeInSub);
-        const durationMinutes = (windowProfiles[windowProfiles.length - 1].commentTime - windowStart) / 60000;
+        const outsiders = windowProfiles.filter((p) => p.isFirstTimeInSub);
+        const durationMinutes =
+          (windowProfiles[windowProfiles.length - 1].commentTime - windowStart) / 60000;
 
         waves.push({
           startTime: windowStart,
@@ -552,7 +557,8 @@ function detectTemporalWaves(profiles: CommenterProfile[]): TemporalWave[] {
           commentCount: windowProfiles.length,
           uniqueUsers: windowProfiles.length,
           outsiderCount: outsiders.length,
-          intensity: durationMinutes > 0 ? windowProfiles.length / durationMinutes : windowProfiles.length,
+          intensity:
+            durationMinutes > 0 ? windowProfiles.length / durationMinutes : windowProfiles.length,
         });
       }
 
@@ -566,8 +572,9 @@ function detectTemporalWaves(profiles: CommenterProfile[]): TemporalWave[] {
 
   // Process final window
   if (windowProfiles.length >= 3) {
-    const outsiders = windowProfiles.filter(p => p.isFirstTimeInSub);
-    const durationMinutes = (windowProfiles[windowProfiles.length - 1].commentTime - windowStart) / 60000;
+    const outsiders = windowProfiles.filter((p) => p.isFirstTimeInSub);
+    const durationMinutes =
+      (windowProfiles[windowProfiles.length - 1].commentTime - windowStart) / 60000;
 
     waves.push({
       startTime: windowStart,
@@ -575,11 +582,12 @@ function detectTemporalWaves(profiles: CommenterProfile[]): TemporalWave[] {
       commentCount: windowProfiles.length,
       uniqueUsers: windowProfiles.length,
       outsiderCount: outsiders.length,
-      intensity: durationMinutes > 0 ? windowProfiles.length / durationMinutes : windowProfiles.length,
+      intensity:
+        durationMinutes > 0 ? windowProfiles.length / durationMinutes : windowProfiles.length,
     });
   }
 
-  return waves.filter(w => w.commentCount >= 5 || w.outsiderCount >= 3);
+  return waves.filter((w) => w.commentCount >= 5 || w.outsiderCount >= 3);
 }
 
 // ============================================================================
@@ -596,7 +604,9 @@ export function formatBrigadeReport(evidence: BrigadeEvidence): string {
   lines.push(`# Brigade Analysis Report`);
   lines.push(``);
   lines.push(`**Thread:** [${evidence.postTitle}](${evidence.postUrl})`);
-  lines.push(`**Confidence:** ${evidence.confidence.toUpperCase()} (${evidence.confidenceScore}/100)`);
+  lines.push(
+    `**Confidence:** ${evidence.confidence.toUpperCase()} (${evidence.confidenceScore}/100)`
+  );
   lines.push(``);
   lines.push(`## Summary`);
   lines.push(evidence.summary);
@@ -608,7 +618,9 @@ export function formatBrigadeReport(evidence: BrigadeEvidence): string {
   lines.push(`|--------|-------|`);
   lines.push(`| Total Comments | ${evidence.totalComments} |`);
   lines.push(`| Unique Commenters Analyzed | ${evidence.uniqueCommenters} |`);
-  lines.push(`| First-Time Posters | ${evidence.firstTimePosters} (${evidence.firstTimePosterPercentage}%) |`);
+  lines.push(
+    `| First-Time Posters | ${evidence.firstTimePosters} (${evidence.firstTimePosterPercentage}%) |`
+  );
   lines.push(`| Suspicious Accounts | ${evidence.suspiciousAccounts} |`);
   lines.push(`| Deleted Comments (PullPush) | ${evidence.deletedCommentCount} |`);
   lines.push(``);
@@ -633,7 +645,9 @@ export function formatBrigadeReport(evidence: BrigadeEvidence): string {
     lines.push(`|------|----------|-----------|-----------|`);
     for (const wave of evidence.waves) {
       const time = new Date(wave.startTime).toLocaleTimeString();
-      lines.push(`| ${time} | ${wave.commentCount} | ${wave.outsiderCount} | ${wave.intensity.toFixed(1)}/min |`);
+      lines.push(
+        `| ${time} | ${wave.commentCount} | ${wave.outsiderCount} | ${wave.intensity.toFixed(1)}/min |`
+      );
     }
     lines.push(``);
   }
@@ -654,9 +668,13 @@ export function formatBrigadeReport(evidence: BrigadeEvidence): string {
     for (const profile of evidence.suspiciousProfiles.slice(0, 10)) {
       lines.push(`### u/${profile.username}`);
       lines.push(`- Account age: ${profile.accountAge} days, Karma: ${profile.karma}`);
-      lines.push(`- Prior activity in sub: ${profile.priorCommentsInSub} comments, ${profile.priorPostsInSub} posts`);
+      lines.push(
+        `- Prior activity in sub: ${profile.priorCommentsInSub} comments, ${profile.priorPostsInSub} posts`
+      );
       if (profile.homeSubreddits.length > 0) {
-        const homes = profile.homeSubreddits.slice(0, 3).map(h => `r/${h.subreddit} (${h.percentage}%)`);
+        const homes = profile.homeSubreddits
+          .slice(0, 3)
+          .map((h) => `r/${h.subreddit} (${h.percentage}%)`);
         lines.push(`- Usually posts in: ${homes.join(', ')}`);
       }
       lines.push(`- **Flags:** ${profile.suspicionReasons.join('; ')}`);
@@ -681,7 +699,9 @@ export function formatBrigadeAlert(evidence: BrigadeEvidence): string {
   lines.push(``);
   lines.push(evidence.summary);
   lines.push(``);
-  lines.push(`- ${evidence.firstTimePosters}/${evidence.uniqueCommenters} first-time posters (${evidence.firstTimePosterPercentage}%)`);
+  lines.push(
+    `- ${evidence.firstTimePosters}/${evidence.uniqueCommenters} first-time posters (${evidence.firstTimePosterPercentage}%)`
+  );
 
   if (evidence.topSourceSubreddits.length > 0) {
     const top = evidence.topSourceSubreddits[0];
@@ -703,7 +723,7 @@ export function formatBrigadeAlert(evidence: BrigadeEvidence): string {
 // ============================================================================
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -725,7 +745,9 @@ export function formatBrigadeStickyComment(
 
   // Show brigade stats if significant
   if (evidence.firstTimePosterPercentage >= 20 || evidence.firstTimePosters >= 3) {
-    lines.push(`**${evidence.firstTimePosters}** of **${evidence.uniqueCommenters}** commenters (${evidence.firstTimePosterPercentage}%) are posting here for the first time.`);
+    lines.push(
+      `**${evidence.firstTimePosters}** of **${evidence.uniqueCommenters}** commenters (${evidence.firstTimePosterPercentage}%) are posting here for the first time.`
+    );
     lines.push(``);
   }
 
@@ -757,7 +779,9 @@ export function formatBrigadeStickyComment(
 
   // Footer
   lines.push(`---`);
-  lines.push(`*brigade-sentinel • [leaderboard](/r/${evidence.subreddit}/wiki/hub-bot-9000/hater-leaderboard)*`);
+  lines.push(
+    `*brigade-sentinel • [leaderboard](/r/${evidence.subreddit}/wiki/hub-bot-9000/hater-leaderboard)*`
+  );
 
   return lines.join('\n');
 }

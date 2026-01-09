@@ -24,8 +24,8 @@ export async function handleWeeklyPost(_: unknown, context: JobContext): Promise
 
     // Build post title
     const title = buildWeeklyTitle(
-      settings.postTitleWeekly as string || '{location} Weekly Thread - Week of {weekOf}',
-      settings.weatherLocation as string || 'Community',
+      (settings.postTitleWeekly as string) || '{location} Weekly Thread - Week of {weekOf}',
+      (settings.weatherLocation as string) || 'Community',
       now
     );
 
@@ -50,7 +50,6 @@ export async function handleWeeklyPost(_: unknown, context: JobContext): Promise
         console.error('Failed to sticky weekly post (may lack permissions):', stickyError);
       }
     }
-
   } catch (error) {
     console.error('Failed to create weekly post:', error);
   }
@@ -72,14 +71,19 @@ function buildWeeklyTitle(template: string, location: string, date: Date): strin
 /**
  * Build the weekly post body content
  */
-async function buildWeeklyPostBody(settings: Record<string, unknown>, context: JobContext): Promise<string> {
+async function buildWeeklyPostBody(
+  settings: Record<string, unknown>,
+  context: JobContext
+): Promise<string> {
   const sections: string[] = [];
   const now = new Date();
 
   // Header
   sections.push(`# Welcome to this week's community thread!\n`);
   sections.push(`**${formatWeekRange(now)}**\n`);
-  sections.push(`Use this thread to discuss anything happening this week, share events, ask questions, or just chat with your community.\n`);
+  sections.push(
+    `Use this thread to discuss anything happening this week, share events, ask questions, or just chat with your community.\n`
+  );
 
   // Weather outlook
   if (settings.enableWeather) {
@@ -112,13 +116,13 @@ async function buildWeeklyPostBody(settings: Record<string, unknown>, context: J
 
   // Community links section
   const communityLinks = parseJsonSetting<CommunityLink[]>(settings.communityLinks as string, []);
-  const validLinks = communityLinks.filter(link => link.url && link.url.trim() !== '');
+  const validLinks = communityLinks.filter((link) => link.url && link.url.trim() !== '');
   if (validLinks.length > 0) {
     sections.push(buildCommunityLinksSection(validLinks));
   }
 
   // Footer
-  const botName = settings.botName as string || 'Community Hub Bot';
+  const botName = (settings.botName as string) || 'Community Hub Bot';
   sections.push(`---\n*Posted by ${botName}*`);
 
   return sections.join('\n\n');
@@ -127,7 +131,11 @@ async function buildWeeklyPostBody(settings: Record<string, unknown>, context: J
 /**
  * Build weather outlook section
  */
-async function buildWeatherOutlook(gridPoint: string, location: string, date: Date): Promise<string> {
+async function buildWeatherOutlook(
+  gridPoint: string,
+  location: string,
+  date: Date
+): Promise<string> {
   const lines: string[] = [`## 🌤️ Weather Outlook - ${location}`];
 
   try {
@@ -154,7 +162,7 @@ async function buildWeatherOutlook(gridPoint: string, location: string, date: Da
 function buildEventSourcesSection(sources: EventSource[]): string {
   const lines: string[] = ['## 🎭 Find Events This Week'];
 
-  sources.forEach(source => {
+  sources.forEach((source) => {
     lines.push(`• ${source.icon} [${source.name}](${source.url})`);
   });
 
@@ -164,7 +172,10 @@ function buildEventSourcesSection(sources: EventSource[]): string {
 /**
  * Build user-submitted events for the week
  */
-async function buildWeeklyUserEventsSection(context: JobContext, now: Date): Promise<string | null> {
+async function buildWeeklyUserEventsSection(
+  context: JobContext,
+  now: Date
+): Promise<string | null> {
   try {
     const eventsJson = await context.redis.get('user_events');
     if (!eventsJson) return null;
@@ -188,7 +199,7 @@ async function buildWeeklyUserEventsSection(context: JobContext, now: Date): Pro
     // Sort by date
     (weekEvents as any[])
       .sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime())
-      .forEach(event => {
+      .forEach((event) => {
         const dateStr = new Date(event.dateStart).toLocaleDateString('en-US', {
           weekday: 'short',
           month: 'short',
@@ -224,7 +235,7 @@ Events must link to trusted sites (Eventbrite, Meetup, Facebook Events, governme
 function buildCommunityLinksSection(links: CommunityLink[]): string {
   const lines: string[] = ['## 🔗 Community Links'];
 
-  links.forEach(link => {
+  links.forEach((link) => {
     lines.push(`• ${link.icon} [${link.name}](${link.url})`);
   });
 

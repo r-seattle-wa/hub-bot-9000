@@ -53,10 +53,12 @@ hub-bot-9000/
 │   │   │   └── responses.ts      # 5 sarcasm levels + political responses
 │   │   └── devvit.yaml
 │   │
-│   └── hub-widget/               # Unified events dashboard
+│   └── hub-widget/               # Unified events dashboard (React webview)
 │       ├── src/
-│       │   └── main.tsx          # Custom Post Type widget
-│       └── devvit.yaml
+│       │   ├── client/           # React 19 + Vite + Tailwind
+│       │   ├── server/           # Express backend
+│       │   └── shared/           # Shared types
+│       └── devvit.json
 │
 ├── scraper-service/              # Cloud Run service (Python)
 │   ├── main.py                   # FastAPI app
@@ -441,6 +443,12 @@ devvit install r/YourSubreddit
 
 # Then in the subreddit, use menu: "Create Hub Bot Events Widget"
 ```
+
+> **Note on React Webview Architecture**: Reddit's `devvit-template-react` uses a newer
+> webview architecture (React 19 + Vite + Express with `devvit.json`). This format is
+> not yet compatible with the current Devvit CLI for custom post types. Hub-widget
+> uses the stable Devvit.blocks architecture with `devvit.yaml` until the webview
+> config schema is finalized.
 
 ### Event Types Displayed
 | Type | Icon | Color | Description |

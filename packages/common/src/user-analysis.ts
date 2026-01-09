@@ -19,12 +19,12 @@ export interface UserAnalysis {
   commentKarma?: number;
 
   // Activity patterns (from PullPush)
-  recentActivitySubs?: string[];      // Where they've been active recently
+  recentActivitySubs?: string[]; // Where they've been active recently
   postFrequency?: 'inactive' | 'low' | 'moderate' | 'high' | 'very_high';
-  accountFlags?: string[];            // e.g., 'new_account', 'low_karma', 'high_activity'
+  accountFlags?: string[]; // e.g., 'new_account', 'low_karma', 'high_activity'
 
   // Behavior analysis (Gemini, if enabled)
-  behaviorSummary?: string;           // Brief AI summary of public behavior
+  behaviorSummary?: string; // Brief AI summary of public behavior
   engagementStyle?: 'constructive' | 'neutral' | 'confrontational' | 'unknown';
 
   // Behavioral profile (The-Profiler style, if deep analysis enabled)
@@ -36,11 +36,11 @@ export interface UserAnalysis {
 export interface BehavioralProfile {
   // Big Five OCEAN traits (communication style indicators only)
   ocean?: {
-    openness: 'low' | 'moderate' | 'high';       // Curiosity, creativity in discussion
+    openness: 'low' | 'moderate' | 'high'; // Curiosity, creativity in discussion
     conscientiousness: 'low' | 'moderate' | 'high'; // Thoroughness, attention to detail
-    extraversion: 'low' | 'moderate' | 'high';   // Engagement frequency, social seeking
-    agreeableness: 'low' | 'moderate' | 'high';  // Cooperativeness, conflict avoidance
-    neuroticism: 'low' | 'moderate' | 'high';    // Emotional reactivity in posts
+    extraversion: 'low' | 'moderate' | 'high'; // Engagement frequency, social seeking
+    agreeableness: 'low' | 'moderate' | 'high'; // Cooperativeness, conflict avoidance
+    neuroticism: 'low' | 'moderate' | 'high'; // Emotional reactivity in posts
   };
 
   // Communication patterns
@@ -54,14 +54,14 @@ export interface BehavioralProfile {
   // Behavioral indicators (for moderation context)
   moderationRisk?: {
     trollingLikelihood: 'low' | 'moderate' | 'high';
-    deceptionIndicators: number;  // Count of inconsistencies found
-    brigadingPattern: boolean;    // Pattern of cross-sub conflict
+    deceptionIndicators: number; // Count of inconsistencies found
+    brigadingPattern: boolean; // Pattern of cross-sub conflict
     sockpuppetRisk: 'low' | 'moderate' | 'high';
   };
 
   // Analysis confidence
   confidence: 'low' | 'moderate' | 'high';
-  sampleSize: number;  // Number of posts/comments analyzed
+  sampleSize: number; // Number of posts/comments analyzed
 }
 
 /**
@@ -73,7 +73,7 @@ export async function analyzeUser(
   options?: {
     geminiApiKey?: string;
     includeRecentPosts?: boolean;
-    deepBehavioralAnalysis?: boolean;  // Enable The-Profiler style analysis
+    deepBehavioralAnalysis?: boolean; // Enable The-Profiler style analysis
   }
 ): Promise<UserAnalysis> {
   const analysis: UserAnalysis = {
@@ -124,7 +124,7 @@ export async function analyzeUser(
       });
 
       // Extract unique subreddits
-      const subs = new Set(recentComments.map(c => c.subreddit));
+      const subs = new Set(recentComments.map((c) => c.subreddit));
       analysis.recentActivitySubs = Array.from(subs).slice(0, 10);
 
       // Determine post frequency
@@ -146,10 +146,7 @@ export async function analyzeUser(
   // Optional: Gemini behavior analysis
   if (options?.geminiApiKey) {
     try {
-      const behaviorResult = await analyzeUserBehaviorWithGemini(
-        username,
-        options.geminiApiKey
-      );
+      const behaviorResult = await analyzeUserBehaviorWithGemini(username, options.geminiApiKey);
       if (behaviorResult) {
         analysis.behaviorSummary = behaviorResult.summary;
         analysis.engagementStyle = behaviorResult.style;
@@ -174,16 +171,12 @@ export async function analyzeUser(
 
         // Combine content for analysis
         const allContent = [
-          ...recentComments.map(c => c.body),
-          ...recentSubmissions.map(s => `${s.title} ${s.selftext || ''}`),
+          ...recentComments.map((c) => c.body),
+          ...recentSubmissions.map((s) => `${s.title} ${s.selftext || ''}`),
         ].filter(Boolean);
 
         if (allContent.length >= 5) {
-          const profile = await deepBehavioralAnalysis(
-            username,
-            allContent,
-            options.geminiApiKey
-          );
+          const profile = await deepBehavioralAnalysis(username, allContent, options.geminiApiKey);
           if (profile) {
             analysis.behavioralProfile = profile;
           }
@@ -229,11 +222,13 @@ Return JSON only:
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.1, maxOutputTokens: 200 },
-          tools: [{
-            google_search_retrieval: {
-              dynamic_retrieval_config: { mode: 'MODE_DYNAMIC' }
-            }
-          }],
+          tools: [
+            {
+              google_search_retrieval: {
+                dynamic_retrieval_config: { mode: 'MODE_DYNAMIC' },
+              },
+            },
+          ],
         }),
       }
     );
@@ -244,7 +239,7 @@ Return JSON only:
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     // Clean markdown
@@ -333,7 +328,7 @@ Return JSON only:
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     // Clean markdown
@@ -362,7 +357,12 @@ export async function getDeletedUserContent(
   options?: { limit?: number }
 ): Promise<{
   deletedComments: Array<{ body: string; subreddit: string; created_utc: number }>;
-  deletedSubmissions: Array<{ title: string; selftext?: string; subreddit: string; created_utc: number }>;
+  deletedSubmissions: Array<{
+    title: string;
+    selftext?: string;
+    subreddit: string;
+    created_utc: number;
+  }>;
 }> {
   const limit = options?.limit || 100;
 
@@ -375,22 +375,22 @@ export async function getDeletedUserContent(
 
     // Filter to likely deleted content (body = [deleted] or [removed] by Reddit,
     // but PullPush has the original text)
-    const deletedComments = comments.filter(c =>
-      c.body && c.body !== '[deleted]' && c.body !== '[removed]'
-    ).map(c => ({
-      body: c.body,
-      subreddit: c.subreddit,
-      created_utc: c.created_utc,
-    }));
+    const deletedComments = comments
+      .filter((c) => c.body && c.body !== '[deleted]' && c.body !== '[removed]')
+      .map((c) => ({
+        body: c.body,
+        subreddit: c.subreddit,
+        created_utc: c.created_utc,
+      }));
 
-    const deletedSubmissions = submissions.filter(s =>
-      s.title && s.selftext !== '[deleted]' && s.selftext !== '[removed]'
-    ).map(s => ({
-      title: s.title,
-      selftext: s.selftext,
-      subreddit: s.subreddit,
-      created_utc: s.created_utc,
-    }));
+    const deletedSubmissions = submissions
+      .filter((s) => s.title && s.selftext !== '[deleted]' && s.selftext !== '[removed]')
+      .map((s) => ({
+        title: s.title,
+        selftext: s.selftext,
+        subreddit: s.subreddit,
+        created_utc: s.created_utc,
+      }));
 
     return { deletedComments, deletedSubmissions };
   } catch {
@@ -416,9 +416,12 @@ export async function analyzeDeletedContent(
   }
 
   const allContent = [
-    ...deleted.deletedComments.map(c => c.body),
-    ...deleted.deletedSubmissions.map(s => `${s.title}: ${s.selftext || ''}`),
-  ].slice(0, 30).join('\n---\n').slice(0, 6000);
+    ...deleted.deletedComments.map((c) => c.body),
+    ...deleted.deletedSubmissions.map((s) => `${s.title}: ${s.selftext || ''}`),
+  ]
+    .slice(0, 30)
+    .join('\n---\n')
+    .slice(0, 6000);
 
   const prompt = `Analyze this DELETED Reddit content from u/${username} for signs of abusive behavior.
 These are posts/comments the user deleted (or were removed by mods).
@@ -462,7 +465,7 @@ If nothing problematic found, return: {"flaggedContent": [], "summary": "No prob
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
     }
 
-    const data = await response.json() as GeminiResponse;
+    const data = (await response.json()) as GeminiResponse;
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     if (text.startsWith('```')) {
@@ -472,7 +475,11 @@ If nothing problematic found, return: {"flaggedContent": [], "summary": "No prob
     text = text.trim();
 
     return JSON.parse(text) as {
-      flaggedContent: Array<{ text: string; reason: string; severity: 'low' | 'moderate' | 'severe' }>;
+      flaggedContent: Array<{
+        text: string;
+        reason: string;
+        severity: 'low' | 'moderate' | 'severe';
+      }>;
       summary: string;
     };
   } catch {
@@ -509,7 +516,12 @@ export function formatUserAnalysisForFarewell(analysis: UserAnalysis): string {
   }
 
   if (analysis.recentActivitySubs && analysis.recentActivitySubs.length > 0) {
-    parts.push(`Also active in: ${analysis.recentActivitySubs.slice(0, 5).map(s => `r/${s}`).join(', ')}`);
+    parts.push(
+      `Also active in: ${analysis.recentActivitySubs
+        .slice(0, 5)
+        .map((s) => `r/${s}`)
+        .join(', ')}`
+    );
   }
 
   if (analysis.postFrequency) {

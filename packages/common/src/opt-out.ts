@@ -14,10 +14,7 @@ interface OptOutData {
 /**
  * Check if user has opted out (stored in subreddit wiki)
  */
-export async function isUserOptedOut(
-  context: AppContext,
-  username: string
-): Promise<boolean> {
+export async function isUserOptedOut(context: AppContext, username: string): Promise<boolean> {
   try {
     const subredditName = await context.reddit.getCurrentSubredditName();
     const wikiPage = await context.reddit.getWikiPage(subredditName, WIKI_PAGE);
@@ -25,7 +22,7 @@ export async function isUserOptedOut(
     if (!wikiPage?.content) return false;
 
     const data = JSON.parse(wikiPage.content) as OptOutData;
-    return data.users.map(u => u.toLowerCase()).includes(username.toLowerCase());
+    return data.users.map((u) => u.toLowerCase()).includes(username.toLowerCase());
   } catch {
     // Wiki page doesn't exist or parse error - user not opted out
     return false;
@@ -35,10 +32,7 @@ export async function isUserOptedOut(
 /**
  * Add user to opt-out list
  */
-export async function addOptOut(
-  context: AppContext,
-  username: string
-): Promise<void> {
+export async function addOptOut(context: AppContext, username: string): Promise<void> {
   const subredditName = await context.reddit.getCurrentSubredditName();
 
   let data: OptOutData = { users: [], updatedAt: Date.now() };
@@ -53,7 +47,7 @@ export async function addOptOut(
   }
 
   const userLower = username.toLowerCase();
-  if (!data.users.map(u => u.toLowerCase()).includes(userLower)) {
+  if (!data.users.map((u) => u.toLowerCase()).includes(userLower)) {
     data.users.push(username);
     data.updatedAt = Date.now();
   }
@@ -79,10 +73,7 @@ export async function addOptOut(
 /**
  * Remove user from opt-out list
  */
-export async function removeOptOut(
-  context: AppContext,
-  username: string
-): Promise<void> {
+export async function removeOptOut(context: AppContext, username: string): Promise<void> {
   const subredditName = await context.reddit.getCurrentSubredditName();
 
   try {
@@ -91,7 +82,7 @@ export async function removeOptOut(
 
     const data = JSON.parse(wikiPage.content) as OptOutData;
     const userLower = username.toLowerCase();
-    data.users = data.users.filter(u => u.toLowerCase() !== userLower);
+    data.users = data.users.filter((u) => u.toLowerCase() !== userLower);
     data.updatedAt = Date.now();
 
     await context.reddit.updateWikiPage({

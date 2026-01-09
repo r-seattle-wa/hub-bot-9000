@@ -146,8 +146,10 @@ const brigadeAnalysisForm = Devvit.createForm(
 
       // Show summary toast
       const topSource = evidence.topSourceSubreddits[0];
-      const sourceInfo = topSource ? ` Top source: r/${topSource.subreddit} (${topSource.count} users).` : '';
-      
+      const sourceInfo = topSource
+        ? ` Top source: r/${topSource.subreddit} (${topSource.count} users).`
+        : '';
+
       context.ui.showToast({
         text: `${evidence.confidence.toUpperCase()}: ${evidence.firstTimePosters}/${evidence.uniqueCommenters} first-time posters (${evidence.firstTimePosterPercentage}%).${sourceInfo} Full report in modmail.`,
         appearance: evidence.confidenceScore >= 30 ? 'success' : 'neutral',
@@ -294,15 +296,15 @@ export function registerMenuActions(): void {
     forUserType: 'moderator',
     onPress: async (_, ctx) => {
       ctx.ui.showToast('Updating Hall of Shame...');
-      
+
       const settings = await ctx.settings.getAll();
       const installedSub = await ctx.reddit.getCurrentSubredditName();
       const homeSubreddit = (settings.homeSubreddit as string)?.trim() || installedSub;
-      
+
       const result = await updateHallOfShame(ctx, homeSubreddit);
-      
+
       ctx.ui.showToast({
-        text: result.success 
+        text: result.success
           ? `Hall of Shame updated! View at /r/${installedSub}/wiki/${HALL_OF_SHAME_WIKI}`
           : result.message,
         appearance: result.success ? 'success' : 'neutral',

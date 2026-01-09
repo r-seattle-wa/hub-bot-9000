@@ -11,8 +11,12 @@ export function createMockRedis(): MockRedis {
   return {
     data,
     get: async (key: string) => data.get(key) ?? null,
-    set: async (key: string, value: string) => { data.set(key, value); },
-    del: async (key: string) => { data.delete(key); },
+    set: async (key: string, value: string) => {
+      data.set(key, value);
+    },
+    del: async (key: string) => {
+      data.delete(key);
+    },
   };
 }
 
@@ -26,13 +30,13 @@ export interface MockRedditAPI {
 export function createMockRedditAPI(): MockRedditAPI {
   const users = new Map();
   const subreddits = new Map();
-  subreddits.set("default", { name: "TestSubreddit" });
-  
+  subreddits.set('default', { name: 'TestSubreddit' });
+
   return {
     users,
     subreddits,
     getUserByUsername: async (username: string) => users.get(username) ?? null,
-    getCurrentSubreddit: async () => subreddits.get("default"),
+    getCurrentSubreddit: async () => subreddits.get('default'),
   };
 }
 
