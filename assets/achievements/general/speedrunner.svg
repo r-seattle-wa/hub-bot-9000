@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg_speedrunner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ccac00;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#bg_speedrunner)" stroke="#333" stroke-width="2"/>
+  <!-- Inner highlight -->
+  <circle cx="32" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+  <!-- Achievement symbol -->
+  <text x="32" y="42" font-size="28" text-anchor="middle" fill="#333">⏱️</text>
+</svg>

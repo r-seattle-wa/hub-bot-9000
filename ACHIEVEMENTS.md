@@ -26,12 +26,12 @@ We actively encourage contributors to add new achievements! The system is design
 
 | Count | Tier |
 |-------|------|
-| 8 | Bronze |
-| 8 | Silver |
-| 7 | Gold |
-| 1 | Platinum |
+| 27 | Bronze |
+| 21 | Silver |
+| 11 | Gold |
+| 2 | Platinum |
 | 2 | Diamond |
-| **26** | **Total** |
+| **63** | **Total** |
 
 ## Achievement Registry
 
@@ -47,6 +47,25 @@ We actively encourage contributors to add new achievements! The system is design
 | `mod_critic` | Mod Critic | Accused mods of abuse/power-tripping | `mod_critic.svg` |
 | `dramatic_departure` | Dramatic Departure | Made dramatic "I'm leaving" post | `dramatic_departure.svg` |
 | `shadow_lurker` | Shadow Lurker | Announced leaving with almost no prior activity | `shadow_lurker.svg` |
+| `delete_and_retreat` | Delete & Retreat | Deleted comment within 5 min | `delete_and_retreat.svg` |
+| `wall_of_text` | Wall of Text | Single comment over 2000 characters | `wall_of_text.svg` |
+| `whataboutism` | What About... | Used whataboutism 3+ times | `whataboutism.svg` |
+| `seattle_freeze` | Seattle Freeze | Complained about friendliness | `seattle_freeze.svg` | Seattle |
+| `rain_check` | Rain Check | Complained about weather 5+ times | `rain_check.svg` | Seattle |
+| `helpful_local` | Helpful Local | 10+ helpful tourist comments | `helpful_local.svg` |
+| `welcomer` | Welcome Wagon | Welcomed 10+ new residents | `welcomer.svg` |
+| `photo_pro` | Photo Pro | 10+ upvoted photos | `photo_pro.svg` |
+| `weekend_warrior` | Weekend Warrior | Only active on weekends | `weekend_warrior.svg` |
+| `haiku_magnet` | Haiku Magnet | Triggered haiku-sensei 5+ times | `haiku_magnet.svg` |
+| `early_bird` | Early Bird | 90% of posts before 7am | `early_bird.svg` |
+| `contrarian` | Professional Contrarian | Disagreed with top comment 10+ times | `contrarian.svg` |
+| `necromancer` | Thread Necromancer | Commented on 3+ old posts | `necromancer.svg` |
+| `bot_whisperer` | Bot Whisperer | Bot conversation 3+ times | `bot_whisperer.svg` |
+| `self_aware` | Self Aware | Acknowledged own achievement | `self_aware.svg` |
+| `umbrella_truther` | Umbrella Truther | Argued about umbrella usage | `umbrella_truther.svg` | Seattle |
+| `best_teriyaki` | Best Teriyaki Debater | Argued about teriyaki spots | `best_teriyaki.svg` | Seattle |
+| `mountain_out` | The Mountain Is Out | Posted Rainier photo | `mountain_out.svg` | Seattle |
+| `transit_takes` | Transit Takes | Strong opinions on light rail | `transit_takes.svg` | Seattle |
 
 ### Tier: Silver (Commitment)
 
@@ -60,6 +79,19 @@ We actively encourage contributors to add new achievements! The system is design
 | `rage_machine` | Rage Machine | Consistently hostile tone detected | `rage_machine.svg` |
 | `multi_front_warrior` | Multi-Front Warrior | Posted from 3+ hostile subreddits | `multi_front_warrior.svg` |
 | `troll_suspect` | Troll Suspect | High trolling likelihood detected | `troll_suspect.svg` |
+| `night_owl` | Night Owl | 10+ hostile posts 2-5am | `night_owl.svg` |
+| `comeback_king` | Comeback King | Returned after 6+ month hiatus | `comeback_king.svg` |
+| `double_down` | Double Down | Argued after being proven wrong | `double_down.svg` |
+| `rent_is_too_damn_high` | The Rent Is Too Damn High | 10+ housing complaints | `rent_is_too_damn_high.svg` |
+| `peacemaker` | Peacemaker | De-escalated 3+ heated threads | `peacemaker.svg` |
+| `fact_checker` | Fact Checker | Provided sources in 5+ debates | `fact_checker.svg` |
+| `event_evangelist` | Event Evangelist | Shared 20+ local events | `event_evangelist.svg` |
+| `hidden_gem_hunter` | Hidden Gem Hunter | Shared 5+ underrated spots | `hidden_gem_hunter.svg` |
+| `one_topic_wonder` | One Topic Wonder | 50+ posts same niche topic | `one_topic_wonder.svg` |
+| `lurker_emeritus` | Lurker Emeritus | First post after 5+ years | `lurker_emeritus.svg` |
+| `achievement_hunter` | Achievement Hunter | Unlocked 10+ achievements | `achievement_hunter.svg` |
+| `techie_blamer` | Techie Blamer | Blamed tech workers | `techie_blamer.svg` | Seattle |
+| `old_seattle` | Old Seattle Energy | "Back in my day" 5+ times | `old_seattle.svg` | Seattle |
 
 ### Tier: Gold (Dedication)
 
@@ -72,12 +104,17 @@ We actively encourage contributors to add new achievements! The system is design
 | `farewell_trilogy` | The Farewell Trilogy | Announced leaving 3+ times | `farewell_trilogy.svg` |
 | `evidence_eraser` | Evidence Eraser | 5+ deleted comments detected | `evidence_eraser.svg` |
 | `story_teller` | Story Teller | Deception indicators detected | `story_teller.svg` |
+| `speedrunner` | Speedrunner | Reached 25 points in under 7 days | `speedrunner.svg` |
+| `og_local` | OG Local | 10+ year account, positive contributor | `og_local.svg` |
+| `good_faith_debater` | Good Faith Debater | Changed mind publicly | `good_faith_debater.svg` |
+| `hall_of_famer` | Hall of Famer | Featured in Hall of Shame wiki | `hall_of_famer.svg` |
 
 ### Tier: Platinum (Excellence)
 
 | ID | Name | Unlock Condition | Asset |
 |----|------|------------------|-------|
 | `legendary_salt_lord` | Legendary Salt Lord | 50+ salt points | `legendary_salt_lord.svg` |
+| `completionist` | Completionist | Unlocked all Bronze achievements | `completionist.svg` |
 
 ### Tier: Diamond (Supreme)
 
@@ -186,7 +223,7 @@ Unlocks based on specific behavior flags.
 
 ## How Notifications Work
 
-1. **checkAchievements()** evaluates all 26 achievements against user stats
+1. **checkAchievements()** evaluates all 63 achievements against user stats
 2. Returns `AchievementUnlock[]` with `isNew` and `shouldNotify` flags
 3. `shouldNotify = isNew && !alreadyNotified && cooldownPassed`
 4. **getHighestNewAchievement()** picks the best one (highest tier)
@@ -336,8 +373,8 @@ The `roastTemplate` is the base text that Gemini enhances:
 ## Tier Progression
 
 ```
-Bronze (8)  ->  Silver (8)  ->  Gold (6)  ->  Platinum (1)  ->  Diamond (2)
-   5 pts         10 pts         25 pts         50 pts          100 pts
+Bronze (27)  ->  Silver (21)  ->  Gold (11)  ->  Platinum (2)  ->  Diamond (2)
+   5 pts          10 pts          25 pts          50 pts          100 pts
 ```
 
 ### XP Values (for leaderboard bonus)
@@ -353,69 +390,49 @@ Bronze (8)  ->  Silver (8)  ->  Gold (6)  ->  Platinum (1)  ->  Diamond (2)
 
 ## Future Achievement Ideas
 
-**Add your ideas here!** These are achievements we'd love to see implemented. Feel free to add rows or submit PRs.
+**Add your ideas here!** Most ideas from the original list have been implemented! Feel free to add new ideas or submit PRs.
+
+*Note: Achievements marked with "Seattle" in the registry require `enableSeattleAchievements` setting to be enabled.*
 
 ### Villain Achievements (Hater Recognition)
 
+*All villain achievements from this section have been implemented! Add new ideas below:*
+
 | ID | Name | Condition | Tier | Roast Idea |
 |----|------|-----------|------|------------|
-| `night_owl` | Night Owl | 10+ hostile posts between 2-5am | Silver | "Losing sleep to lose arguments" |
-| `speedrunner` | Speedrunner | Reached 25 points in under 7 days | Gold | "Any% hater run, new PB!" |
-| `comeback_king` | Comeback King | Returned after 6+ month hiatus to hate | Silver | "You can check out but you can never leave" |
-| `delete_and_retreat` | Delete & Retreat | Deleted comment within 5 min of posting | Bronze | "Typed, posted, regretted" |
-| `wall_of_text` | Wall of Text | Single comment over 2000 characters complaining | Bronze | "Sir, this is a Wendy's" |
-| `double_down` | Double Down | Argued after being proven wrong | Silver | "Doubling down on a losing hand" |
-| `whataboutism` | What About... | Used whataboutism 3+ times | Bronze | "Deflection: 100" |
-| `seattle_freeze` | Seattle Freeze | Complained about friendliness | Bronze | "Making friends by complaining about making friends" |
-| `rain_check` | Rain Check | Complained about weather 5+ times | Bronze | "Did you... not know it rains here?" |
-| `rent_is_too_damn_high` | The Rent Is Too Damn High | 10+ housing complaint posts | Silver | "We know. We ALL know." |
+| `your_idea_here` | Your Idea | Describe the trigger | Tier | "Your roast" |
 
 ### Hero Achievements (Positive Recognition)
 
+*All hero achievements from this section have been implemented! Add new ideas below:*
+
 | ID | Name | Condition | Tier | Praise Idea |
 |----|------|-----------|------|-------------|
-| `helpful_local` | Helpful Local | 10+ comments answering tourist questions | Bronze | "The hero every visitor needs" |
-| `peacemaker` | Peacemaker | De-escalated 3+ heated threads | Silver | "Bringing civility to the discourse" |
-| `fact_checker` | Fact Checker | Provided sources in 5+ debates | Silver | "Citations! Actual citations!" |
-| `welcomer` | Welcome Wagon | Welcomed 10+ new residents | Bronze | "Making Seattle less freezy" |
-| `og_local` | OG Local | Account 10+ years, positive contributor | Gold | "Remember when this was all orchards?" |
-| `event_evangelist` | Event Evangelist | Shared 20+ local events | Silver | "The social calendar we need" |
-| `photo_pro` | Photo Pro | 10+ upvoted Seattle photos | Bronze | "Making us all jealous of your views" |
-| `good_faith_debater` | Good Faith Debater | Changed mind publicly based on evidence | Gold | "Intellectual honesty is rare and beautiful" |
-| `hidden_gem_hunter` | Hidden Gem Hunter | Shared 5+ underrated local spots | Silver | "Keeper of secret knowledge" |
+| `your_idea_here` | Your Idea | Describe the trigger | Tier | "Your praise" |
 
 ### Chaotic Neutral Achievements
 
+*All chaotic neutral achievements from this section have been implemented! Add new ideas below:*
+
 | ID | Name | Condition | Tier | Comment Idea |
 |----|------|-----------|------|--------------|
-| `weekend_warrior` | Weekend Warrior | Only posts on weekends | Bronze | "9-5 lurker, weekend warrior" |
-| `one_topic_wonder` | One Topic Wonder | 50+ posts about same niche topic | Silver | "Passion or obsession? Yes." |
-| `haiku_magnet` | Haiku Magnet | Triggered haiku-sensei 5+ times | Bronze | "Accidentally poetic" |
-| `early_bird` | Early Bird | 90% of posts before 7am | Bronze | "Do you even sleep?" |
-| `lurker_emeritus` | Lurker Emeritus | First post after 5+ years of account age | Silver | "They speak!" |
-| `contrarian` | Professional Contrarian | Disagreed with top comment 10+ times | Bronze | "Well, actually..." |
-| `necromancer` | Thread Necromancer | Commented on 3+ posts older than 6 months | Bronze | "Raising the dead, one thread at a time" |
+| `your_idea_here` | Your Idea | Describe the trigger | Tier | "Your comment" |
 
 ### Meta Achievements
 
+*All meta achievements from this section have been implemented! Add new ideas below:*
+
 | ID | Name | Condition | Tier | Comment Idea |
 |----|------|-----------|------|--------------|
-| `achievement_hunter` | Achievement Hunter | Unlocked 10+ achievements | Silver | "Playing the metagame" |
-| `bot_whisperer` | Bot Whisperer | Had conversation with bot 3+ times | Bronze | "Making friends with the machines" |
-| `hall_of_famer` | Hall of Famer | Featured in Hall of Shame wiki | Gold | "Legendary status achieved" |
-| `self_aware` | Self Aware | Acknowledged own achievement in comment | Bronze | "At least you're honest about it" |
-| `completionist` | Completionist | Unlocked all Bronze tier achievements | Platinum | "Gotta catch 'em all" |
+| `your_idea_here` | Your Idea | Describe the trigger | Tier | "Your comment" |
 
 ### Seattle-Specific Ideas
 
+*All Seattle-specific achievements from this section have been implemented! These require `enableSeattleAchievements` setting.*
+
 | ID | Name | Condition | Tier | Comment Idea |
 |----|------|-----------|------|--------------|
-| `umbrella_truther` | Umbrella Truther | Argued about umbrella usage | Bronze | "Real Seattleites don't... wait" |
-| `best_teriyaki` | Best Teriyaki Debater | Argued about teriyaki spots | Bronze | "The eternal question" |
-| `mountain_out` | The Mountain Is Out | Posted Rainier photo for karma | Bronze | "But it never gets old" |
-| `transit_takes` | Transit Takes | Strong opinions on light rail | Bronze | "Everyone's a transit planner" |
-| `techie_blamer` | Techie Blamer | Blamed tech workers for everything | Silver | "It's always Amazon's fault somehow" |
-| `old_seattle` | Old Seattle Energy | "Back in my day..." 5+ times | Silver | "OK, Boomer... but also, valid" |
+| `your_idea_here` | Your Idea | Describe the trigger | Tier | "Your comment" |
 
 ---
 
@@ -438,3 +455,5 @@ Remember: The best achievements are the ones that make people laugh when they un
 | 2024-12-29 | Initial 26 achievements implemented |
 | 2025-01-11 | Created formal inventory document |
 | 2025-01-11 | Added contributor guidance and expanded future ideas |
+| 2025-01-11 | Implemented all 37 future achievement ideas (total: 63) |
+| 2025-01-11 | Added seattleSpecific flag for regional achievements |

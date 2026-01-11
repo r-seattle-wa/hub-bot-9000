@@ -45,9 +45,52 @@ export interface Achievement {
     | 'multi_sub_hater'
     | 'deleted_evidence'
     | 'high_troll_risk'
-    | 'deception_detected';
+    | 'deception_detected'
+    // Villain achievements (new)
+    | 'night_owl'
+    | 'speedrunner'
+    | 'comeback_king'
+    | 'delete_and_retreat'
+    | 'wall_of_text'
+    | 'double_down'
+    | 'whataboutism'
+    | 'seattle_freeze'
+    | 'rain_check'
+    | 'rent_is_too_damn_high'
+    // Hero achievements (new)
+    | 'helpful_local'
+    | 'peacemaker'
+    | 'fact_checker'
+    | 'welcomer'
+    | 'og_local'
+    | 'event_evangelist'
+    | 'photo_pro'
+    | 'good_faith_debater'
+    | 'hidden_gem_hunter'
+    // Chaotic neutral achievements (new)
+    | 'weekend_warrior'
+    | 'one_topic_wonder'
+    | 'haiku_magnet'
+    | 'early_bird'
+    | 'lurker_emeritus'
+    | 'contrarian'
+    | 'necromancer'
+    // Meta achievements (new)
+    | 'achievement_hunter'
+    | 'bot_whisperer'
+    | 'hall_of_famer'
+    | 'self_aware'
+    | 'completionist'
+    // Seattle-specific achievements (new)
+    | 'umbrella_truther'
+    | 'best_teriyaki'
+    | 'mountain_out'
+    | 'transit_takes'
+    | 'techie_blamer'
+    | 'old_seattle';
   imagePrompt: string; // For GenAI image generation
   roastTemplate: string; // Base template for AI to enhance
+  seattleSpecific?: boolean; // If true, only shown when Seattle mode is on
 }
 
 // User's achievement record
@@ -340,6 +383,357 @@ export const ACHIEVEMENTS: Achievement[] = [
     imagePrompt: 'A Pinocchio nose growing from a Reddit avatar, caught lying style',
     roastTemplate: 'Inconsistencies detected! Your story has more holes than Swiss cheese.',
   },
+
+  // ===== VILLAIN ACHIEVEMENTS (New) =====
+  {
+    id: 'night_owl',
+    name: 'Night Owl',
+    description: '10+ hostile posts between 2-5am',
+    tier: AchievementTier.SILVER,
+    special: 'night_owl',
+    imagePrompt: 'An owl with bloodshot eyes typing on a laptop at 3am, coffee cups everywhere, gaming achievement style',
+    roastTemplate: 'Losing sleep to lose arguments. Your dedication to 3am rage-posting is noted.',
+  },
+  {
+    id: 'speedrunner',
+    name: 'Speedrunner',
+    description: 'Reached 25 salt points in under 7 days',
+    tier: AchievementTier.GOLD,
+    special: 'speedrunner',
+    imagePrompt: 'A speedrun timer with salt shakers, NEW PB flashing, retro gaming style',
+    roastTemplate: 'Any% hater run, new personal best! Most people take months to get here.',
+  },
+  {
+    id: 'comeback_king',
+    name: 'Comeback King',
+    description: 'Returned after 6+ month hiatus to hate',
+    tier: AchievementTier.SILVER,
+    special: 'comeback_king',
+    imagePrompt: 'A phoenix rising from ashes but angry and holding a keyboard, dramatic style',
+    roastTemplate: 'You can check out any time you like, but you can never leave. Welcome back!',
+  },
+  {
+    id: 'delete_and_retreat',
+    name: 'Delete & Retreat',
+    description: 'Deleted comment within 5 minutes of posting',
+    tier: AchievementTier.BRONZE,
+    special: 'delete_and_retreat',
+    imagePrompt: 'A trash can with a speech bubble being thrown away, regret style',
+    roastTemplate: 'Typed, posted, immediately regretted. We saw it though.',
+  },
+  {
+    id: 'wall_of_text',
+    name: 'Wall of Text',
+    description: 'Single complaint comment over 2000 characters',
+    tier: AchievementTier.BRONZE,
+    special: 'wall_of_text',
+    imagePrompt: 'A giant wall made of text blocks crushing a tiny reader, epic style',
+    roastTemplate: 'Sir, this is a Wendys. Nobody is reading all that.',
+  },
+  {
+    id: 'double_down',
+    name: 'Double Down',
+    description: 'Continued arguing after being proven wrong',
+    tier: AchievementTier.SILVER,
+    special: 'double_down',
+    imagePrompt: 'Two poker chips stacked on a losing hand, casino style',
+    roastTemplate: 'Doubling down on a losing hand. Respect the commitment, question the judgment.',
+  },
+  {
+    id: 'whataboutism',
+    name: 'What About...',
+    description: 'Used whataboutism deflection 3+ times',
+    tier: AchievementTier.BRONZE,
+    special: 'whataboutism',
+    imagePrompt: 'A person pointing in multiple directions at once, confused deflection style',
+    roastTemplate: 'Deflection skill: 100. Staying on topic: 0.',
+  },
+  {
+    id: 'seattle_freeze',
+    name: 'Seattle Freeze',
+    description: 'Complained about Seattle friendliness',
+    tier: AchievementTier.BRONZE,
+    special: 'seattle_freeze',
+    seattleSpecific: true,
+    imagePrompt: 'A frozen coffee cup with a passive-aggressive sticky note, PNW style',
+    roastTemplate: 'Making friends by complaining about how hard it is to make friends. Bold strategy.',
+  },
+  {
+    id: 'rain_check',
+    name: 'Rain Check',
+    description: 'Complained about Seattle weather 5+ times',
+    tier: AchievementTier.BRONZE,
+    special: 'rain_check',
+    seattleSpecific: true,
+    imagePrompt: 'A rain cloud with an angry face following someone, cartoon style',
+    roastTemplate: 'Did you... not know it rains here? This information was available.',
+  },
+  {
+    id: 'rent_is_too_damn_high',
+    name: 'The Rent Is Too Damn High',
+    description: '10+ housing complaint posts',
+    tier: AchievementTier.SILVER,
+    special: 'rent_is_too_damn_high',
+    imagePrompt: 'A person shaking fist at apartment building with dollar signs, meme style',
+    roastTemplate: 'We know. We ALL know. You are not the first to notice.',
+  },
+
+  // ===== HERO ACHIEVEMENTS (New) =====
+  {
+    id: 'helpful_local',
+    name: 'Helpful Local',
+    description: '10+ comments helping tourists/visitors',
+    tier: AchievementTier.BRONZE,
+    special: 'helpful_local',
+    imagePrompt: 'A friendly person with a map and coffee giving directions, wholesome style',
+    roastTemplate: 'The hero every visitor needs! Your neighborhood knowledge is appreciated.',
+  },
+  {
+    id: 'peacemaker',
+    name: 'Peacemaker',
+    description: 'De-escalated 3+ heated threads',
+    tier: AchievementTier.SILVER,
+    special: 'peacemaker',
+    imagePrompt: 'A dove carrying an olive branch between two angry Reddit avatars, noble style',
+    roastTemplate: 'Bringing civility to the discourse. The community salutes your patience.',
+  },
+  {
+    id: 'fact_checker',
+    name: 'Fact Checker',
+    description: 'Provided sources in 5+ debates',
+    tier: AchievementTier.SILVER,
+    special: 'fact_checker',
+    imagePrompt: 'A magnifying glass over citations with checkmarks, academic style',
+    roastTemplate: 'Citations! Actual citations! You are doing the Lords work.',
+  },
+  {
+    id: 'welcomer',
+    name: 'Welcome Wagon',
+    description: 'Welcomed 10+ new residents',
+    tier: AchievementTier.BRONZE,
+    special: 'welcomer',
+    imagePrompt: 'A wagon full of coffee and umbrellas with a welcome banner, friendly style',
+    roastTemplate: 'Making Seattle less freezy, one welcome at a time.',
+  },
+  {
+    id: 'og_local',
+    name: 'OG Local',
+    description: 'Account 10+ years old, positive contributor',
+    tier: AchievementTier.GOLD,
+    special: 'og_local',
+    imagePrompt: 'A vintage Seattle badge with Space Needle, established date, retro style',
+    roastTemplate: 'Remember when this was all orchards? A true Seattle veteran.',
+  },
+  {
+    id: 'event_evangelist',
+    name: 'Event Evangelist',
+    description: 'Shared 20+ local events',
+    tier: AchievementTier.SILVER,
+    special: 'event_evangelist',
+    imagePrompt: 'A calendar exploding with fun activities, energetic style',
+    roastTemplate: 'The social calendar we all need. Thanks for keeping us informed!',
+  },
+  {
+    id: 'photo_pro',
+    name: 'Photo Pro',
+    description: '10+ upvoted Seattle photos',
+    tier: AchievementTier.BRONZE,
+    special: 'photo_pro',
+    imagePrompt: 'A camera with Mount Rainier in the viewfinder, artistic style',
+    roastTemplate: 'Making us all jealous of your views and photography skills.',
+  },
+  {
+    id: 'good_faith_debater',
+    name: 'Good Faith Debater',
+    description: 'Changed mind publicly based on evidence',
+    tier: AchievementTier.GOLD,
+    special: 'good_faith_debater',
+    imagePrompt: 'A lightbulb moment over someones head during a discussion, enlightened style',
+    roastTemplate: 'Intellectual honesty is rare and beautiful. Respect.',
+  },
+  {
+    id: 'hidden_gem_hunter',
+    name: 'Hidden Gem Hunter',
+    description: 'Shared 5+ underrated local spots',
+    tier: AchievementTier.SILVER,
+    special: 'hidden_gem_hunter',
+    imagePrompt: 'A treasure map of Seattle with gem markers, adventure style',
+    roastTemplate: 'Keeper of secret knowledge. The real MVP of local recommendations.',
+  },
+
+  // ===== CHAOTIC NEUTRAL ACHIEVEMENTS (New) =====
+  {
+    id: 'weekend_warrior',
+    name: 'Weekend Warrior',
+    description: 'Only active on weekends',
+    tier: AchievementTier.BRONZE,
+    special: 'weekend_warrior',
+    imagePrompt: 'A warrior helmet made of calendar pages showing Saturday/Sunday, fun style',
+    roastTemplate: '9-5 lurker, weekend warrior. We see you.',
+  },
+  {
+    id: 'one_topic_wonder',
+    name: 'One Topic Wonder',
+    description: '50+ posts about the same niche topic',
+    tier: AchievementTier.SILVER,
+    special: 'one_topic_wonder',
+    imagePrompt: 'A person surrounded by the same thing repeated infinitely, obsession style',
+    roastTemplate: 'Passion or obsession? Yes. At least you are consistent.',
+  },
+  {
+    id: 'haiku_magnet',
+    name: 'Haiku Magnet',
+    description: 'Triggered haiku-sensei 5+ times',
+    tier: AchievementTier.BRONZE,
+    special: 'haiku_magnet',
+    imagePrompt: 'A magnet attracting 5-7-5 syllable patterns, zen style',
+    roastTemplate: 'Accidentally poetic. The bot loves you.',
+  },
+  {
+    id: 'early_bird',
+    name: 'Early Bird',
+    description: '90% of posts before 7am',
+    tier: AchievementTier.BRONZE,
+    special: 'early_bird',
+    imagePrompt: 'A bird with coffee posting on Reddit at sunrise, morning style',
+    roastTemplate: 'Do you even sleep? Your commitment to early morning posting is noted.',
+  },
+  {
+    id: 'lurker_emeritus',
+    name: 'Lurker Emeritus',
+    description: 'First post after 5+ years of account age',
+    tier: AchievementTier.SILVER,
+    special: 'lurker_emeritus',
+    imagePrompt: 'A figure emerging from shadows after years of watching, dramatic reveal style',
+    roastTemplate: 'They speak! After 5 years of silence, the lurker has emerged.',
+  },
+  {
+    id: 'contrarian',
+    name: 'Professional Contrarian',
+    description: 'Disagreed with top comment 10+ times',
+    tier: AchievementTier.BRONZE,
+    special: 'contrarian',
+    imagePrompt: 'A person saying well actually with glasses pushed up, debate style',
+    roastTemplate: 'Well, actually... Your dedication to disagreement is impressive.',
+  },
+  {
+    id: 'necromancer',
+    name: 'Thread Necromancer',
+    description: 'Commented on 3+ posts older than 6 months',
+    tier: AchievementTier.BRONZE,
+    special: 'necromancer',
+    imagePrompt: 'A wizard raising old Reddit threads from graves, dark magic style',
+    roastTemplate: 'Raising the dead, one ancient thread at a time.',
+  },
+
+  // ===== META ACHIEVEMENTS (New) =====
+  {
+    id: 'achievement_hunter',
+    name: 'Achievement Hunter',
+    description: 'Unlocked 10+ achievements',
+    tier: AchievementTier.SILVER,
+    special: 'achievement_hunter',
+    imagePrompt: 'A trophy case full of achievement badges, collector style',
+    roastTemplate: 'Playing the metagame. At this point you are doing it on purpose.',
+  },
+  {
+    id: 'bot_whisperer',
+    name: 'Bot Whisperer',
+    description: 'Had conversation with bot 3+ times',
+    tier: AchievementTier.BRONZE,
+    special: 'bot_whisperer',
+    imagePrompt: 'A person having tea with robot friends, wholesome tech style',
+    roastTemplate: 'Making friends with the machines. They remember kindness.',
+  },
+  {
+    id: 'hall_of_famer',
+    name: 'Hall of Famer',
+    description: 'Featured in Hall of Shame wiki',
+    tier: AchievementTier.GOLD,
+    special: 'hall_of_famer',
+    imagePrompt: 'A golden frame with a portrait in a hall of infamous portraits, legendary style',
+    roastTemplate: 'Legendary status achieved. Your name echoes in the halls.',
+  },
+  {
+    id: 'self_aware',
+    name: 'Self Aware',
+    description: 'Acknowledged own achievement in comment',
+    tier: AchievementTier.BRONZE,
+    special: 'self_aware',
+    imagePrompt: 'A person looking at their own reflection which is winking, meta style',
+    roastTemplate: 'At least you are honest about it. Self-awareness is rare.',
+  },
+  {
+    id: 'completionist',
+    name: 'Completionist',
+    description: 'Unlocked all Bronze tier achievements',
+    tier: AchievementTier.PLATINUM,
+    special: 'completionist',
+    imagePrompt: 'A complete set of bronze badges arranged in a platinum frame, collector ultimate style',
+    roastTemplate: 'Gotta catch em all! The dedication to complete the set is... something.',
+  },
+
+  // ===== SEATTLE-SPECIFIC ACHIEVEMENTS (New) =====
+  {
+    id: 'umbrella_truther',
+    name: 'Umbrella Truther',
+    description: 'Argued about umbrella usage',
+    tier: AchievementTier.BRONZE,
+    special: 'umbrella_truther',
+    seattleSpecific: true,
+    imagePrompt: 'A conspiracy board connecting umbrellas to Seattle identity, investigation style',
+    roastTemplate: 'Real Seattleites dont... wait, do they? The eternal debate.',
+  },
+  {
+    id: 'best_teriyaki',
+    name: 'Best Teriyaki Debater',
+    description: 'Argued about teriyaki spots',
+    tier: AchievementTier.BRONZE,
+    special: 'best_teriyaki',
+    seattleSpecific: true,
+    imagePrompt: 'A teriyaki bowl with a debate podium, food fight style',
+    roastTemplate: 'The eternal question. Everyone has opinions on this.',
+  },
+  {
+    id: 'mountain_out',
+    name: 'The Mountain Is Out',
+    description: 'Posted Rainier photo for karma',
+    tier: AchievementTier.BRONZE,
+    special: 'mountain_out',
+    seattleSpecific: true,
+    imagePrompt: 'Mount Rainier with upvote arrows raining down, majestic style',
+    roastTemplate: 'But it never gets old. The mountain is indeed out.',
+  },
+  {
+    id: 'transit_takes',
+    name: 'Transit Takes',
+    description: 'Strong opinions on light rail',
+    tier: AchievementTier.BRONZE,
+    special: 'transit_takes',
+    seattleSpecific: true,
+    imagePrompt: 'A light rail train with opinion bubbles all around it, urban planning style',
+    roastTemplate: 'Everyones a transit planner. Your takes have been noted.',
+  },
+  {
+    id: 'techie_blamer',
+    name: 'Techie Blamer',
+    description: 'Blamed tech workers for problems',
+    tier: AchievementTier.SILVER,
+    special: 'techie_blamer',
+    seattleSpecific: true,
+    imagePrompt: 'Tech company logos being blamed for everything, scapegoat style',
+    roastTemplate: 'Its always Amazons fault somehow. Classic Seattle discourse.',
+  },
+  {
+    id: 'old_seattle',
+    name: 'Old Seattle Energy',
+    description: 'Used back in my day 5+ times',
+    tier: AchievementTier.SILVER,
+    special: 'old_seattle',
+    seattleSpecific: true,
+    imagePrompt: 'A sepia-toned Seattle skyline with someone shaking fist at clouds, nostalgic style',
+    roastTemplate: 'OK, Boomer... but also, valid. Seattle has changed a lot.',
+  },
 ];
 
 // Achievement tier colors (for display)
@@ -410,6 +804,49 @@ export async function checkAchievements(
     deletedContentCount?: number;
     trollingRisk?: 'low' | 'moderate' | 'high';
     deceptionIndicators?: number;
+    // Villain-specific (new)
+    nightPostCount?: number;
+    daysToReach25?: number;
+    monthsSinceLastActivity?: number;
+    quickDeleteCount?: number;
+    longCommentLength?: number;
+    doubleDownCount?: number;
+    whataboutismCount?: number;
+    seattleFreezeComplaint?: boolean;
+    weatherComplaintCount?: number;
+    housingComplaintCount?: number;
+    // Hero-specific (new)
+    helpfulCommentCount?: number;
+    deescalationCount?: number;
+    sourcedDebateCount?: number;
+    welcomeCount?: number;
+    accountAgeYears?: number;
+    isPositiveContributor?: boolean;
+    eventShareCount?: number;
+    upvotedPhotoCount?: number;
+    changedMindPublicly?: boolean;
+    hiddenGemCount?: number;
+    // Chaotic neutral (new)
+    weekendOnlyPoster?: boolean;
+    sameTopicCount?: number;
+    haikuTriggerCount?: number;
+    earlyBirdPercentage?: number;
+    yearsBeforeFirstPost?: number;
+    topCommentDisagreeCount?: number;
+    oldThreadCommentCount?: number;
+    // Meta (new)
+    totalUnlockedAchievements?: number;
+    botConversationCount?: number;
+    inHallOfShame?: boolean;
+    acknowledgedAchievement?: boolean;
+    hasAllBronze?: boolean;
+    // Seattle-specific (new)
+    umbrellaArgument?: boolean;
+    teriyakiArgument?: boolean;
+    rainierPhotoPosted?: boolean;
+    transitOpinion?: boolean;
+    techBlameCount?: number;
+    backInMyDayCount?: number;
   }
 ): Promise<AchievementUnlock[]> {
   const opts = options || {};
@@ -534,6 +971,127 @@ export async function checkAchievements(
           meetsCondition =
             (opts.deceptionIndicators || 0) >= 2 ||
             (userEntry.behavioralProfile?.moderationRisk?.deceptionIndicators || 0) >= 2;
+          break;
+
+        // Villain achievements (new)
+        case 'night_owl':
+          meetsCondition = (opts.nightPostCount || 0) >= 10;
+          break;
+        case 'speedrunner':
+          meetsCondition = score >= 25 && (opts.daysToReach25 || 999) <= 7;
+          break;
+        case 'comeback_king':
+          meetsCondition = (opts.monthsSinceLastActivity || 0) >= 6;
+          break;
+        case 'delete_and_retreat':
+          meetsCondition = (opts.quickDeleteCount || 0) >= 1;
+          break;
+        case 'wall_of_text':
+          meetsCondition = (opts.longCommentLength || 0) >= 2000;
+          break;
+        case 'double_down':
+          meetsCondition = (opts.doubleDownCount || 0) >= 1;
+          break;
+        case 'whataboutism':
+          meetsCondition = (opts.whataboutismCount || 0) >= 3;
+          break;
+        case 'seattle_freeze':
+          meetsCondition = opts.seattleFreezeComplaint === true;
+          break;
+        case 'rain_check':
+          meetsCondition = (opts.weatherComplaintCount || 0) >= 5;
+          break;
+        case 'rent_is_too_damn_high':
+          meetsCondition = (opts.housingComplaintCount || 0) >= 10;
+          break;
+
+        // Hero achievements (new)
+        case 'helpful_local':
+          meetsCondition = (opts.helpfulCommentCount || 0) >= 10;
+          break;
+        case 'peacemaker':
+          meetsCondition = (opts.deescalationCount || 0) >= 3;
+          break;
+        case 'fact_checker':
+          meetsCondition = (opts.sourcedDebateCount || 0) >= 5;
+          break;
+        case 'welcomer':
+          meetsCondition = (opts.welcomeCount || 0) >= 10;
+          break;
+        case 'og_local':
+          meetsCondition = (opts.accountAgeYears || 0) >= 10 && opts.isPositiveContributor === true;
+          break;
+        case 'event_evangelist':
+          meetsCondition = (opts.eventShareCount || 0) >= 20;
+          break;
+        case 'photo_pro':
+          meetsCondition = (opts.upvotedPhotoCount || 0) >= 10;
+          break;
+        case 'good_faith_debater':
+          meetsCondition = opts.changedMindPublicly === true;
+          break;
+        case 'hidden_gem_hunter':
+          meetsCondition = (opts.hiddenGemCount || 0) >= 5;
+          break;
+
+        // Chaotic neutral achievements (new)
+        case 'weekend_warrior':
+          meetsCondition = opts.weekendOnlyPoster === true;
+          break;
+        case 'one_topic_wonder':
+          meetsCondition = (opts.sameTopicCount || 0) >= 50;
+          break;
+        case 'haiku_magnet':
+          meetsCondition = (opts.haikuTriggerCount || 0) >= 5;
+          break;
+        case 'early_bird':
+          meetsCondition = (opts.earlyBirdPercentage || 0) >= 90;
+          break;
+        case 'lurker_emeritus':
+          meetsCondition = (opts.yearsBeforeFirstPost || 0) >= 5;
+          break;
+        case 'contrarian':
+          meetsCondition = (opts.topCommentDisagreeCount || 0) >= 10;
+          break;
+        case 'necromancer':
+          meetsCondition = (opts.oldThreadCommentCount || 0) >= 3;
+          break;
+
+        // Meta achievements (new)
+        case 'achievement_hunter':
+          meetsCondition = (opts.totalUnlockedAchievements || userAchievements.totalAchievements || 0) >= 10;
+          break;
+        case 'bot_whisperer':
+          meetsCondition = (opts.botConversationCount || 0) >= 3;
+          break;
+        case 'hall_of_famer':
+          meetsCondition = opts.inHallOfShame === true;
+          break;
+        case 'self_aware':
+          meetsCondition = opts.acknowledgedAchievement === true;
+          break;
+        case 'completionist':
+          meetsCondition = opts.hasAllBronze === true;
+          break;
+
+        // Seattle-specific achievements (new)
+        case 'umbrella_truther':
+          meetsCondition = opts.umbrellaArgument === true;
+          break;
+        case 'best_teriyaki':
+          meetsCondition = opts.teriyakiArgument === true;
+          break;
+        case 'mountain_out':
+          meetsCondition = opts.rainierPhotoPosted === true;
+          break;
+        case 'transit_takes':
+          meetsCondition = opts.transitOpinion === true;
+          break;
+        case 'techie_blamer':
+          meetsCondition = (opts.techBlameCount || 0) >= 3;
+          break;
+        case 'old_seattle':
+          meetsCondition = (opts.backInMyDayCount || 0) >= 5;
           break;
       }
     }
