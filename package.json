@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write \"packages/*/src/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"packages/*/src/**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"packages/*/src/**/*.{ts,tsx}\"",
+    "validate:achievements": "node scripts/validate-achievements.js"
   },
   "keywords": [
     "reddit",

@@ -244,6 +244,8 @@ import {
 
 ### Achievement System
 
+> **Full inventory:** See [ACHIEVEMENTS.md](ACHIEVEMENTS.md) for complete achievement registry, unlock conditions, and asset requirements.
+
 ```typescript
 import {
   // Achievement tracking
@@ -254,20 +256,22 @@ import {
   getAchievementById,       // Lookup achievement by ID
   
   // Constants
-  ACHIEVEMENTS,             // All 11 achievement definitions
+  ACHIEVEMENTS,             // All 26 achievement definitions
   TIER_EMOJIS,              // Tier icons (bronze->diamond)
   AchievementTier,          // bronze, silver, gold, platinum, diamond
 } from '@hub-bot/common';
 
-// 27 achievements across 5 tiers:
-// Bronze: Casual Complainer, New Challenger, Broken Record, Echo Enthusiast,
-//         Transplant Tracker, Mod Critic, Dramatic Departure, Shadow Lurker
-// Silver: Serial Brigader, Top 10 Menace, Consistency Award, Meme Collector,
-//         Encore Performer, Rage Machine, Multi-Front Warrior, Troll Suspect
-// Gold: Professional Hater, Podium Pest, Mask Off, Meme Master, Farewell Trilogy,
-//       Evidence Eraser, Story Teller
-// Platinum: Legendary Salt Lord
-// Diamond: Transcendent Malcontent, Supreme Antagonist
+// 26 achievements across 5 tiers:
+// Bronze (8):   casual_complainer, new_challenger, broken_record, echo_enthusiast,
+//               transplant_tracker, mod_critic, dramatic_departure, shadow_lurker
+// Silver (8):   serial_brigader, top_ten_menace, consistency_award, meme_collector,
+//               encore_performer, rage_machine, multi_front_warrior, troll_suspect
+// Gold (7):     professional_hater, podium_pest, mask_off, meme_master,
+//               farewell_trilogy, evidence_eraser, story_teller
+// Platinum (1): legendary_salt_lord
+// Diamond (2):  transcendent_malcontent, supreme_antagonist
+
+// Validate: npm run validate:achievements
 ```
 
 ### Meme/Talking Point Detection
